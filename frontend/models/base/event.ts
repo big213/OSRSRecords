@@ -69,9 +69,9 @@ export const Event = <RecordInfo<'event'>>{
     isHardMode: {
       text: 'Is Hard Mode',
       inputType: 'switch',
+      default: () => false,
       component: BooleanColumn,
     },
-
     'createdBy.id': {
       text: 'Created By',
     },

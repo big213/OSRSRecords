@@ -27,7 +27,7 @@ export const submissionStatusArray = [
     index: 5,
     name: 'REJECTED',
     text: 'Rejected',
-    color: 'grey',
+    color: 'red',
   },
 ]
 

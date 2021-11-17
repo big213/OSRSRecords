@@ -186,10 +186,20 @@ export default {
       let value
 
       // if it is a value array, need to assemble the value as an array
-      if (inputObject.inputType === 'value-array') {
+      if (
+        inputObject.inputType === 'value-array' ||
+        inputObject.inputType === 'key-value-array'
+      ) {
         value = []
         for (const nestedInputObject of inputObject.nestedInputsArray) {
-          value.push(await this.processInputObject(nestedInputObject))
+          value.push(
+            inputObject.inputType === 'value-array'
+              ? await this.processInputObject(nestedInputObject)
+              : {
+                  key: nestedInputObject.key.value,
+                  value: await this.processInputObject(nestedInputObject.value),
+                }
+          )
         }
       } else {
         // if the fieldInfo.inputType === 'combobox' | 'server-combobox', it came from a combo box. need to handle accordingly

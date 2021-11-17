@@ -328,16 +328,18 @@
           autocomplete="off"
           v-bind="attrs"
           v-on="on"
+          @input="syncDatePickerInput"
           @click:append="item.value = null"
           @click:append-outer="handleClose()"
         ></v-text-field>
       </template>
       <v-date-picker
-        v-model="item.value"
+        v-model="tempInput"
         color="primary"
         no-title
         :readonly="isReadonly"
         @input="item.focused = false"
+        @change="applyDatePickerInput"
       ></v-date-picker>
     </v-menu>
     <v-combobox
@@ -539,7 +541,25 @@
             </div>
           </v-col>
         </v-row>
-        <div v-if="item.value.length > 0">
+        <div v-if="item.nestedInputsArray.length > 0">
+          <v-row
+            v-for="(nestedInputObject, i) in item.nestedInputsArray"
+            :key="i"
+          >
+            <v-col cols="6" class="py-0">
+              <GenericInput
+                :item="nestedInputObject.key"
+                @handle-close="removeRow(i)"
+              ></GenericInput>
+            </v-col>
+            <v-col cols="6" class="py-0">
+              <GenericInput
+                :item="nestedInputObject.value"
+                @handle-close="removeRow(i)"
+              ></GenericInput>
+            </v-col>
+          </v-row>
+
           <v-row v-for="(subItem, i) in item.value" :key="i">
             <v-col cols="6" class="py-0">
               <v-text-field
@@ -616,27 +636,6 @@
                 :item="nestedInputObject"
                 @handle-close="removeRow(i)"
               ></GenericInput>
-              <!--               <v-text-field
-                v-model="item.value[i]"
-                label="Value"
-                :readonly="isReadonly"
-                :rules="item.inputRules"
-                :hint="item.hint"
-                :append-icon="
-                  subItem === null
-                    ? 'mdi-null'
-                    : isReadonly
-                    ? null
-                    : 'mdi-close'
-                "
-                :append-outer-icon="isReadonly ? null : 'mdi-close'"
-                persistent-hint
-                filled
-                dense
-                class="py-0"
-                @click:append="subItem = null"
-                @click:append-outer="removeRow(i)"
-              ></v-text-field> -->
             </v-col>
           </v-row>
         </div>
@@ -705,6 +704,7 @@ export default {
 
   data() {
     return {
+      tempInput: null,
       filesData: [],
       filesProcessingQueue: null,
     }
@@ -744,31 +744,41 @@ export default {
       this.$emit('handle-submit')
     },
 
-    addRow(keyValue = false) {
-      /*       this.item.value.push(
-        keyValue
-          ? {
-              key: null,
-              value: null,
-            }
-          : null
-      ) */
+    applyDatePickerInput(val) {
+      this.item.value = val + ' 12:00:00 AM'
+    },
 
+    syncDatePickerInput(val) {
+      // if the dateTextInput is like YYYY-MM-DD, parse that
+      if (val && val.match(/^\d{4}-\d{2}-\d{2}\s/)) {
+        this.tempInput = val.split(' ')[0]
+      } else {
+        this.tempInput = null
+      }
+    },
+
+    addRow(keyValue = false) {
+      const valueInputObject = {
+        ...this.item,
+        isNested: true,
+        label: this.item.inputOptions?.nestedValueText ?? 'Element',
+        inputType: this.item.inputOptions?.nestedInputType,
+        value: null,
+        options: [],
+        nestedInputsArray: [],
+      }
       this.item.nestedInputsArray.push(
         keyValue
           ? {
-              key: null,
-              value: null,
+              key: {
+                isNested: false,
+                label: this.item.inputOptions?.nestedKeyText ?? 'Key',
+                inputType: 'text',
+                value: null,
+              },
+              value: valueInputObject,
             }
-          : {
-              ...this.item,
-              isNested: true,
-              label: `Element`,
-              inputType: this.item.inputOptions?.nestedInputType,
-              value: null,
-              options: [],
-              nestedInputsArray: [],
-            }
+          : valueInputObject
       )
     },
 
@@ -1009,15 +1019,18 @@ export default {
     },
 
     reset() {
-      if (
-        this.item.inputType === 'multiple-file' ||
-        this.item.inputType === 'multiple-media'
-      ) {
-        this.filesData = []
-        this.filesProcessingQueue = new Map()
-        if (this.parentItem) {
-          this.loadFiles(this.item)
-        }
+      switch (this.item.inputType) {
+        case 'multiple-file':
+        case 'multiple-media':
+          this.filesData = []
+          this.filesProcessingQueue = new Map()
+          if (this.parentItem) {
+            this.loadFiles(this.item)
+          }
+          break
+        case 'datepicker':
+          this.syncDatePickerInput(this.item.value)
+          break
       }
     },
   },

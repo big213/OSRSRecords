@@ -156,11 +156,21 @@ export default {
           inputs[inputObject.field] = await this.processInputObject(inputObject)
         }
 
-        // changed: list of participant characters by id, like [1,2,3]
-        const participantsList = new Set(inputs.participantsList)
+        // changed: for add mode only
+        const participantsMap = new Map()
+        if (this.mode === 'add') {
+          // changed: if any participants are null or falsey
+          if (inputs.participantsList.some((ele) => !ele.value))
+            throw new Error('No empty participant values allowed')
 
-        // changed: remove parcipants from inputs and process them specially
-        delete inputs.participantsList
+          // changed: map of participant characters by Map<id,obj>
+          inputs.participantsList.forEach((ele) => {
+            participantsMap.set(ele.value, ele)
+          })
+
+          // changed: remove parcipants from inputs and process them specially
+          delete inputs.participantsList
+        }
 
         // add/copy mode
         let query
@@ -190,21 +200,23 @@ export default {
         }
         const data = await executeGiraffeql(this, query)
 
-        // changed: after creating the submission, also add the submissionCharacterParticipantLinks
-        for (const participant of participantsList) {
-          await executeGiraffeql(this, {
-            createSubmissionCharacterParticipantLink: {
-              __args: {
-                submission: {
-                  id: data.id,
+        // changed: after creating the submission, also add the submissionCharacterParticipantLinks. add mode only
+        if (this.mode === 'add') {
+          for (const participant of participantsMap) {
+            await executeGiraffeql(this, {
+              createSubmissionCharacterParticipantLink: {
+                __args: {
+                  submission: {
+                    id: data.id,
+                  },
+                  character: {
+                    id: participant[1].value,
+                  },
+                  title: participant[1].key,
                 },
-                character: {
-                  id: participant,
-                },
-                title: null,
               },
-            },
-          })
+            })
+          }
         }
 
         this.$notifier.showSnackbar({

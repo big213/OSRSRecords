@@ -72,10 +72,12 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Participants Count',
     },
     participantsList: {
-      text: 'Participants (RSN)',
-      inputType: 'value-array',
+      text: 'Participants',
+      inputType: 'key-value-array',
       inputOptions: {
         nestedInputType: 'server-combobox',
+        nestedKeyText: 'Title',
+        nestedValueText: 'RSN',
         typename: 'character',
       },
     },
@@ -188,7 +190,8 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Ranking',
     },
     submittedBy: {
-      text: 'Submitted By (RSN)',
+      text: 'Submitted By',
+      hint: 'RSN',
     },
     'createdBy.id': {
       text: 'Created By',
@@ -207,13 +210,20 @@ export const Submission = <RecordInfo<'submission'>>{
     filters: [],
     headers: [
       {
-        field: 'event.name',
+        field: 'event.name+event.avatar+event.id+event.__typename',
         sortable: false,
+      },
+      {
+        field: 'timeElapsed',
+        width: '200px',
+        sortable: false,
+        align: 'right',
       },
       {
         field: 'participants',
         width: '150px',
         sortable: false,
+        align: 'right',
       },
       {
         field: 'createdAt',
@@ -247,7 +257,18 @@ export const Submission = <RecordInfo<'submission'>>{
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['privateComments'],
+    fields: [
+      'event.id',
+      'era.id',
+      'timeElapsed',
+      'world',
+      'files',
+      'externalLinks',
+      'happenedOn',
+      'privateComments',
+      'publicComments',
+      'submittedBy',
+    ],
     component: EditSubmissionInterface,
   },
   viewOptions: {
@@ -259,7 +280,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'timeElapsed',
       'happenedOn',
       'status',
-      'score',
+      // 'score',
       'world',
       'files',
       'externalLinks',

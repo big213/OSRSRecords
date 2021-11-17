@@ -40,7 +40,8 @@ export type RecordInfo<T extends keyof MainTypes> = {
         // fallbackIcon?: string
         // the nested type for this input if it is value-array
         nestedInputType?: InputType
-
+        nestedKeyText?: string
+        nestedValueText?: string
         typename?: string
       }
 

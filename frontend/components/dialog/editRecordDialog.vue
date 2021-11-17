@@ -20,6 +20,9 @@
             <span class="headline">{{ title }}</span>
           </v-toolbar-title>
           <v-spacer></v-spacer>
+          <v-btn v-if="computedMode === 'view'" icon @click="reset()">
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
           <RecordActionMenu
             v-if="computedMode !== 'add' && computedMode !== 'import'"
             :record-info="recordInfo"

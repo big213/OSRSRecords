@@ -1,6 +1,7 @@
 // Query builder (Typescript version >= 4.1.3 required)
 /* const queryResult = executeGiraffeql({
   // Start typing here to get hints
+  
 }); */
 
 export function executeGiraffeql<Key extends keyof Root>(
@@ -284,11 +285,13 @@ export type FilterByField<T> = {
     name: Scalars['string']
     avatar?: Scalars['string'] | null
     description?: Scalars['string'] | null
+    isSubEvent: Scalars['boolean']
   }
   updateEventClassFields: {
     name?: Scalars['string']
     avatar?: Scalars['string'] | null
     description?: Scalars['string'] | null
+    isSubEvent?: Scalars['boolean']
   }
   updateEventClass: {
     item: InputTypes['eventClass']
@@ -715,6 +718,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   name: { Type: Scalars['string']; Args: undefined }
   avatar: { Type: Scalars['string'] | null; Args: undefined }
   description: { Type: Scalars['string'] | null; Args: undefined }
+  isSubEvent: { Type: Scalars['boolean']; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
     Args: undefined

@@ -38,6 +38,11 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     'createdBy.id': {
       text: 'Created By',
     },
+    isSubEvent: {
+      text: 'Sub Event',
+      inputType: 'switch',
+      default: () => false,
+    },
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,
@@ -69,14 +74,14 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['avatar', 'name', 'description'],
+    fields: ['avatar', 'name', 'description', 'isSubEvent'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['avatar', 'name', 'description'],
+    fields: ['avatar', 'name', 'description', 'isSubEvent'],
   },
   viewOptions: {
-    fields: ['name+avatar', 'description'],
+    fields: ['name+avatar', 'description', 'isSubEvent'],
     component: ViewRecordTableInterface,
   },
   enterOptions: {},

@@ -8,6 +8,7 @@ import {
   generateStringField,
   generateTextField,
   generateTypenameField,
+  generateBooleanField,
 } from "../../core/helpers/typeDef";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
@@ -20,6 +21,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     avatar: generateStringField({ allowNull: true }),
     description: generateTextField({
       allowNull: true,
+    }),
+    isSubEvent: generateBooleanField({
+      allowNull: false,
+      sqlOptions: {
+        field: "is_sub_event",
+      },
     }),
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),

@@ -1,6 +1,10 @@
 <template>
   <div v-if="currentValue">
-    <div v-for="(participantLink, index) in currentValue" :key="index">
+    <div
+      v-for="(participantLink, index) in currentValue"
+      :key="index"
+      class="pb-2"
+    >
       <span v-if="participantLink.title">{{ participantLink.title }}:</span>
       <PreviewRecordMenu
         :item="participantLink.character"

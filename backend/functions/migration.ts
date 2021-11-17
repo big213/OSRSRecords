@@ -42,6 +42,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("name").notNullable();
       table.string("avatar").nullable();
       table.text("description").nullable();
+      table.boolean("is_sub_event").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
