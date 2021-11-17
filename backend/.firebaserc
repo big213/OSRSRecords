@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "osrs-records"
+  },
+  "targets": {
+    "osrs-records": {
+      "hosting": {
+        "osrs-records-cdn": [
+          "osrs-records-cdn"
+        ],
+        "osrs-records-api": [
+          "osrs-records-api"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://alpha.osrsrecords.com", "https://osrsrecords.com"],
+    "responseHeader": ["Content-Type"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]
