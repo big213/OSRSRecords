@@ -392,22 +392,11 @@ export default {
 
         // build inputs Array
         this.inputsArray = await Promise.all(
-          inputFields.map((fieldKey) => {
+          inputFields.map(async (fieldKey) => {
             const fieldInfo = this.recordInfo.fields[fieldKey]
 
             // field unknown, abort
             if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
-
-            let fieldValue
-
-            // if copy mode and fieldKey not in original fields, use default
-            if (this.mode === 'copy' && !fields.includes(fieldKey)) {
-              fieldValue = fieldInfo.default ? fieldInfo.default(this) : null
-            } else {
-              fieldValue = fieldInfo.hidden
-                ? null
-                : getNestedProperty(data, fieldKey)
-            }
 
             const inputObject = {
               field: fieldKey.split(/\+/)[0],
@@ -421,7 +410,7 @@ export default {
               optional: fieldInfo.optional,
               inputRules: fieldInfo.inputRules,
               inputOptions: fieldInfo.inputOptions,
-              value: fieldValue, // already serialized
+              value: null,
               options: [],
               readonly:
                 this.mode === 'view'
@@ -431,6 +420,17 @@ export default {
                   : false,
               generation: 0,
               nestedInputsArray: [],
+            }
+
+            // if copy mode and fieldKey not in original fields, use default
+            if (this.mode === 'copy' && !fields.includes(fieldKey)) {
+              inputObject.value = fieldInfo.default
+                ? await fieldInfo.default(this)
+                : null
+            } else {
+              inputObject.value = fieldInfo.hidden
+                ? null
+                : getNestedProperty(data, fieldKey)
             }
 
             // if inputType === 'server-autocomplete', only populate the options with the specific entry, if any, and if inputObject.value not null
@@ -493,7 +493,7 @@ export default {
     },
 
     resetInputs() {
-      this.inputsArray.forEach((inputObject) => {
+      this.inputsArray.forEach(async (inputObject) => {
         const fieldInfo = this.recordInfo.fields[inputObject.fieldKey]
 
         // field unknown, abort
@@ -503,7 +503,9 @@ export default {
         if (inputObject.fieldKey in this.selectedItem) {
           inputObject.value = this.selectedItem[inputObject.fieldKey]
         } else {
-          inputObject.value = fieldInfo.default ? fieldInfo.default(this) : null
+          inputObject.value = fieldInfo.default
+            ? await fieldInfo.default(this)
+            : null
         }
 
         // increment inputObject.generation to reset inputs, if necessary
@@ -512,7 +514,7 @@ export default {
       })
     },
 
-    reset(hardReset = false) {
+    async reset(hardReset = false) {
       // duplicate misc inputs, if any
       this.miscInputs = JSON.parse(JSON.stringify(this.originalMiscInputs))
 
@@ -526,78 +528,81 @@ export default {
 
       // initialize inputs
       if (this.mode === 'add') {
-        this.inputsArray = this.recordInfo.addOptions.fields.map((fieldKey) => {
-          const fieldInfo = this.recordInfo.fields[fieldKey]
+        this.inputsArray = await Promise.all(
+          this.recordInfo.addOptions.fields.map(async (fieldKey) => {
+            const fieldInfo = this.recordInfo.fields[fieldKey]
 
-          // field unknown, abort
-          if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
+            // field unknown, abort
+            if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
 
-          let value
-          let readonly = false
+            let readonly = false
 
-          // is the field in selectedItem? if so, use that and set field to readonly
-          if (fieldKey in this.selectedItem) {
-            value = this.selectedItem[fieldKey]
-            readonly = true
-          } else {
-            value = fieldInfo.default ? fieldInfo.default(this) : null
-          }
-
-          const inputObject = {
-            field: fieldKey,
-            fieldKey,
-            fieldInfo,
-            recordInfo: this.recordInfo,
-            inputType: fieldInfo.inputType,
-            label: fieldInfo.text ?? fieldKey,
-            hint: fieldInfo.hint,
-            isNested: false,
-            optional: fieldInfo.optional,
-            inputRules: fieldInfo.inputRules,
-            inputOptions: fieldInfo.inputOptions,
-            value,
-            options: [],
-            readonly,
-            loading: false,
-            input: null,
-            focused: false,
-            generation: 0,
-            nestedInputsArray: [],
-          }
-
-          // if server-autocomplete and readonly, load only the specific entry
-          if (
-            fieldInfo.inputType === 'server-autocomplete' ||
-            fieldInfo.inputType === 'server-combobox'
-          ) {
-            // only if readonly and value is truthy
-            if (inputObject.readonly && inputObject.value) {
-              executeGiraffeql(this, {
-                [`get${capitalizeString(fieldInfo.inputOptions.typename)}`]: {
-                  id: true,
-                  name: true,
-                  ...(fieldInfo.inputOptions?.hasAvatar && { avatar: true }),
-                  __args: {
-                    id: inputObject.value,
-                  },
-                },
-              })
-                .then((res) => {
-                  inputObject.options = [res]
-                  inputObject.value = res
-                })
-                .catch((e) => e)
+            const inputObject = {
+              field: fieldKey,
+              fieldKey,
+              fieldInfo,
+              recordInfo: this.recordInfo,
+              inputType: fieldInfo.inputType,
+              label: fieldInfo.text ?? fieldKey,
+              hint: fieldInfo.hint,
+              isNested: false,
+              optional: fieldInfo.optional,
+              inputRules: fieldInfo.inputRules,
+              inputOptions: fieldInfo.inputOptions,
+              value: null,
+              options: [],
+              readonly,
+              loading: false,
+              input: null,
+              focused: false,
+              generation: 0,
+              nestedInputsArray: [],
             }
-          }
 
-          // add the other options, if any
-          fieldInfo.getOptions &&
-            fieldInfo.getOptions(this).then((res) => {
-              inputObject.options.push(...res)
-            })
+            // is the field in selectedItem? if so, use that and set field to readonly
+            if (fieldKey in this.selectedItem) {
+              inputObject.value = this.selectedItem[fieldKey]
+              readonly = true
+            } else {
+              inputObject.value = fieldInfo.default
+                ? await fieldInfo.default(this)
+                : null
+            }
 
-          return inputObject
-        })
+            // if server-autocomplete and readonly, load only the specific entry
+            if (
+              fieldInfo.inputType === 'server-autocomplete' ||
+              fieldInfo.inputType === 'server-combobox'
+            ) {
+              // only if readonly and value is truthy
+              if (inputObject.readonly && inputObject.value) {
+                executeGiraffeql(this, {
+                  [`get${capitalizeString(fieldInfo.inputOptions.typename)}`]: {
+                    id: true,
+                    name: true,
+                    ...(fieldInfo.inputOptions?.hasAvatar && { avatar: true }),
+                    __args: {
+                      id: inputObject.value,
+                    },
+                  },
+                })
+                  .then((res) => {
+                    inputObject.options = [res]
+                    inputObject.value = res
+                  })
+                  .catch((e) => e)
+              }
+            }
+
+            // add the other options, if any
+            fieldInfo.getOptions &&
+              fieldInfo.getOptions(this).then((res) => {
+                inputObject.options.push(...res)
+              })
+
+            return inputObject
+          })
+        )
       } else {
         this.loadRecord()
       }

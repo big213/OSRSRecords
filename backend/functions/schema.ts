@@ -1,7 +1,6 @@
 // Query builder (Typescript version >= 4.1.3 required)
 /* const queryResult = executeGiraffeql({
   // Start typing here to get hints
-  
 }); */
 
 export function executeGiraffeql<Key extends keyof Root>(
@@ -119,7 +118,7 @@ export type FilterByField<T> = {
   eventClassGroupByKey: undefined;
   eventSortByKey: "id" | "createdAt" | "updatedAt";
   eventGroupByKey: undefined;
-  submissionSortByKey: "id" | "createdAt" | "updatedAt";
+  submissionSortByKey: "id" | "createdAt" | "updatedAt" | "score";
   submissionGroupByKey: undefined;
   characterSortByKey: "id" | "createdAt" | "updatedAt";
   characterGroupByKey: undefined;
@@ -342,9 +341,15 @@ export type FilterByField<T> = {
   submission: { id?: Scalars["id"] };
   "submissionFilterByField/id": FilterByField<Scalars["id"]>;
   "submissionFilterByField/createdBy.id": FilterByField<Scalars["id"]>;
+  "submissionFilterByField/event.id": FilterByField<Scalars["id"]>;
+  "submissionFilterByField/participants": FilterByField<Scalars["number"]>;
+  "submissionFilterByField/status": FilterByField<Scalars["submissionStatus"]>;
   submissionFilterByObject: {
     id?: InputTypes["submissionFilterByField/id"];
     "createdBy.id"?: InputTypes["submissionFilterByField/createdBy.id"];
+    "event.id"?: InputTypes["submissionFilterByField/event.id"];
+    participants?: InputTypes["submissionFilterByField/participants"];
+    status?: InputTypes["submissionFilterByField/status"];
   };
   submissionPaginator: {
     first?: Scalars["number"];
@@ -360,18 +365,21 @@ export type FilterByField<T> = {
   createSubmission: {
     event: InputTypes["event"];
     era: InputTypes["era"];
+    participants?: Scalars["number"];
     timeElapsed: Scalars["number"];
     happenedOn: Scalars["unixTimestamp"];
     world?: Scalars["number"] | null;
-    files: Scalars["id"][];
-    externalLinks: Scalars["url"][];
+    files?: Scalars["id"][];
+    externalLinks?: Scalars["url"][];
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
     submittedBy: Scalars["string"];
+    discordId?: Scalars["string"] | null;
   };
   updateSubmissionFields: {
     event?: InputTypes["event"];
     era?: InputTypes["era"];
+    participants?: Scalars["number"];
     timeElapsed?: Scalars["number"];
     happenedOn?: Scalars["unixTimestamp"];
     status?: Scalars["submissionStatus"];
@@ -381,6 +389,7 @@ export type FilterByField<T> = {
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
     submittedBy?: Scalars["string"];
+    discordId?: Scalars["string"] | null;
   };
   updateSubmission: {
     item: InputTypes["submission"];
@@ -793,6 +802,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   };
   createdBy: { Type: User | null; Args: undefined };
   submittedBy: { Type: Scalars["string"]; Args: undefined };
+  discordId: { Type: Scalars["string"] | null; Args: undefined };
 };
 /**Character type*/ export type Character = {
   /**The unique ID of the field*/ id: { Type: Scalars["id"]; Args: undefined };

@@ -263,41 +263,36 @@ export default {
         },
       ],
       navItems: [
-        /*         {
+        {
           icon: 'mdi-podium',
           title: 'Leaderboard',
-          to: generateCrudRecordInterfaceRoute('/public-pbs', {
+          to: generateCrudRecordInterfaceRoute('/public-submissions', {
             sortBy: ['score'],
             sortDesc: [false],
             filters: [
               {
                 field: 'event.id',
                 operator: 'eq',
-                value: 4, // 3x3x3 on prod db
+                value: 'c3xnykl6', // COX CM on prod db
               },
               {
-                field: 'pbClass.id',
-                operator: 'eq',
-                value: 1, // pbClass single on prod db
-              },
-              {
-                field: 'setSize',
+                field: 'participants',
                 operator: 'eq',
                 value: 1,
               },
               {
-                field: 'isFlagged',
+                field: 'status',
                 operator: 'eq',
-                value: false,
+                value: 'APPROVED',
               },
             ],
           }),
           loginRequired: false,
         },
-        {
+        /*         {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
-          to: generateCrudRecordInterfaceRoute('/public-pbs', {
+          to: generateCrudRecordInterfaceRoute('/public-submissions', {
             sortBy: ['happenedOn'],
             sortDesc: [true],
           }),
@@ -382,7 +377,7 @@ export default {
   },
 
   methods: {
-    openCreateSubmissionDialog() {
+    async openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
           recordInfo: 'Submission',

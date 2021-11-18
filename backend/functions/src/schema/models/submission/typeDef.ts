@@ -23,7 +23,8 @@ import {
   generatePivotResolverObject,
 } from "../../core/helpers/typeDef";
 import { Scalars } from "../..";
-import { expandObject, flattenObject } from "../../core/helpers/shared";
+import { countTableRows } from "../../core/helpers/sql";
+import { submissionStatusKenum } from "../../enums";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: Submission.typename,
@@ -42,7 +43,6 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     participants: generateIntegerField({
       allowNull: false,
       defaultValue: 0,
-      typeDefOptions: { addable: false, updateable: false },
     }),
     participantsLinks: generatePaginatorPivotResolverObject({
       pivotService: SubmissionCharacterParticipantLink,
@@ -108,17 +108,37 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       description:
         "The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only",
       allowNull: true,
-      requiredSqlFields: ["score"],
-      async resolver({ parentValue, fieldPath }) {
-        // if not a current PB or user is not public or isFlagged, return null
-        if (
-          !parentValue.isCurrent ||
-          !parentValue.createdBy.isPublic ||
-          parentValue.isFlagged
-        )
-          return null;
+      requiredSqlFields: ["score", "event.id", "participants", "status"],
+      async resolver({ parentValue }) {
+        const resultsCount = await countTableRows({
+          from: Submission.typename,
+          where: {
+            fields: [
+              {
+                field: "score",
+                operator: "lt",
+                value: parentValue.score,
+              },
+              {
+                field: "event.id",
+                operator: "eq",
+                value: parentValue.event.id,
+              },
+              {
+                field: "participants",
+                operator: "eq",
+                value: parentValue.participants,
+              },
+              {
+                field: "status",
+                operator: "eq",
+                value: submissionStatusKenum.APPROVED.index,
+              },
+            ],
+          },
+        });
 
-        return 0;
+        return resultsCount + 1;
       },
     },
     ...generateCreatedAtField(),
@@ -129,6 +149,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       allowNull: false,
       sqlOptions: {
         field: "submitted_by",
+      },
+    }),
+    discordId: generateStringField({
+      allowNull: true,
+      sqlOptions: {
+        field: "discord_id",
       },
     }),
   },

@@ -351,10 +351,10 @@ export function generateArrayField(
     nestHidden,
     sqlType: "json",
     type,
+    ...(!allowNull && { defaultValue: [] }),
     sqlOptions: {
       // necessary for inserting JSON into DB properly
       parseValue: (val) => JSON.stringify(val),
-      ...(!allowNull && { defaultValue: [] }),
       ...sqlOptions,
     },
     typeDefOptions: {

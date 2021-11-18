@@ -4,8 +4,11 @@ import PreviewableFilesColumn from '~/components/table/common/previewableFilesCo
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
 import SubmissionStatusColumn from '~/components/table/common/submissionStatusColumn.vue'
+import ResultColumn from '~/components/table/common/resultColumn.vue'
+import SubmissionTypeColumn from '~/components/table/common/submissionTypeColumn.vue'
 import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
 import EditSubmissionInterface from '~/components/interface/crud/special/editSubmissionInterface.vue'
+import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
 import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
@@ -13,7 +16,7 @@ import {
 import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue'
 import UrlsColumn from '~/components/table/common/urlsColumn.vue'
 import ParticipantsColumn from '~/components/table/common/participantsColumn.vue'
-import { getEras, getSubmissionStatuses } from '~/services/dropdown'
+import { getEras, getEvents, getSubmissionStatuses } from '~/services/dropdown'
 import { serializeTime } from '~/services/common'
 
 export const Submission = <RecordInfo<'submission'>>{
@@ -35,6 +38,7 @@ export const Submission = <RecordInfo<'submission'>>{
         hasAvatar: true,
         typename: 'event',
       },
+      getOptions: getEvents,
     },
     'event.__typename': {},
     'event.avatar': {},
@@ -44,6 +48,13 @@ export const Submission = <RecordInfo<'submission'>>{
       component: RecordColumn,
       compoundOptions: {
         pathPrefix: 'event',
+        primaryField: 'event.name',
+      },
+    },
+    'event.name+participants': {
+      text: 'Event',
+      component: SubmissionTypeColumn,
+      compoundOptions: {
         primaryField: 'event.name',
       },
     },
@@ -58,6 +69,11 @@ export const Submission = <RecordInfo<'submission'>>{
         typename: 'era',
       },
       getOptions: getEras,
+      default: async (that) => {
+        const eras = await getEras(that)
+
+        return eras.find((era) => era.isCurrent)?.id ?? null
+      },
     },
     'era.name+era.avatar+era.id+era.__typename': {
       text: 'Era',
@@ -73,10 +89,9 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     participantsList: {
       text: 'Participants',
-      inputType: 'key-value-array',
+      inputType: 'value-array',
       inputOptions: {
         nestedInputType: 'server-combobox',
-        nestedKeyText: 'Title',
         nestedValueText: 'RSN',
         typename: 'character',
       },
@@ -106,7 +121,8 @@ export const Submission = <RecordInfo<'submission'>>{
       component: UrlsColumn,
     },
     score: {
-      text: 'Score',
+      text: 'Result',
+      component: ResultColumn,
     },
     timeElapsed: {
       text: 'Time',
@@ -169,6 +185,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     world: {
       text: 'World',
+      optional: true,
     },
     files: {
       text: 'Files',
@@ -193,6 +210,10 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Submitted By',
       hint: 'RSN',
     },
+    discordId: {
+      text: 'Discord ID',
+      optional: true,
+    },
     'createdBy.id': {
       text: 'Created By',
     },
@@ -210,18 +231,17 @@ export const Submission = <RecordInfo<'submission'>>{
     filters: [],
     headers: [
       {
-        field: 'event.name+event.avatar+event.id+event.__typename',
+        field: 'event.name+participants',
         sortable: false,
       },
       {
-        field: 'timeElapsed',
+        field: 'status',
         width: '200px',
         sortable: false,
-        align: 'right',
       },
       {
-        field: 'participants',
-        width: '150px',
+        field: 'score',
+        width: '200px',
         sortable: false,
         align: 'right',
       },
@@ -237,6 +257,7 @@ export const Submission = <RecordInfo<'submission'>>{
       },
     ],
     downloadOptions: {},
+    interfaceComponent: CrudSubmissionInterface,
   },
   addOptions: {
     fields: [
@@ -246,11 +267,12 @@ export const Submission = <RecordInfo<'submission'>>{
       'timeElapsed',
       'happenedOn',
       'world',
-      'files',
+      // 'files',
       'externalLinks',
       'privateComments',
       'publicComments',
       'submittedBy',
+      'discordId',
     ],
 
     component: EditSubmissionInterface,
@@ -262,31 +284,35 @@ export const Submission = <RecordInfo<'submission'>>{
       'era.id',
       'timeElapsed',
       'world',
-      'files',
+      // 'files',
       'externalLinks',
       'happenedOn',
       'privateComments',
       'publicComments',
       'submittedBy',
+      'discordId',
     ],
     component: EditSubmissionInterface,
   },
   viewOptions: {
     fields: [
+      'event.name+participants',
       'event.name+event.avatar+event.id+event.__typename',
       'era.name+era.avatar+era.id+era.__typename',
       'participants',
       'participantsList.id+participantsList.title+participantsList.character.id+participantsList.character.name+participantsList.character.avatar+participantsList.character.__typename',
-      'timeElapsed',
+      'score',
       'happenedOn',
       'status',
       // 'score',
       'world',
-      'files',
+      'ranking',
+      // 'files',
       'externalLinks',
       'privateComments',
       'publicComments',
       'submittedBy',
+      'discordId',
     ],
     component: ViewRecordTableInterface,
   },

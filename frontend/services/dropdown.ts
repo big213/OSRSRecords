@@ -57,6 +57,24 @@ export const getEras = <any>(
         id: true,
         name: true,
         avatar: true,
+        isCurrent: true,
+      },
+      {
+        filterBy,
+      }
+    )
+  })
+)
+
+export const getEvents = <any>(
+  memoize(function (that, _forceReload = false, filterBy = []) {
+    return collectPaginatorData(
+      that,
+      'getEventPaginator',
+      {
+        id: true,
+        name: true,
+        avatar: true,
       },
       {
         filterBy,

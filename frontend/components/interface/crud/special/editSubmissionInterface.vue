@@ -157,15 +157,14 @@ export default {
         }
 
         // changed: for add mode only
-        const participantsMap = new Map()
+        const participantsSet = new Set()
         if (this.mode === 'add') {
           // changed: if any participants are null or falsey
-          if (inputs.participantsList.some((ele) => !ele.value))
+          if (inputs.participantsList.some((ele) => !ele))
             throw new Error('No empty participant values allowed')
 
-          // changed: map of participant characters by Map<id,obj>
           inputs.participantsList.forEach((ele) => {
-            participantsMap.set(ele.value, ele)
+            participantsSet.add(ele)
           })
 
           // changed: remove parcipants from inputs and process them specially
@@ -202,7 +201,7 @@ export default {
 
         // changed: after creating the submission, also add the submissionCharacterParticipantLinks. add mode only
         if (this.mode === 'add') {
-          for (const participant of participantsMap) {
+          for (const participant of participantsSet) {
             await executeGiraffeql(this, {
               createSubmissionCharacterParticipantLink: {
                 __args: {
@@ -210,9 +209,9 @@ export default {
                     id: data.id,
                   },
                   character: {
-                    id: participant[1].value,
+                    id: participant,
                   },
-                  title: participant[1].key,
+                  title: null,
                 },
               },
             })

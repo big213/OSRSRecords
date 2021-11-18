@@ -2,7 +2,9 @@ import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
 import { PaginatedService } from "../../core/services";
+import { sendDiscordMessage } from "../../helpers/discord";
 import { File } from "../../services";
+import { env } from "../../../config";
 
 export class SubmissionService extends PaginatedService {
   defaultTypename = "submission";
@@ -10,12 +12,16 @@ export class SubmissionService extends PaginatedService {
   filterFieldsMap = {
     id: {},
     "createdBy.id": {},
+    "event.id": {},
+    participants: {},
+    status: {},
   };
 
   sortFieldsMap = {
     id: {},
     createdAt: {},
     updatedAt: {},
+    score: {},
   };
 
   searchFieldsMap = {
@@ -42,7 +48,7 @@ export class SubmissionService extends PaginatedService {
       addFields: {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
-        score: 123,
+        score: validatedArgs.timeElapsed,
         createdBy: req.user!.id,
       },
       req,
@@ -78,6 +84,13 @@ export class SubmissionService extends PaginatedService {
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
   ) {
+    sendDiscordMessage(
+      env.discord.submissions_channel_url,
+      `New submission received
+    https://osrsrecords.com/a/crud?type=submission
+    `
+    );
+
     return File.updateFileParentKeys(
       req.user!.id,
       this.typename,
