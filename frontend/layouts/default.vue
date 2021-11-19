@@ -211,6 +211,26 @@
       <VersionCheckText />
       <span>&nbsp;&copy; {{ new Date().getFullYear() }}</span>
       <v-spacer></v-spacer>
+      <!--       <nuxt-link to="/legal/privacy" class="mr-2"> Privacy & Terms </nuxt-link> -->
+      <v-icon
+        small
+        class="mr-2"
+        @click="openLink('https://discord.gg/72d8gNq7bh')"
+        >mdi-discord</v-icon
+      >
+      <v-icon
+        small
+        class="mr-2"
+        @click="openLink('https://github.com/big213/OSRSRecords')"
+        >mdi-github</v-icon
+      >
+      <v-icon
+        small
+        class="mr-2"
+        title="hello@osrsrecords.com"
+        @click="copyToClipboard('hello@osrsrecords.com')"
+        >mdi-email</v-icon
+      >
       <v-icon
         small
         class="mr-2"
@@ -246,7 +266,12 @@
 import { mapGetters } from 'vuex'
 import Snackbar from '~/components/snackbar/snackbar'
 import VersionCheckText from '~/components/common/versionCheckText.vue'
-import { handleError, generateCrudRecordInterfaceRoute } from '~/services/base'
+import {
+  copyToClipboard,
+  openLink,
+  handleError,
+  generateCrudRecordInterfaceRoute,
+} from '~/services/base'
 import firebase from '~/services/fireinit'
 import AdminNavRoutes from '~/components/navigation/adminNavRoutes.vue'
 import 'firebase/auth'
@@ -428,6 +453,11 @@ export default {
   },
 
   methods: {
+    copyToClipboard(content) {
+      return copyToClipboard(this, content)
+    },
+    openLink,
+
     async openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
