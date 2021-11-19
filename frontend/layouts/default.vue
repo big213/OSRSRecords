@@ -212,10 +212,7 @@
       <span>&nbsp;&copy; {{ new Date().getFullYear() }}</span>
       <v-spacer></v-spacer>
       <!--       <nuxt-link to="/legal/privacy" class="mr-2"> Privacy & Terms </nuxt-link> -->
-      <v-icon
-        small
-        class="mr-2"
-        @click="openLink('https://discord.gg/72d8gNq7bh')"
+      <v-icon small class="mr-2" @click="openLink('https://discord.gg/8U56ZZn')"
         >mdi-discord</v-icon
       >
       <v-icon
