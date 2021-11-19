@@ -13,6 +13,7 @@ export class EventService extends PaginatedService {
     id: {},
     createdAt: {},
     updatedAt: {},
+    name: {},
   };
 
   searchFieldsMap = {

@@ -83,6 +83,24 @@
       </v-list>
       -->
       <v-divider></v-divider>
+      <v-list v-if="isAdmin" dense>
+        <v-list-item
+          v-for="(item, i) in moderatorItems"
+          :key="i"
+          :to="item.to"
+          router
+          exact
+        >
+          <v-list-item-action>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-action>
+          <v-list-item-content>
+            <v-list-item-title v-text="item.title" />
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+
+      <v-divider></v-divider>
 
       <AdminNavRoutes v-if="isAdmin"></AdminNavRoutes>
     </v-navigation-drawer>
@@ -314,6 +332,39 @@ export default {
           icon: 'mdi-file',
           title: 'My Files',
           to: '/my-files',
+        },
+      ],
+
+      moderatorItems: [
+        {
+          icon: 'mdi-format-list-checkbox',
+          title: 'Review Queue',
+          to: generateCrudRecordInterfaceRoute('/submissions', {
+            sortBy: ['createdAt'],
+            sortDesc: [true],
+            filters: [
+              {
+                field: 'status',
+                operator: 'in',
+                value: ['UNDER_REVIEW', 'SUBMITTED'],
+              },
+            ],
+          }),
+        },
+        {
+          icon: 'mdi-checkbox-marked',
+          title: 'Done',
+          to: generateCrudRecordInterfaceRoute('/submissions', {
+            sortBy: ['createdAt'],
+            sortDesc: [true],
+            filters: [
+              {
+                field: 'status',
+                operator: 'in',
+                value: ['APPROVED', 'REJECTED', 'INFORMATION_REQUESTED'],
+              },
+            ],
+          }),
         },
       ],
       accountItems: [

@@ -11,7 +11,7 @@ export const PublicSubmission = {
       {
         field: 'score',
         width: '200px',
-        sortable: false,
+        sortable: true,
         align: 'right',
       },
       {

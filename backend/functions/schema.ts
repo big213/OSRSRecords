@@ -1,6 +1,7 @@
 // Query builder (Typescript version >= 4.1.3 required)
 /* const queryResult = executeGiraffeql({
   // Start typing here to get hints
+  
 }); */
 
 export function executeGiraffeql<Key extends keyof Root>(
@@ -116,7 +117,7 @@ export type FilterByField<T> = {
   eraGroupByKey: undefined;
   eventClassSortByKey: "id" | "createdAt" | "updatedAt";
   eventClassGroupByKey: undefined;
-  eventSortByKey: "id" | "createdAt" | "updatedAt";
+  eventSortByKey: "id" | "createdAt" | "updatedAt" | "name";
   eventGroupByKey: undefined;
   submissionSortByKey: "id" | "createdAt" | "updatedAt" | "score";
   submissionGroupByKey: undefined;
@@ -373,7 +374,7 @@ export type FilterByField<T> = {
     externalLinks?: Scalars["url"][];
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
-    submittedBy: Scalars["string"];
+    submittedBy?: Scalars["string"] | null;
     discordId?: Scalars["string"] | null;
   };
   updateSubmissionFields: {
@@ -388,7 +389,7 @@ export type FilterByField<T> = {
     externalLinks?: Scalars["url"][];
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
-    submittedBy?: Scalars["string"];
+    submittedBy?: Scalars["string"] | null;
     discordId?: Scalars["string"] | null;
   };
   updateSubmission: {
@@ -801,7 +802,7 @@ export type SubmissionCharacterParticipantLinkEdge =
     Args: undefined;
   };
   createdBy: { Type: User | null; Args: undefined };
-  submittedBy: { Type: Scalars["string"]; Args: undefined };
+  submittedBy: { Type: Scalars["string"] | null; Args: undefined };
   discordId: { Type: Scalars["string"] | null; Args: undefined };
 };
 /**Character type*/ export type Character = {

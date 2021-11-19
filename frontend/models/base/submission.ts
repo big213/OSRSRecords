@@ -89,9 +89,10 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     participantsList: {
       text: 'Participants',
-      inputType: 'value-array',
+      inputType: 'key-value-array',
       inputOptions: {
         nestedInputType: 'server-combobox',
+        nestedKeyText: 'Discord ID',
         nestedValueText: 'RSN',
         typename: 'character',
       },
@@ -149,7 +150,7 @@ export const Submission = <RecordInfo<'submission'>>{
 
         let ms = 0
 
-        ms += Number(parts[parts.length - 1]) * 10
+        ms += Number(parts[parts.length - 1]) * 100
 
         const firstParts = parts[0].split(':')
 
@@ -228,7 +229,23 @@ export const Submission = <RecordInfo<'submission'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
+    filters: [
+      {
+        field: 'status',
+        operator: 'in',
+        inputType: 'multiple-select',
+      },
+      {
+        field: 'event.id',
+        operator: 'eq',
+        inputType: 'select',
+      },
+      {
+        field: 'participants',
+        operator: 'eq',
+        inputType: 'text',
+      },
+    ],
     headers: [
       {
         field: 'event.name+participants',
@@ -242,7 +259,7 @@ export const Submission = <RecordInfo<'submission'>>{
       {
         field: 'score',
         width: '200px',
-        sortable: false,
+        sortable: true,
         align: 'right',
       },
       {
@@ -271,8 +288,6 @@ export const Submission = <RecordInfo<'submission'>>{
       'externalLinks',
       'privateComments',
       'publicComments',
-      'submittedBy',
-      'discordId',
     ],
 
     component: EditSubmissionInterface,
@@ -289,8 +304,6 @@ export const Submission = <RecordInfo<'submission'>>{
       'happenedOn',
       'privateComments',
       'publicComments',
-      'submittedBy',
-      'discordId',
     ],
     component: EditSubmissionInterface,
   },
@@ -311,8 +324,6 @@ export const Submission = <RecordInfo<'submission'>>{
       'externalLinks',
       'privateComments',
       'publicComments',
-      'submittedBy',
-      'discordId',
     ],
     component: ViewRecordTableInterface,
   },

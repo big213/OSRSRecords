@@ -5,7 +5,6 @@
       :key="index"
       class="pb-2"
     >
-      <span v-if="participantLink.title">{{ participantLink.title }}:</span>
       <PreviewRecordMenu
         :item="participantLink.character"
         :close-on-content-click="false"
@@ -14,6 +13,7 @@
         offset-y
         top
       ></PreviewRecordMenu>
+      <span v-if="participantLink.title">({{ participantLink.title }})</span>
     </div>
   </div>
 </template>

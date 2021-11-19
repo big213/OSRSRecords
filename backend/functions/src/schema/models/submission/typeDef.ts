@@ -146,7 +146,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     ...generateCreatedByField(User, true),
 
     submittedBy: generateStringField({
-      allowNull: false,
+      allowNull: true,
       sqlOptions: {
         field: "submitted_by",
       },

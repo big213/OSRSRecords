@@ -4,6 +4,7 @@
     <CrudRecordPage
       :record-info="recordInfo"
       :locked-filters="lockedFilters"
+      :hidden-filters="hiddenFilters"
       :head="head"
       :title="title"
       icon="mdi-star"
@@ -25,6 +26,7 @@ export default {
   data() {
     return {
       recordInfo: PublicSubmission,
+      hiddenFilters: ['status'],
       head: {
         title: 'Public Submissions',
       },

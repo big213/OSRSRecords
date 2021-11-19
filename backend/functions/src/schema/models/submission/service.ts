@@ -87,7 +87,7 @@ export class SubmissionService extends PaginatedService {
     sendDiscordMessage(
       env.discord.submissions_channel_url,
       `New submission received
-    https://osrsrecords.com/a/crud?type=submission
+    https://osrsrecords.com/submissions?pageOptions=eyJzb3J0QnkiOlsiY3JlYXRlZEF0Il0sInNvcnREZXNjIjpbdHJ1ZV0sImZpbHRlcnMiOlt7ImZpZWxkIjoic3RhdHVzIiwib3BlcmF0b3IiOiJpbiIsInZhbHVlIjpbIlVOREVSX1JFVklFVyIsIlNVQk1JVFRFRCJdfV19
     `
     );
 
