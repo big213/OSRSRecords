@@ -5,13 +5,25 @@
       indeterminate
     ></v-progress-circular>
     <v-row v-else justify="center" class="pt-3">
+      <v-col :key="0" cols="12" lg="3" class="pb-0">
+        <v-select
+          v-model="inputs.era"
+          :items="eras"
+          item-text="name"
+          item-value="id"
+          label="Era"
+          filled
+          return-object
+          @change="applyEraPreset"
+        ></v-select>
+      </v-col>
       <v-col :key="-1" cols="12" lg="3" class="pb-0">
         <v-autocomplete
           v-model="inputs.event"
           :items="events"
           item-text="name"
           item-value="id"
-          label="Event"
+          label="Event Category"
           filled
           return-object
           :clearable="eventClearable"
@@ -23,7 +35,7 @@
           v-model="inputs.participants"
           :items="participants"
           item-text="text"
-          label="Participants"
+          label="Team Size"
           clearable
           filled
           return-object
@@ -35,7 +47,7 @@
 </template>
 
 <script>
-import { getEvents } from '~/services/dropdown'
+import { getEvents, getEras } from '~/services/dropdown'
 import { generateCrudRecordInterfaceRoute } from '~/services/base'
 export default {
   props: {
@@ -47,6 +59,7 @@ export default {
   data() {
     return {
       inputs: {
+        era: null,
         event: null,
         participants: null,
       },
@@ -54,6 +67,7 @@ export default {
         presets: false,
       },
       events: [],
+      eras: [],
       participants: [
         {
           text: 'Solo',
@@ -122,6 +136,38 @@ export default {
         })
       )
     },
+
+    applyEraPreset(era) {
+      // get the original sortBy/sortDesc
+      const originalPageOptions = this.$route.query.pageOptions
+        ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
+        : null
+      // replace era.id filters with new ones
+      const excludeFilterKeys = ['era.id']
+      this.$router.push(
+        generateCrudRecordInterfaceRoute(this.$route.path, {
+          ...originalPageOptions,
+          filters: (originalPageOptions?.filters
+            ? originalPageOptions.filters.filter(
+                (filterObject) =>
+                  !excludeFilterKeys.includes(filterObject.field)
+              )
+            : []
+          ).concat(
+            era
+              ? [
+                  {
+                    field: 'era.id',
+                    operator: 'eq',
+                    value: era.id,
+                  },
+                ]
+              : []
+          ),
+        })
+      )
+    },
+
     applyParticipantsPreset(participantObject) {
       // get the original sortBy/sortDesc/filters
       const originalPageOptions = this.$route.query.pageOptions
@@ -155,6 +201,7 @@ export default {
     async loadPresets() {
       this.loading.presets = true
       this.events = await getEvents(this)
+      this.eras = await getEras(this)
       this.loading.presets = false
     },
     // syncs preset inputs with filters
@@ -164,6 +211,19 @@ export default {
         : null
       // determine if a preset was applied
       if (originalPageOptions.filters) {
+        // sync era filters
+        const eraFilterObject = originalPageOptions.filters.find(
+          (filterObject) => filterObject.field === 'era.id'
+        )
+        if (eraFilterObject) {
+          this.inputs.era = this.eras.find(
+            (era) => era.id === eraFilterObject.value
+          )
+        } else {
+          this.inputs.era = null
+        }
+
+        // sync event filters
         const eventFilterObject = originalPageOptions.filters.find(
           (filterObject) => filterObject.field === 'event.id'
         )
@@ -174,6 +234,8 @@ export default {
         } else {
           this.inputs.event = null
         }
+
+        // sync participants filters
         const participantsFilterObject = originalPageOptions.filters.find(
           (filterObject) => filterObject.field === 'participants'
         )

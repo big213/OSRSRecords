@@ -5,7 +5,12 @@ import {
   Submission,
   SubmissionCharacterParticipantLink,
 } from "../../services";
-import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
+import {
+  GiraffeqlInputFieldType,
+  GiraffeqlInputType,
+  GiraffeqlObjectType,
+  ObjectTypeDefinition,
+} from "giraffeql";
 import {
   generateIdField,
   generateCreatedAtField,
@@ -108,8 +113,22 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       description:
         "The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only",
       allowNull: true,
-      requiredSqlFields: ["score", "event.id", "participants", "status"],
+      requiredSqlFields: [
+        "score",
+        "event.id",
+        "participants",
+        "status",
+        "era.id",
+      ],
       async resolver({ parentValue }) {
+        // if status is not approved, return null
+        if (
+          submissionStatusKenum.fromUnknown(parentValue.status) !==
+          submissionStatusKenum.APPROVED
+        ) {
+          return null;
+        }
+
         const resultsCount = await countTableRows({
           from: Submission.typename,
           where: {
@@ -133,6 +152,11 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
                 field: "status",
                 operator: "eq",
                 value: submissionStatusKenum.APPROVED.index,
+              },
+              {
+                field: "era.id",
+                operator: "eq",
+                value: parentValue.era.id,
               },
             ],
           },

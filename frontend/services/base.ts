@@ -69,6 +69,10 @@ export function generateParseDateTimeStringFn(
     // i.e. 12:00PM -> hours: 12
     if (dateParts[dateParts.length - 1] === 'PM' && hours !== 12) hours += 12
 
+    // if AM, set hours to 0 if hours is 12
+    // i.e. 12:00AM -> hours 0
+    if (dateParts[dateParts.length - 1] === 'AM') hours = 0
+
     if (hours > 23) throw new Error('Hours cannot be more than 23')
 
     // if hours missing, automatically append current HH/MM/SS

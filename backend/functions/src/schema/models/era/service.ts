@@ -16,6 +16,7 @@ export class EraService extends PaginatedService {
     id: {},
     createdAt: {},
     updatedAt: {},
+    beginDate: {},
   };
 
   searchFieldsMap = {

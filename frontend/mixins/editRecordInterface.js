@@ -438,8 +438,9 @@ export default {
               fieldInfo.inputType === 'server-autocomplete' ||
               fieldInfo.inputType === 'server-combobox'
             ) {
+              const originalFieldValue = inputObject.value
               inputObject.value = null // set this to null initially while the results load, to prevent console error
-              if (fieldValue) {
+              if (originalFieldValue) {
                 dropdownPromises.push(
                   executeGiraffeql(this, {
                     [`get${capitalizeString(fieldInfo.inputOptions.typename)}`]:
@@ -450,7 +451,7 @@ export default {
                           avatar: true,
                         }),
                         __args: {
-                          id: fieldValue,
+                          id: originalFieldValue,
                         },
                       },
                   })

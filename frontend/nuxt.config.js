@@ -48,6 +48,7 @@ export default {
   plugins: [
     '@/plugins/notifier.js',
     '@/plugins/auth.js',
+    '@/plugins/era.js',
     '@/plugins/wysiwyg.js',
     '@/plugins/firebase.js',
     '@/plugins/vuetify.js',

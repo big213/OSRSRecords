@@ -13,6 +13,7 @@ export class SubmissionService extends PaginatedService {
     id: {},
     "createdBy.id": {},
     "event.id": {},
+    "era.id": {},
     participants: {},
     status: {},
   };

@@ -61,6 +61,8 @@ export const getEras = <any>(
       },
       {
         filterBy,
+        sortBy: ['beginDate'],
+        sortDesc: [true],
       }
     )
   })

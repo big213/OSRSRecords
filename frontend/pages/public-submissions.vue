@@ -28,10 +28,10 @@ export default {
       recordInfo: PublicSubmission,
       hiddenFilters: ['status'],
       head: {
-        title: 'Public Submissions',
+        title: 'Submissions',
       },
       lockedFilters: [],
-      title: 'Public Submissions',
+      title: 'Submissions',
 
       loading: {
         presets: false,

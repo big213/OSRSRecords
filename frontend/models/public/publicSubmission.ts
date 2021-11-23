@@ -5,7 +5,7 @@ export const PublicSubmission = {
     ...Submission.paginationOptions,
     headers: [
       {
-        field: 'event.name+participants',
+        field: 'event.name+event.avatar+event.id+event.__typename+participants',
         sortable: false,
       },
       {
@@ -20,6 +20,7 @@ export const PublicSubmission = {
         sortable: true,
       },
     ],
+    downloadOptions: undefined,
   },
   addOptions: undefined,
   editOptions: undefined,

@@ -43,6 +43,15 @@
       </v-list>
       <v-divider></v-divider>
       <v-list dense>
+        <v-list-item :key="-1" :to="generateLeaderboardRoute()" router exact>
+          <v-list-item-action>
+            <v-icon>mdi-podium</v-icon>
+          </v-list-item-action>
+          <v-list-item-content>
+            <v-list-item-title v-text="'Leaderboard'" />
+          </v-list-item-content>
+        </v-list-item>
+
         <v-list-item
           v-for="(item, i) in visibleNavItems"
           :key="i"
@@ -275,6 +284,7 @@ import 'firebase/auth'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import CrudRecordDialog from '~/components/dialog/crudRecordDialog.vue'
 import * as allModels from '~/models'
+import { getEras } from '~/services/dropdown'
 
 export default {
   components: {
@@ -303,6 +313,7 @@ export default {
         },
       ],
       navItems: [
+        /*         
         {
           icon: 'mdi-podium',
           title: 'Leaderboard',
@@ -329,7 +340,7 @@ export default {
           }),
           loginRequired: false,
         },
-        /*         {
+        {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
           to: generateCrudRecordInterfaceRoute('/public-submissions', {
@@ -450,12 +461,41 @@ export default {
   },
 
   methods: {
+    generateLeaderboardRoute() {
+      return generateCrudRecordInterfaceRoute('/public-submissions', {
+        sortBy: ['score'],
+        sortDesc: [false],
+        filters: [
+          {
+            field: 'event.id',
+            operator: 'eq',
+            value: 'c3xnykl6', // COX CM on prod db
+          },
+          {
+            field: 'participants',
+            operator: 'eq',
+            value: 1,
+          },
+          {
+            field: 'status',
+            operator: 'eq',
+            value: 'APPROVED',
+          },
+          {
+            field: 'era.id',
+            operator: 'eq',
+            value: this.$store.getters['era/currentEra']?.id,
+          },
+        ],
+      })
+    },
+
     copyToClipboard(content) {
       return copyToClipboard(this, content)
     },
     openLink,
 
-    async openCreateSubmissionDialog() {
+    openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
           recordInfo: 'Submission',

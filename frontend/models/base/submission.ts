@@ -32,7 +32,7 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'ID',
     },
     'event.id': {
-      text: 'Event',
+      text: 'Event Category',
       inputType: 'server-autocomplete',
       inputOptions: {
         hasAvatar: true,
@@ -44,15 +44,15 @@ export const Submission = <RecordInfo<'submission'>>{
     'event.avatar': {},
     'event.name': {},
     'event.name+event.avatar+event.id+event.__typename': {
-      text: 'Event',
+      text: 'Event Category',
       component: RecordColumn,
       compoundOptions: {
         pathPrefix: 'event',
         primaryField: 'event.name',
       },
     },
-    'event.name+participants': {
-      text: 'Event',
+    'event.name+event.avatar+event.id+event.__typename+participants': {
+      text: 'Event Category',
       component: SubmissionTypeColumn,
       compoundOptions: {
         primaryField: 'event.name',
@@ -88,7 +88,7 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Participants Count',
     },
     participantsList: {
-      text: 'Participants',
+      text: 'Team Members',
       inputType: 'key-value-array',
       inputOptions: {
         nestedInputType: 'server-combobox',
@@ -106,7 +106,7 @@ export const Submission = <RecordInfo<'submission'>>{
 
     'participantsList.id+participantsList.title+participantsList.character.id+participantsList.character.name+participantsList.character.avatar+participantsList.character.__typename':
       {
-        text: 'Participants',
+        text: 'Team Members',
         component: ParticipantsColumn,
         compoundOptions: {
           pathPrefix: 'participantsList',
@@ -118,6 +118,7 @@ export const Submission = <RecordInfo<'submission'>>{
       inputType: 'value-array',
       inputOptions: {
         nestedInputType: 'text',
+        nestedValueText: 'Link URL',
       },
       component: UrlsColumn,
     },
@@ -205,7 +206,7 @@ export const Submission = <RecordInfo<'submission'>>{
       inputType: 'textarea',
     },
     ranking: {
-      text: 'Ranking',
+      text: 'Era Ranking',
     },
     submittedBy: {
       text: 'Submitted By',
@@ -229,11 +230,19 @@ export const Submission = <RecordInfo<'submission'>>{
   },
   paginationOptions: {
     hasSearch: false,
+    handleRowClick: (that, item) => {
+      that.openEditDialog('view', item)
+    },
     filters: [
       {
         field: 'status',
         operator: 'in',
         inputType: 'multiple-select',
+      },
+      {
+        field: 'era.id',
+        operator: 'eq',
+        inputType: 'select',
       },
       {
         field: 'event.id',
@@ -248,17 +257,22 @@ export const Submission = <RecordInfo<'submission'>>{
     ],
     headers: [
       {
-        field: 'event.name+participants',
+        field: 'event.name+event.avatar+event.id+event.__typename+participants',
+        sortable: false,
+      },
+      {
+        field: 'era.name+era.avatar+era.id+era.__typename',
+        width: '150px',
         sortable: false,
       },
       {
         field: 'status',
-        width: '200px',
+        width: '150px',
         sortable: false,
       },
       {
         field: 'score',
-        width: '200px',
+        width: '100px',
         sortable: true,
         align: 'right',
       },
@@ -309,10 +323,10 @@ export const Submission = <RecordInfo<'submission'>>{
   },
   viewOptions: {
     fields: [
-      'event.name+participants',
-      'event.name+event.avatar+event.id+event.__typename',
+      'event.name+event.avatar+event.id+event.__typename+participants',
+      // 'event.name+event.avatar+event.id+event.__typename',
       'era.name+era.avatar+era.id+era.__typename',
-      'participants',
+      // 'participants',
       'participantsList.id+participantsList.title+participantsList.character.id+participantsList.character.name+participantsList.character.avatar+participantsList.character.__typename',
       'score',
       'happenedOn',
