@@ -332,7 +332,7 @@ export default {
   data() {
     return {
       rankIndex: null,
-      requiredFilters: ['event.id', 'participants', 'status'],
+      requiredFilters: ['era.id', 'event.id', 'participants', 'status'],
     }
   },
 
