@@ -29,6 +29,10 @@ export const Event = <RecordInfo<'event'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
+    backgroundImage: {
+      text: 'Background Image',
+      inputType: 'single-image',
+    },
     'name+avatar': {
       text: 'Name',
       component: RecordColumn,
@@ -119,12 +123,13 @@ export const Event = <RecordInfo<'event'>>{
       'avatar',
       'name',
       'description',
+      'backgroundImage',
       'isHardMode',
     ],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['avatar', 'name', 'description'],
+    fields: ['avatar', 'name', 'description', 'backgroundImage'],
   },
   viewOptions: {
     fields: [
@@ -135,6 +140,7 @@ export const Event = <RecordInfo<'event'>>{
       'avatar',
       'name',
       'description',
+      'backgroundImage',
       'isHardMode',
     ],
     component: ViewRecordTableInterface,

@@ -47,6 +47,10 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       },
     }),
     avatar: generateStringField({ allowNull: true }),
+    backgroundImage: generateStringField({
+      allowNull: true,
+      sqlOptions: { field: "background_image" },
+    }),
     name: generateStringField({
       allowNull: false,
     }),

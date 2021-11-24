@@ -77,6 +77,7 @@ export const getEvents = <any>(
         id: true,
         name: true,
         avatar: true,
+        backgroundImage: true,
       },
       {
         filterBy,

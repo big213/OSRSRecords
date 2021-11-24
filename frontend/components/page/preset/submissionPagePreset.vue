@@ -5,42 +5,17 @@
       indeterminate
     ></v-progress-circular>
     <v-row v-else justify="center" class="pt-3">
-      <v-col :key="0" cols="12" lg="3" class="pb-0">
-        <v-select
-          v-model="inputs.era"
-          :items="eras"
-          item-text="name"
-          item-value="id"
-          label="Era"
-          filled
-          return-object
-          @change="applyEraPreset"
-        ></v-select>
-      </v-col>
-      <v-col :key="-1" cols="12" lg="3" class="pb-0">
-        <v-autocomplete
-          v-model="inputs.event"
-          :items="events"
-          item-text="name"
-          item-value="id"
-          label="Event Category"
-          filled
-          return-object
-          :clearable="eventClearable"
-          @change="applyEventPreset"
-        ></v-autocomplete>
-      </v-col>
-      <v-col :key="-2" cols="12" lg="3" class="pb-0">
-        <v-select
-          v-model="inputs.participants"
-          :items="participants"
-          item-text="text"
-          label="Team Size"
-          clearable
-          filled
-          return-object
-          @change="applyParticipantsPreset"
-        ></v-select>
+      <v-col
+        v-for="(inputObject, index) in inputsArray"
+        :key="index"
+        cols="12"
+        lg="3"
+        class="pb-0"
+      >
+        <GenericInput
+          :item="inputObject"
+          @change="applyPreset(inputObject.field, $event)"
+        ></GenericInput>
       </v-col>
     </v-row>
   </v-container>
@@ -48,8 +23,17 @@
 
 <script>
 import { getEvents, getEras } from '~/services/dropdown'
-import { generateCrudRecordInterfaceRoute } from '~/services/base'
+import {
+  generateCrudRecordInterfaceRoute,
+  getIcon,
+  getInputObject,
+  setInputValue,
+} from '~/services/base'
+import { Submission } from '~/models/base'
+import GenericInput from '~/components/input/genericInput.vue'
+
 export default {
+  components: { GenericInput },
   props: {
     eventClearable: {
       type: Boolean,
@@ -58,39 +42,58 @@ export default {
   },
   data() {
     return {
-      inputs: {
-        era: null,
-        event: null,
-        participants: null,
-      },
       loading: {
         presets: false,
       },
-      events: [],
-      eras: [],
-      participants: [
+      inputsArray: [
         {
-          text: 'Solo',
-          value: 1,
+          field: 'era.id',
+          label: 'Era',
+          inputType: 'select',
+          value: null,
+          clearable: false,
+          inputOptions: Submission.fields['era.id'].inputOptions,
         },
         {
-          text: 'Duo',
-          value: 2,
+          field: 'event.id',
+          label: 'Event Category',
+          inputType: 'autocomplete',
+          value: null,
+          clearable: false,
+          inputOptions: Submission.fields['event.id'].inputOptions,
         },
+        {
+          field: 'participants',
+          label: 'Team Size',
+          inputType: 'select',
+          value: null,
+          clearable: true,
+          inputOptions: 'select',
+          options: [
+            {
+              name: 'Solo',
+              id: 1,
+            },
+            {
+              name: 'Duo',
+              id: 2,
+            },
 
-        {
-          text: 'Trio',
-          value: 3,
-        },
+            {
+              name: 'Trio',
+              id: 3,
+            },
 
-        {
-          text: '4-Man',
-          value: 4,
-        },
+            {
+              name: '4-Man',
+              id: 4,
+            },
 
-        {
-          text: '5-Man',
-          value: 5,
+            {
+              name: '5-Man',
+              id: 5,
+            },
+          ],
         },
       ],
     }
@@ -106,13 +109,22 @@ export default {
     })
   },
   methods: {
-    applyEventPreset(event) {
+    getIcon,
+    getInputObject(key) {
+      return getInputObject(this.inputsArray, key)
+    },
+
+    setInputValue(key, value) {
+      return setInputValue(this.inputsArray, key, value)
+    },
+
+    applyPreset(field, item) {
       // get the original sortBy/sortDesc
       const originalPageOptions = this.$route.query.pageOptions
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
         : null
       // replace event.id filters with new ones
-      const excludeFilterKeys = ['event.id']
+      const excludeFilterKeys = [field]
       this.$router.push(
         generateCrudRecordInterfaceRoute(this.$route.path, {
           ...originalPageOptions,
@@ -123,12 +135,12 @@ export default {
               )
             : []
           ).concat(
-            event
+            item
               ? [
                   {
-                    field: 'event.id',
+                    field: field,
                     operator: 'eq',
-                    value: event.id,
+                    value: item.id,
                   },
                 ]
               : []
@@ -137,71 +149,10 @@ export default {
       )
     },
 
-    applyEraPreset(era) {
-      // get the original sortBy/sortDesc
-      const originalPageOptions = this.$route.query.pageOptions
-        ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
-        : null
-      // replace era.id filters with new ones
-      const excludeFilterKeys = ['era.id']
-      this.$router.push(
-        generateCrudRecordInterfaceRoute(this.$route.path, {
-          ...originalPageOptions,
-          filters: (originalPageOptions?.filters
-            ? originalPageOptions.filters.filter(
-                (filterObject) =>
-                  !excludeFilterKeys.includes(filterObject.field)
-              )
-            : []
-          ).concat(
-            era
-              ? [
-                  {
-                    field: 'era.id',
-                    operator: 'eq',
-                    value: era.id,
-                  },
-                ]
-              : []
-          ),
-        })
-      )
-    },
-
-    applyParticipantsPreset(participantObject) {
-      // get the original sortBy/sortDesc/filters
-      const originalPageOptions = this.$route.query.pageOptions
-        ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
-        : null
-      // replace event.id/setSize filters with new ones
-      const excludeFilterKeys = ['participants']
-      this.$router.push(
-        generateCrudRecordInterfaceRoute(this.$route.path, {
-          ...originalPageOptions,
-          filters: (originalPageOptions?.filters
-            ? originalPageOptions.filters.filter(
-                (filterObject) =>
-                  !excludeFilterKeys.includes(filterObject.field)
-              )
-            : []
-          ).concat(
-            participantObject
-              ? [
-                  {
-                    field: 'participants',
-                    operator: 'eq',
-                    value: participantObject.value,
-                  },
-                ]
-              : []
-          ),
-        })
-      )
-    },
     async loadPresets() {
       this.loading.presets = true
-      this.events = await getEvents(this)
-      this.eras = await getEras(this)
+      this.getInputObject('event.id').options = await getEvents(this)
+      this.getInputObject('era.id').options = await getEras(this)
       this.loading.presets = false
     },
     // syncs preset inputs with filters
@@ -216,11 +167,14 @@ export default {
           (filterObject) => filterObject.field === 'era.id'
         )
         if (eraFilterObject) {
-          this.inputs.era = this.eras.find(
-            (era) => era.id === eraFilterObject.value
+          this.setInputValue(
+            'era.id',
+            this.getInputObject('era.id').options.find(
+              (era) => era.id === eraFilterObject.value
+            )
           )
         } else {
-          this.inputs.era = null
+          this.setInputValue('era.id', null)
         }
 
         // sync event filters
@@ -228,24 +182,35 @@ export default {
           (filterObject) => filterObject.field === 'event.id'
         )
         if (eventFilterObject) {
-          this.inputs.event = this.events.find(
-            (event) => event.id === eventFilterObject.value
+          this.setInputValue(
+            'event.id',
+            this.getInputObject('event.id').options.find(
+              (event) => event.id === eventFilterObject.value
+            )
           )
         } else {
-          this.inputs.event = null
+          this.setInputValue('event.id', null)
         }
+
+        // emit event update to parent
+        this.$root.$emit('setBackgroundImage', {
+          url: this.getInputObject('event.id').value?.backgroundImage ?? null,
+        })
 
         // sync participants filters
         const participantsFilterObject = originalPageOptions.filters.find(
           (filterObject) => filterObject.field === 'participants'
         )
         if (participantsFilterObject) {
-          this.inputs.participants = this.participants.find(
-            (participantObject) =>
-              participantObject.value === participantsFilterObject.value
+          this.setInputValue(
+            'participants',
+            this.getInputObject('participants').options.find(
+              (participantObject) =>
+                participantObject.id === participantsFilterObject.value
+            )
           )
         } else {
-          this.inputs.participants = null
+          this.setInputValue('participants', null)
         }
       }
     },

@@ -281,9 +281,7 @@
       class="py-0"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
@@ -295,9 +293,7 @@
       v-model="item.value"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
@@ -318,9 +314,7 @@
           v-model="item.value"
           :label="item.label + (item.optional ? ' (optional)' : '')"
           :readonly="isReadonly"
-          :append-icon="
-            item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-          "
+          :append-icon="appendIcon"
           :append-outer-icon="item.isNested ? 'mdi-close' : null"
           :hint="item.hint"
           persistent-hint
@@ -351,9 +345,7 @@
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
@@ -373,15 +365,14 @@
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
       hide-no-data
       class="py-0"
+      v-on="$listeners"
       :chips="item.inputOptions && item.inputOptions.hasAvatar"
       @update:search-input="handleSearchUpdate(item)"
       @blur="item.focused = false"
@@ -430,18 +421,50 @@
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
       return-object
       class="py-0"
+      v-on="$listeners"
       @click:append="item.value = null"
       @click:append-outer="handleClose()"
-    ></v-autocomplete>
+    >
+      <template
+        v-if="item.inputOptions && item.inputOptions.hasAvatar"
+        v-slot:item="data"
+      >
+        <v-chip pill>
+          <v-avatar left>
+            <v-img
+              v-if="data.item.avatar"
+              :src="data.item.avatar"
+              contain
+            ></v-img
+            ><v-icon v-else>{{ icon }} </v-icon>
+          </v-avatar>
+          {{ data.item.name }}
+        </v-chip>
+      </template>
+      <template
+        v-if="item.inputOptions && item.inputOptions.hasAvatar"
+        v-slot:selection="data"
+      >
+        <v-chip v-bind="data.attrs" pill>
+          <v-avatar left>
+            <v-img
+              v-if="data.item.avatar"
+              :src="data.item.avatar"
+              contain
+            ></v-img
+            ><v-icon v-else>{{ icon }}</v-icon>
+          </v-avatar>
+          {{ data.item.name }}
+        </v-chip>
+      </template>
+    </v-autocomplete>
     <v-autocomplete
       v-else-if="item.inputType === 'server-autocomplete'"
       v-model="item.value"
@@ -452,9 +475,7 @@
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
@@ -463,6 +484,7 @@
       return-object
       class="py-0"
       :chips="item.inputOptions && item.inputOptions.hasAvatar"
+      v-on="$listeners"
       @update:search-input="handleSearchUpdate(item)"
       @blur="item.focused = false"
       @focus="item.focused = true"
@@ -512,9 +534,7 @@
       filled
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
@@ -522,9 +542,43 @@
       item-text="name"
       item-value="id"
       class="py-0"
-      @click:append="item.value = null"
+      v-on="$listeners"
+      @click:append="handleClear"
       @click:append-outer="handleClose()"
-    ></v-select>
+    >
+      <template
+        v-if="item.inputOptions && item.inputOptions.hasAvatar"
+        v-slot:item="data"
+      >
+        <v-chip pill>
+          <v-avatar left>
+            <v-img
+              v-if="data.item.avatar"
+              :src="data.item.avatar"
+              contain
+            ></v-img
+            ><v-icon v-else>{{ icon }} </v-icon>
+          </v-avatar>
+          {{ data.item.name }}
+        </v-chip>
+      </template>
+      <template
+        v-if="item.inputOptions && item.inputOptions.hasAvatar"
+        v-slot:selection="data"
+      >
+        <v-chip v-bind="data.attrs" pill>
+          <v-avatar left>
+            <v-img
+              v-if="data.item.avatar"
+              :src="data.item.avatar"
+              contain
+            ></v-img
+            ><v-icon v-else>{{ icon }}</v-icon>
+          </v-avatar>
+          {{ data.item.name }}
+        </v-chip>
+      </template>
+    </v-select>
     <div
       v-else-if="item.inputType === 'key-value-array'"
       class="accent rounded-sm mb-4"
@@ -650,9 +704,7 @@
       :readonly="isReadonly"
       :rules="item.inputRules"
       :hint="item.hint"
-      :append-icon="
-        item.value === null ? 'mdi-null' : isReadonly ? null : 'mdi-close'
-      "
+      :append-icon="appendIcon"
       :append-outer-icon="item.isNested ? 'mdi-close' : null"
       persistent-hint
       filled
@@ -721,6 +773,16 @@ export default {
     recordIcon() {
       return this.item.recordInfo?.icon
     },
+
+    appendIcon() {
+      return this.item.value === null
+        ? 'mdi-null'
+        : this.isReadonly
+        ? null
+        : this.item.clearable
+        ? 'mdi-close'
+        : null
+    },
   },
 
   watch: {
@@ -735,7 +797,10 @@ export default {
 
   methods: {
     generateFileServingUrl,
-
+    handleClear() {
+      this.item.value = null
+      this.$emit('change', this.item.value)
+    },
     handleClose() {
       this.$emit('handle-close')
     },
@@ -761,6 +826,7 @@ export default {
       const valueInputObject = {
         ...this.item,
         isNested: true,
+        clearable: true,
         label: this.item.inputOptions?.nestedValueText ?? 'Element',
         inputType: this.item.inputOptions?.nestedInputType,
         value: null,
@@ -774,6 +840,7 @@ export default {
                 isNested: false,
                 label: this.item.inputOptions?.nestedKeyText ?? 'Key',
                 inputType: 'text',
+                clearable: true,
                 value: null,
               },
               value: valueInputObject,

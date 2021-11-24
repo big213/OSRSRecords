@@ -54,6 +54,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.integer("max_participants").nullable();
       table.dateTime("release_date").notNullable();
       table.string("avatar").nullable();
+      table.string("background_image").nullable();
       table.string("name").notNullable();
       table.text("description").nullable();
       table.boolean("is_hard_mode").notNullable();

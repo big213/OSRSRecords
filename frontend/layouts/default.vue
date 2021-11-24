@@ -213,7 +213,7 @@
         Login
       </v-btn>
     </v-app-bar>
-    <v-main>
+    <v-main :style="styleComputed">
       <nuxt />
     </v-main>
     <v-footer :absolute="!fixed" app>
@@ -284,7 +284,6 @@ import 'firebase/auth'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import CrudRecordDialog from '~/components/dialog/crudRecordDialog.vue'
 import * as allModels from '~/models'
-import { getEras } from '~/services/dropdown'
 
 export default {
   components: {
@@ -312,6 +311,8 @@ export default {
           to: '/',
         },
       ],
+
+      backgroundImage: null,
       navItems: [
         /*         
         {
@@ -440,6 +441,16 @@ export default {
     isAdmin() {
       return this.$store.getters['auth/user']?.role === 'ADMIN'
     },
+
+    styleComputed() {
+      return this.backgroundImage
+        ? {
+            background: `url(${this.backgroundImage})`,
+            backgroundSize: 'cover',
+            height: '100%',
+          }
+        : {}
+    },
   },
 
   mounted() {
@@ -457,6 +468,13 @@ export default {
      */
     this.$root.$on('openCrudRecordDialog', (params) => {
       this.dialogs.crudRecord = params
+    })
+
+    /*
+     ** Expecting url
+     */
+    this.$root.$on('setBackgroundImage', (params) => {
+      this.backgroundImage = params.url
     })
   },
 
@@ -540,3 +558,10 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.generic-hero2 {
+  background: url('../static/Fighting_Nylocas_hordes.png');
+  background-size: cover;
+}
+</style>

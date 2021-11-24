@@ -113,7 +113,7 @@ export type FilterByField<T> = {
   userGroupByKey: undefined;
   apiKeySortByKey: "id" | "createdAt";
   apiKeyGroupByKey: undefined;
-  eraSortByKey: "id" | "createdAt" | "updatedAt";
+  eraSortByKey: "id" | "createdAt" | "updatedAt" | "beginDate";
   eraGroupByKey: undefined;
   eventClassSortByKey: "id" | "createdAt" | "updatedAt";
   eventClassGroupByKey: undefined;
@@ -321,6 +321,7 @@ export type FilterByField<T> = {
     maxParticipants?: Scalars["number"] | null;
     releaseDate: Scalars["unixTimestamp"];
     avatar?: Scalars["string"] | null;
+    backgroundImage?: Scalars["string"] | null;
     name: Scalars["string"];
     description?: Scalars["string"] | null;
     isHardMode: Scalars["boolean"];
@@ -331,6 +332,7 @@ export type FilterByField<T> = {
     maxParticipants?: Scalars["number"] | null;
     releaseDate?: Scalars["unixTimestamp"];
     avatar?: Scalars["string"] | null;
+    backgroundImage?: Scalars["string"] | null;
     name?: Scalars["string"];
     description?: Scalars["string"] | null;
     isHardMode?: Scalars["boolean"];
@@ -343,12 +345,14 @@ export type FilterByField<T> = {
   "submissionFilterByField/id": FilterByField<Scalars["id"]>;
   "submissionFilterByField/createdBy.id": FilterByField<Scalars["id"]>;
   "submissionFilterByField/event.id": FilterByField<Scalars["id"]>;
+  "submissionFilterByField/era.id": FilterByField<Scalars["id"]>;
   "submissionFilterByField/participants": FilterByField<Scalars["number"]>;
   "submissionFilterByField/status": FilterByField<Scalars["submissionStatus"]>;
   submissionFilterByObject: {
     id?: InputTypes["submissionFilterByField/id"];
     "createdBy.id"?: InputTypes["submissionFilterByField/createdBy.id"];
     "event.id"?: InputTypes["submissionFilterByField/event.id"];
+    "era.id"?: InputTypes["submissionFilterByField/era.id"];
     participants?: InputTypes["submissionFilterByField/participants"];
     status?: InputTypes["submissionFilterByField/status"];
   };
@@ -750,6 +754,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   maxParticipants: { Type: Scalars["number"] | null; Args: undefined };
   releaseDate: { Type: Scalars["unixTimestamp"]; Args: undefined };
   avatar: { Type: Scalars["string"] | null; Args: undefined };
+  backgroundImage: { Type: Scalars["string"] | null; Args: undefined };
   name: { Type: Scalars["string"]; Args: undefined };
   description: { Type: Scalars["string"] | null; Args: undefined };
   isHardMode: { Type: Scalars["boolean"]; Args: undefined };

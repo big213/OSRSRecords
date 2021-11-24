@@ -46,6 +46,7 @@
 import { mapGetters } from 'vuex'
 import ReleaseHistory from '~/components/common/releaseHistory.vue'
 import { generateCrudRecordInterfaceRoute, handleError } from '~/services/base'
+import { getEvents } from '~/services/dropdown'
 
 export default {
   components: {
@@ -85,6 +86,21 @@ export default {
     ...mapGetters({
       user: 'auth/user',
     }),
+  },
+
+  mounted() {
+    // set a random image
+    getEvents(this).then((events) => {
+      const eventsWithBgImages = events.filter((event) => event.backgroundImage)
+
+      if (eventsWithBgImages.length < 1) return
+
+      this.$root.$emit('setBackgroundImage', {
+        url: eventsWithBgImages[
+          Math.floor(Math.random() * (eventsWithBgImages.length - 1))
+        ].backgroundImage,
+      })
+    })
   },
 
   methods: {
