@@ -558,10 +558,3 @@ export default {
   },
 }
 </script>
-
-<style scoped>
-.generic-hero2 {
-  background: url('../static/Fighting_Nylocas_hordes.png');
-  background-size: cover;
-}
-</style>
