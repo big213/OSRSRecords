@@ -113,7 +113,7 @@
 
       <AdminNavRoutes v-if="isAdmin"></AdminNavRoutes>
     </v-navigation-drawer>
-    <v-app-bar :clipped-left="clipped" fixed app>
+    <v-app-bar :clipped-left="clipped" fixed app color="transparent">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <nuxt-link to="/" class="hidden-sm-and-down">
         <v-img
@@ -284,6 +284,7 @@ import 'firebase/auth'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import CrudRecordDialog from '~/components/dialog/crudRecordDialog.vue'
 import * as allModels from '~/models'
+import { generateLeaderboardRoute } from '~/services/common'
 
 export default {
   components: {
@@ -480,32 +481,7 @@ export default {
 
   methods: {
     generateLeaderboardRoute() {
-      return generateCrudRecordInterfaceRoute('/public-submissions', {
-        sortBy: ['score'],
-        sortDesc: [false],
-        filters: [
-          {
-            field: 'event.id',
-            operator: 'eq',
-            value: 'c3xnykl6', // COX CM on prod db
-          },
-          {
-            field: 'participants',
-            operator: 'eq',
-            value: 1,
-          },
-          {
-            field: 'status',
-            operator: 'eq',
-            value: 'APPROVED',
-          },
-          {
-            field: 'era.id',
-            operator: 'eq',
-            value: this.$store.getters['era/currentEra']?.id,
-          },
-        ],
-      })
+      return generateLeaderboardRoute(this)
     },
 
     copyToClipboard(content) {

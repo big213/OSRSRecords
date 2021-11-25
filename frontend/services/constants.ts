@@ -1,3 +1,5 @@
+import { generateCrudRecordInterfaceRoute } from './base'
+
 export const submissionStatusArray = [
   {
     index: 1,

@@ -31,7 +31,7 @@
             <v-icon left> mdi-plus </v-icon>
             Submit Record</v-btn
           >
-          <v-btn color="primary" nuxt :to="leaderboardRoute">
+          <v-btn color="primary" nuxt :to="generateLeaderboardRoute()">
             <v-icon left> mdi-podium </v-icon>
             Leaderboard</v-btn
           >
@@ -45,41 +45,13 @@
 <script>
 import { mapGetters } from 'vuex'
 import ReleaseHistory from '~/components/common/releaseHistory.vue'
-import { generateCrudRecordInterfaceRoute, handleError } from '~/services/base'
+import { handleError } from '~/services/base'
 import { getEvents } from '~/services/dropdown'
+import { generateLeaderboardRoute } from '~/services/common'
 
 export default {
   components: {
     ReleaseHistory,
-  },
-
-  data() {
-    return {
-      leaderboardRoute: generateCrudRecordInterfaceRoute(
-        '/public-submissions',
-        {
-          sortBy: ['score'],
-          sortDesc: [false],
-          filters: [
-            {
-              field: 'event.id',
-              operator: 'eq',
-              value: 'c3xnykl6', // COX CM on prod db
-            },
-            {
-              field: 'participants',
-              operator: 'eq',
-              value: 1,
-            },
-            {
-              field: 'status',
-              operator: 'eq',
-              value: 'APPROVED',
-            },
-          ],
-        }
-      ),
-    }
   },
 
   computed: {
@@ -104,6 +76,9 @@ export default {
   },
 
   methods: {
+    generateLeaderboardRoute() {
+      return generateLeaderboardRoute(this)
+    },
     openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {

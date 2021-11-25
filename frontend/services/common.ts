@@ -1,3 +1,5 @@
+import { generateCrudRecordInterfaceRoute } from './base'
+
 type StringKeyObject = { [x: string]: any }
 
 // tens digits only
@@ -21,4 +23,33 @@ export function serializeTime(ms: number | null): string | null {
     '.' +
     String(Math.floor(cs / 10)).padStart(1, '0')
   )
+}
+
+export function generateLeaderboardRoute(that) {
+  return generateCrudRecordInterfaceRoute('/public-submissions', {
+    sortBy: ['score'],
+    sortDesc: [false],
+    filters: [
+      {
+        field: 'event.id',
+        operator: 'eq',
+        value: 'c3xnykl6', // COX CM on prod db
+      },
+      {
+        field: 'participants',
+        operator: 'eq',
+        value: 1,
+      },
+      {
+        field: 'status',
+        operator: 'eq',
+        value: 'APPROVED',
+      },
+      {
+        field: 'era.id',
+        operator: 'eq',
+        value: that.$store.getters['era/currentEra']?.id,
+      },
+    ],
+  })
 }
