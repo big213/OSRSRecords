@@ -7,6 +7,7 @@
       :max-width="300"
       offset-y
       top
+      open-mode="openInDialog"
     ></PreviewRecordMenu>
   </div>
 </template>

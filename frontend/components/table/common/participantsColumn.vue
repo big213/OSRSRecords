@@ -12,6 +12,7 @@
         :max-width="300"
         offset-y
         top
+        open-mode="openInDialog"
       ></PreviewRecordMenu>
       <span v-if="participantLink.title">({{ participantLink.title }})</span>
     </div>

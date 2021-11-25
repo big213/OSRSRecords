@@ -26,7 +26,12 @@ export class SubmissionCharacterParticipantLinkService extends LinkService {
 
   groupByFieldsMap = {};
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    get: () => true,
+    getMultiple: () => true,
+    // ideally this should not be allowed, but it is a temporary solution
+    create: () => true,
+  };
 
   @permissionsCheck("create")
   async createRecord({
@@ -46,7 +51,7 @@ export class SubmissionCharacterParticipantLinkService extends LinkService {
       addFields: {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
-        createdBy: req.user!.id,
+        createdBy: req.user?.id, // nullable
       },
       req,
       fieldPath,

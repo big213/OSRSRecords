@@ -20,5 +20,8 @@ export class EventService extends PaginatedService {
     name: {},
   };
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    get: () => true,
+    getMultiple: () => true,
+  };
 }

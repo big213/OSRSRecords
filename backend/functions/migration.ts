@@ -111,10 +111,10 @@ export async function up(knex: Knex): Promise<void[]> {
         table.string("id").notNullable().primary();
         table.string("submission").notNullable();
         table.string("character").notNullable();
-        table.string("title").nullable();
         table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
         table.dateTime("updated_at").nullable();
-        table.string("created_by").notNullable();
+        table.string("created_by").nullable();
+        table.string("title").nullable();
         table.unique(["submission", "character"]);
       }
     ),

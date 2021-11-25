@@ -25,4 +25,5 @@ export const PublicSubmission = {
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,
+  enterOptions: undefined,
 }

@@ -104,14 +104,10 @@ export const Character = <RecordInfo<'character'>>{
   },
   viewOptions: {
     fields: [
-      'eventClass.id',
-      'minParticipants',
-      'maxParticipants',
-      'releaseDate',
       'avatar',
       'name',
       'description',
-      'isHardMode',
+      // 'owedBy.id'
     ],
     component: ViewRecordTableInterface,
   },

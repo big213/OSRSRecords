@@ -1,10 +1,14 @@
 import { GiraffeqlObjectType } from "giraffeql";
 import { generateLinkTypeDef } from "../../core/generators";
-import { generateStringField } from "../../core/helpers/typeDef";
+import {
+  generateCreatedByField,
+  generateStringField,
+} from "../../core/helpers/typeDef";
 import {
   SubmissionCharacterParticipantLink,
   Submission,
   Character,
+  User,
 } from "../../services";
 
 export default new GiraffeqlObjectType(
@@ -22,6 +26,7 @@ export default new GiraffeqlObjectType(
       title: generateStringField({
         allowNull: true,
       }),
+      ...generateCreatedByField(User, true),
     }
   )
 );

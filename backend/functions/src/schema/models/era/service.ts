@@ -23,7 +23,10 @@ export class EraService extends PaginatedService {
     name: {},
   };
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    get: () => true,
+    getMultiple: () => true,
+  };
 
   @permissionsCheck("create")
   async createRecord({

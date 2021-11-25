@@ -45,10 +45,10 @@ export function generateLinkTypeDef(
       ...generateIdField(),
       ...generateTypenameField(currentService),
       ...typeDefFields,
-      ...additionalFields,
       ...generateCreatedAtField(),
       ...generateUpdatedAtField(),
       ...generateCreatedByField(User),
+      ...additionalFields,
     },
   };
 }

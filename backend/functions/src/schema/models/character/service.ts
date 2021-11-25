@@ -1,7 +1,6 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
-import { fetchTableRows } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 
 export class CharacterService extends PaginatedService {
@@ -23,7 +22,11 @@ export class CharacterService extends PaginatedService {
     name: {},
   };
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    get: () => true,
+    getMultiple: () => true,
+    create: () => true,
+  };
 
   @permissionsCheck("create")
   async createRecord({
@@ -69,7 +72,7 @@ export class CharacterService extends PaginatedService {
         ...validatedArgs,
         // changed: used to index
         standardizedName: validatedArgs.name.toLowerCase(),
-        createdBy: req.user!.id,
+        createdBy: req.user?.id, // nullable
       },
       req,
       fieldPath,

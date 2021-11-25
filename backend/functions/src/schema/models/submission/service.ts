@@ -29,7 +29,18 @@ export class SubmissionService extends PaginatedService {
     name: {},
   };
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    get: () => true,
+    getMultiple: () => true,
+
+    /*
+    Only allow creation of submission if the status is empty or "SUBMITTED"
+    */
+    create: ({ args }) => {
+      if (!args.status || args.status === "SUBMITTED") return true;
+      return false;
+    },
+  };
 
   @permissionsCheck("create")
   async createRecord({
@@ -50,7 +61,7 @@ export class SubmissionService extends PaginatedService {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
         score: validatedArgs.timeElapsed,
-        createdBy: req.user!.id,
+        createdBy: req.user?.id, // nullable
       },
       req,
       fieldPath,
@@ -95,6 +106,7 @@ export class SubmissionService extends PaginatedService {
       ],
     });
 
+    /*
     return File.updateFileParentKeys(
       req.user!.id,
       this.typename,
@@ -102,12 +114,14 @@ export class SubmissionService extends PaginatedService {
       [args.files],
       fieldPath
     );
+    */
   }
 
   async afterUpdateProcess(
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
   ) {
+    /*
     return File.updateFileParentKeys(
       req.user!.id,
       this.typename,
@@ -115,5 +129,6 @@ export class SubmissionService extends PaginatedService {
       [args.fields.files],
       fieldPath
     );
+    */
   }
 }
