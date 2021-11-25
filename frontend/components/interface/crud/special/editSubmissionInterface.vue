@@ -228,6 +228,15 @@ export default {
 
         this.handleSubmitSuccess(data)
 
+        // changed: if new submission was just added, open a preview dialog for it
+        this.$root.$emit('openEditRecordDialog', {
+          recordInfo: 'Public' + this.capitalizedType,
+          mode: 'view',
+          selectedItem: {
+            id: data.id,
+          },
+        })
+
         // reset inputs
         this.resetInputs()
       } catch (err) {

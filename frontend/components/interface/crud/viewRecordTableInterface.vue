@@ -128,6 +128,10 @@ export default {
     generation() {
       this.reset()
     },
+
+    recordInfo() {
+      this.reset()
+    },
   },
 
   mounted() {
@@ -185,9 +189,8 @@ export default {
 
                     // if field has args, process them
                     if (fieldInfo.args) {
-                      total[
-                        fieldInfo.args.path + '.__args'
-                      ] = fieldInfo.args.getArgs(this)
+                      total[fieldInfo.args.path + '.__args'] =
+                        fieldInfo.args.getArgs(this)
                     }
                   }
                   return total

@@ -128,15 +128,18 @@ export default {
 
   watch: {
     selectedItem() {
-      this.reset(true)
+      this.reset()
     },
     generation() {
+      this.reset()
+    },
+    recordInfo() {
       this.reset()
     },
   },
 
   created() {
-    this.reset(true)
+    this.reset()
   },
 
   methods: {
@@ -516,7 +519,7 @@ export default {
       })
     },
 
-    async reset(hardReset = false) {
+    async reset() {
       // duplicate misc inputs, if any
       this.miscInputs = JSON.parse(JSON.stringify(this.originalMiscInputs))
 
@@ -608,9 +611,6 @@ export default {
         )
       } else {
         this.loadRecord()
-      }
-
-      if (hardReset) {
       }
     },
   },
