@@ -446,7 +446,7 @@ export default {
     styleComputed() {
       return this.backgroundImage
         ? {
-            background: `url(${this.backgroundImage})`,
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.527),rgba(0, 0, 0, 0.5)), url(${this.backgroundImage})`,
             backgroundSize: 'cover',
             height: '100%',
           }

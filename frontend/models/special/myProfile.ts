@@ -8,7 +8,7 @@ export const MyProfile = {
     filters: [],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {

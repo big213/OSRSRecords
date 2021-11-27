@@ -29,8 +29,9 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
       parseValue: (val: string) =>
         val ? val.split(',').filter((ele) => ele) : [],
     },
-    'user.id': {
+    user: {
       text: 'User',
+      fields: ['user.id'],
       inputType: 'server-autocomplete',
       inputOptions: {
         typename: 'user',
@@ -73,13 +74,13 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['name', 'permissions', 'user.id'],
+    fields: ['name', 'permissions', 'user'],
   },
   editOptions: {
     fields: ['name', 'permissions'],
   },
   viewOptions: {
-    fields: ['name', 'permissions', 'code', 'user.id'],
+    fields: ['name', 'permissions', 'code', 'user'],
   },
   deleteOptions: {},
   shareOptions: undefined,

@@ -1,8 +1,7 @@
 import type { RecordInfo } from '~/types'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
+import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
 
 export const EventClass = <RecordInfo<'eventClass'>>{
   typename: 'eventClass',
@@ -24,12 +23,10 @@ export const EventClass = <RecordInfo<'eventClass'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
-    'name+avatar': {
+    nameWithAvatar: {
       text: 'Name',
-      component: RecordColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
+      fields: ['name', 'avatar'],
+      component: NameAvatarColumn,
     },
     description: {
       text: 'Description',
@@ -57,7 +54,7 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     filters: [],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {
@@ -81,8 +78,7 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     fields: ['avatar', 'name', 'description', 'isSubEvent'],
   },
   viewOptions: {
-    fields: ['name+avatar', 'description', 'isSubEvent'],
-    component: ViewRecordTableInterface,
+    fields: ['nameWithAvatar', 'description', 'isSubEvent'],
   },
   enterOptions: {},
   deleteOptions: {},

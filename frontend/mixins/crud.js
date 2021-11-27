@@ -232,19 +232,25 @@ export default {
           // field unknown, abort
           if (!fieldInfo) throw new Error('Unknown field: ' + headerInfo.field)
 
+          const primaryField = fieldInfo.fields
+            ? fieldInfo.fields[0]
+            : headerInfo.field
+
           return {
             text: fieldInfo.text ?? headerInfo.field,
             align: headerInfo.align ?? 'left',
             sortable: headerInfo.sortable,
-            value: fieldInfo.compoundOptions
-              ? fieldInfo.compoundOptions.primaryField
-              : headerInfo.field,
+            value: primaryField,
             width: headerInfo.width ?? null,
             fieldInfo,
-            path: fieldInfo.compoundOptions
-              ? fieldInfo.compoundOptions.pathPrefix
-              : headerInfo.field,
-            // headerInfo,
+            // equal to pathPrefix if provided
+            // else equal to the field if single-field
+            // else equal to null if multiple-field
+            path:
+              fieldInfo.pathPrefix ??
+              (fieldInfo.fields && fieldInfo.fields.length > 1
+                ? null
+                : primaryField),
           }
         })
         .concat({
@@ -541,8 +547,8 @@ export default {
         const serializeMap = new Map()
 
         // use custom download fields if provided
-        const customFields = this.recordInfo.paginationOptions.downloadOptions
-          .fields
+        const customFields =
+          this.recordInfo.paginationOptions.downloadOptions.fields
         const fields =
           customFields ??
           this.recordInfo.paginationOptions.headers
@@ -564,20 +570,34 @@ export default {
                 // field unknown, abort
                 if (!fieldInfo) throw new Error('Unknown field: ' + field)
 
-                // if field has '+', add all of the fields
-                if (field.match(/\+/)) {
-                  field.split(/\+/).forEach((field) => {
-                    total[field] = true
-                    // assuming all fields are valid
-                    serializeMap.set(
-                      field,
-                      this.recordInfo.fields[field].serialize
-                    )
-                  })
+                const fieldsToAdd = new Set()
+
+                // add all fields
+                if (fieldInfo.fields) {
+                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
                 } else {
-                  total[field] = true
-                  serializeMap.set(field, fieldInfo.serialize)
+                  fieldsToAdd.add(field)
                 }
+
+                // process fields
+                fieldsToAdd.forEach((field) => {
+                  total[field] = true
+
+                  // add a serializer if there is one for the field
+                  const currentFieldInfo = this.recordInfo.fields[field]
+                  if (currentFieldInfo) {
+                    if (currentFieldInfo.serialize) {
+                      serializeMap.set(field, currentFieldInfo.serialize)
+                    }
+
+                    // if field has args, process them
+                    if (currentFieldInfo.args) {
+                      total[currentFieldInfo.args.path + '.__args'] =
+                        currentFieldInfo.args.getArgs(this)
+                    }
+                  }
+                })
+
                 return total
               },
               { id: true, __typename: true } // always add id and typename
@@ -586,8 +606,8 @@ export default {
         }
 
         const args = {
-          [this.positivePageDelta ? 'first' : 'last']: this.options
-            .itemsPerPage,
+          [this.positivePageDelta ? 'first' : 'last']:
+            this.options.itemsPerPage,
           ...(this.options.page > 1 &&
             this.positivePageDelta && {
               after: this.currentPaginatorInfo.endCursor,
@@ -599,13 +619,17 @@ export default {
           sortDesc: this.options.sortDesc,
           filterBy: [
             this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              if (!total[ele.field]) total[ele.field] = {}
-
               // check if there is a parser on the fieldInfo
               const fieldInfo = this.recordInfo.fields[ele.field]
 
               // field unknown, abort
               if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+
+              const primaryField = fieldInfo.fields
+                ? fieldInfo.fields[0]
+                : ele.field
+
+              if (!total[primaryField]) total[primaryField] = {}
 
               // parse '__null' to null first
               // also parse '__now()' to current date string
@@ -617,7 +641,7 @@ export default {
                   : ele.value
 
               // apply parseValue function, if any
-              total[ele.field][ele.operator] = fieldInfo.parseValue
+              total[primaryField][ele.operator] = fieldInfo.parseValue
                 ? fieldInfo.parseValue(value)
                 : value
 
@@ -772,34 +796,34 @@ export default {
                   if (!fieldInfo)
                     throw new Error('Unknown field: ' + headerInfo.field)
 
-                  // if field has '+', add all of the fields
-                  if (headerInfo.field.match(/\+/)) {
-                    headerInfo.field.split(/\+/).forEach((field) => {
-                      total[field] = true
-                      // assuming all fields are valid
-                      serializeMap.set(
-                        field,
-                        this.recordInfo.fields[field].serialize
-                      )
+                  const fieldsToAdd = new Set()
+
+                  // add all fields
+                  if (fieldInfo.fields) {
+                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  } else {
+                    fieldsToAdd.add(headerInfo.field)
+                  }
+
+                  // process fields
+                  fieldsToAdd.forEach((field) => {
+                    total[field] = true
+
+                    // add a serializer if there is one for the field
+                    const currentFieldInfo = this.recordInfo.fields[field]
+                    if (currentFieldInfo) {
+                      if (currentFieldInfo.serialize) {
+                        serializeMap.set(field, currentFieldInfo.serialize)
+                      }
 
                       // if field has args, process them
-                      if (this.recordInfo.fields[field].args) {
-                        total[
-                          this.recordInfo.fields[field].args.path + '.__args'
-                        ] = this.recordInfo.fields[field].args.getArgs(this)
+                      if (currentFieldInfo.args) {
+                        total[currentFieldInfo.args.path + '.__args'] =
+                          currentFieldInfo.args.getArgs(this)
                       }
-                    })
-                  } else {
-                    total[headerInfo.field] = true
-                    serializeMap.set(headerInfo.field, fieldInfo.serialize)
-
-                    // if field has args, process them
-                    if (fieldInfo.args) {
-                      total[
-                        fieldInfo.args.path + '.__args'
-                      ] = fieldInfo.args.getArgs(this)
                     }
-                  }
+                  })
+
                   return total
                 },
                 { id: true, __typename: true } // always add id, typename
@@ -808,8 +832,8 @@ export default {
         }
 
         const args = {
-          [this.positivePageDelta ? 'first' : 'last']: this.options
-            .itemsPerPage,
+          [this.positivePageDelta ? 'first' : 'last']:
+            this.options.itemsPerPage,
           ...(this.options.page > 1 &&
             this.positivePageDelta && {
               after: this.currentPaginatorInfo.endCursor,
@@ -821,13 +845,17 @@ export default {
           sortDesc: this.options.sortDesc,
           filterBy: [
             this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              if (!total[ele.field]) total[ele.field] = {}
-
               // check if there is a parser on the fieldInfo
               const fieldInfo = this.recordInfo.fields[ele.field]
 
               // field unknown, abort
               if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+
+              const primaryField = fieldInfo.fields
+                ? fieldInfo.fields[0]
+                : ele.field
+
+              if (!total[primaryField]) total[primaryField] = {}
 
               // parse '__null' to null first
               // also parse '__now()' to current date string
@@ -839,7 +867,7 @@ export default {
                   : ele.value
 
               // apply parseValue function, if any
-              total[ele.field][ele.operator] = fieldInfo.parseValue
+              total[primaryField][ele.operator] = fieldInfo.parseValue
                 ? fieldInfo.parseValue(value)
                 : value
 

@@ -18,12 +18,10 @@ export const File = <RecordInfo<'file'>>{
     name: {
       text: 'Name',
     },
-    'name+id': {
+    nameWithId: {
       text: 'Name',
+      fields: ['name', 'id'],
       component: FileColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
     },
     size: {
       text: 'Size',
@@ -35,7 +33,6 @@ export const File = <RecordInfo<'file'>>{
     contentType: {
       text: 'Content Type',
     },
-    'createdBy.id': {},
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,
@@ -50,7 +47,7 @@ export const File = <RecordInfo<'file'>>{
     filters: [],
     headers: [
       {
-        field: 'name+id',
+        field: 'nameWithId',
         sortable: false,
       },
       {

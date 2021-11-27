@@ -348,20 +348,34 @@ export default {
                   // if field is hidden, exclude
                   if (fieldInfo.hidden) return total
 
-                  // if field has '+', add all of the fields
-                  if (fieldKey.match(/\+/)) {
-                    fieldKey.split(/\+/).forEach((field) => {
-                      total[field] = true
-                      // assuming all fields are valid
-                      serializeMap.set(
-                        field,
-                        this.recordInfo.fields[field].serialize
-                      )
-                    })
+                  const fieldsToAdd = new Set()
+
+                  // add all fields
+                  if (fieldInfo.fields) {
+                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
                   } else {
-                    total[fieldKey] = true
-                    serializeMap.set(fieldKey, fieldInfo.serialize)
+                    fieldsToAdd.add(fieldKey)
                   }
+
+                  // process fields
+                  fieldsToAdd.forEach((field) => {
+                    total[field] = true
+
+                    // add a serializer if there is one for the field
+                    const currentFieldInfo = this.recordInfo.fields[field]
+                    if (currentFieldInfo) {
+                      if (currentFieldInfo.serialize) {
+                        serializeMap.set(field, currentFieldInfo.serialize)
+                      }
+
+                      // if field has args, process them
+                      if (currentFieldInfo.args) {
+                        total[currentFieldInfo.args.path + '.__args'] =
+                          currentFieldInfo.args.getArgs(this)
+                      }
+                    }
+                  })
+
                   return total
                 },
                 { id: true, __typename: true }
@@ -401,13 +415,17 @@ export default {
             // field unknown, abort
             if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
 
+            const primaryField = fieldInfo.fields
+              ? fieldInfo.fields[0]
+              : fieldKey
+
             const inputObject = {
-              field: fieldKey.split(/\+/)[0],
+              field: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldKey,
               fieldInfo,
               recordInfo: this.recordInfo,
               inputType: fieldInfo.inputType,
-              label: fieldInfo.text ?? fieldKey.split(/\+/)[0],
+              label: fieldInfo.text ?? fieldKey,
               hint: fieldInfo.hint,
               isNested: false,
               clearable: true,
@@ -434,7 +452,7 @@ export default {
             } else {
               inputObject.value = fieldInfo.hidden
                 ? null
-                : getNestedProperty(data, fieldKey)
+                : getNestedProperty(data, primaryField)
             }
 
             // if inputType === 'server-autocomplete', only populate the options with the specific entry, if any, and if inputObject.value not null
@@ -444,6 +462,8 @@ export default {
             ) {
               const originalFieldValue = inputObject.value
               inputObject.value = null // set this to null initially while the results load, to prevent console error
+
+              console.log(originalFieldValue)
               if (originalFieldValue) {
                 dropdownPromises.push(
                   executeGiraffeql(this, {
@@ -543,7 +563,7 @@ export default {
             let readonly = false
 
             const inputObject = {
-              field: fieldKey,
+              field: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldKey,
               fieldInfo,
               recordInfo: this.recordInfo,

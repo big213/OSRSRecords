@@ -108,6 +108,17 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "public_comments",
       },
     }),
+    mainExternalLink: {
+      type: Scalars.url,
+      allowNull: true,
+      requiredSqlFields: ["externalLinks"],
+      async resolver({ parentValue }) {
+        if (!Array.isArray(parentValue.externalLinks)) return null;
+
+        return parentValue.externalLinks[0] ?? null;
+      },
+    },
+
     ranking: {
       type: Scalars.number,
       description:

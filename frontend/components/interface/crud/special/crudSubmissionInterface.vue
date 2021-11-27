@@ -181,7 +181,12 @@
               </div>
               <div class="v-data-table__mobile-row__cell truncate-mobile-row">
                 <div v-if="headerItem.value === 'rank'">
-                  {{ renderRank(props.index) }}
+                  <v-icon
+                    v-if="renderRank(props.index) < 4"
+                    :class="generatePlaceClass(renderRank(props.index))"
+                    >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
+                  >
+                  <span v-else>{{ renderRank(props.index) }}</span>
                 </div>
                 <div v-else>
                   <component
@@ -234,7 +239,12 @@
               </RecordActionMenu>
             </div>
             <span v-else-if="headerItem.value === 'rank'">
-              {{ renderRank(props.index) }}
+              <v-icon
+                v-if="renderRank(props.index) < 4"
+                :class="generatePlaceClass(renderRank(props.index))"
+                >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
+              >
+              <span v-else>{{ renderRank(props.index) }}</span>
             </span>
             <span v-else>
               <component
@@ -332,7 +342,7 @@ export default {
   data() {
     return {
       rankIndex: null,
-      requiredFilters: ['era.id', 'event.id', 'participants', 'status'],
+      requiredFilters: ['era', 'event', 'participants', 'status'],
     }
   },
 
@@ -396,19 +406,25 @@ export default {
             if (!fieldInfo)
               throw new Error('Unknown field: ' + headerInfo.field)
 
+            const primaryField = fieldInfo.fields
+              ? fieldInfo.fields[0]
+              : headerInfo.field
+
             return {
               text: fieldInfo.text ?? headerInfo.field,
               align: headerInfo.align ?? 'left',
               sortable: headerInfo.sortable,
-              value: fieldInfo.compoundOptions
-                ? fieldInfo.compoundOptions.primaryField
-                : headerInfo.field,
+              value: primaryField,
               width: headerInfo.width ?? null,
               fieldInfo,
-              path: fieldInfo.compoundOptions
-                ? fieldInfo.compoundOptions.pathPrefix
-                : headerInfo.field,
-              // headerInfo,
+              // equal to pathPrefix if provided
+              // else equal to the field if single-field
+              // else equal to null if multiple-field
+              path:
+                fieldInfo.pathPrefix ??
+                (fieldInfo.fields && fieldInfo.fields.length > 1
+                  ? null
+                  : primaryField),
             }
           })
           .concat({
@@ -427,6 +443,41 @@ export default {
       // if sorting desc, index must be negative
       const diff = this.pageOptions.sortDesc[0] ? -1 * index : index
       return this.rankIndex ? this.rankIndex + diff : ''
+    },
+
+    generatePlaceClass(place) {
+      return place === 1
+        ? 'first-place-color'
+        : place === 2
+        ? 'second-place-color'
+        : place === 3
+        ? 'third-place-color'
+        : null
+    },
+
+    generateTrClass(props) {
+      // if descending OR not sorting by score, return null
+      if (
+        this.pageOptions.sortDesc[0] ||
+        this.pageOptions.sortBy[0] !== 'score'
+      )
+        return null
+
+      const classArray = []
+
+      classArray.push(
+        props.index === 0
+          ? 'first-place-bg'
+          : props.index === 1
+          ? 'second-place-bg'
+          : props.index === 2
+          ? 'third-place-bg'
+          : null
+      )
+
+      classArray.push(props.isExpanded ? 'expanded-row-bg' : null)
+
+      return classArray.filter((ele) => ele).join(' ')
     },
 
     async loadData(showLoader = true, currentReloadGeneration) {
@@ -452,33 +503,34 @@ export default {
                   if (!fieldInfo)
                     throw new Error('Unknown field: ' + headerInfo.field)
 
-                  // if field has '+', add all of the fields
-                  if (headerInfo.field.match(/\+/)) {
-                    headerInfo.field.split(/\+/).forEach((field) => {
-                      total[field] = true
-                      // assuming all fields are valid
-                      serializeMap.set(
-                        field,
-                        this.recordInfo.fields[field].serialize
-                      )
+                  const fieldsToAdd = new Set()
+
+                  // add all fields
+                  if (fieldInfo.fields) {
+                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  } else {
+                    fieldsToAdd.add(headerInfo.field)
+                  }
+
+                  // process fields
+                  fieldsToAdd.forEach((field) => {
+                    total[field] = true
+
+                    // add a serializer if there is one for the field
+                    const currentFieldInfo = this.recordInfo.fields[field]
+                    if (currentFieldInfo) {
+                      if (currentFieldInfo.serialize) {
+                        serializeMap.set(field, currentFieldInfo.serialize)
+                      }
 
                       // if field has args, process them
-                      if (this.recordInfo.fields[field].args) {
-                        total[
-                          this.recordInfo.fields[field].args.path + '.__args'
-                        ] = this.recordInfo.fields[field].args.getArgs(this)
+                      if (currentFieldInfo.args) {
+                        total[currentFieldInfo.args.path + '.__args'] =
+                          currentFieldInfo.args.getArgs(this)
                       }
-                    })
-                  } else {
-                    total[headerInfo.field] = true
-                    serializeMap.set(headerInfo.field, fieldInfo.serialize)
-
-                    // if field has args, process them
-                    if (fieldInfo.args) {
-                      total[fieldInfo.args.path + '.__args'] =
-                        fieldInfo.args.getArgs(this)
                     }
-                  }
+                  })
+
                   return total
                 },
                 { id: true, __typename: true } // always add id, typename
@@ -500,13 +552,17 @@ export default {
           sortDesc: this.options.sortDesc,
           filterBy: [
             this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              if (!total[ele.field]) total[ele.field] = {}
-
               // check if there is a parser on the fieldInfo
               const fieldInfo = this.recordInfo.fields[ele.field]
 
               // field unknown, abort
               if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+
+              const primaryField = fieldInfo.fields
+                ? fieldInfo.fields[0]
+                : ele.field
+
+              if (!total[primaryField]) total[primaryField] = {}
 
               // parse '__null' to null first
               // also parse '__now()' to current date string
@@ -518,7 +574,7 @@ export default {
                   : ele.value
 
               // apply parseValue function, if any
-              total[ele.field][ele.operator] = fieldInfo.parseValue
+              total[primaryField][ele.operator] = fieldInfo.parseValue
                 ? fieldInfo.parseValue(value)
                 : value
 
@@ -586,5 +642,17 @@ export default {
   > tbody
   > tr.expanded-row-bg:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
   background: var(--v-secondary-base);
+}
+
+.first-place-color {
+  color: gold;
+}
+
+.second-place-color {
+  color: silver;
+}
+
+.third-place-color {
+  color: tan;
 }
 </style>

@@ -3,7 +3,8 @@ import RecordColumn from '~/components/table/common/recordColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
-import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
+import UrlColumn from '~/components/table/common/urlColumn.vue'
+import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
@@ -32,24 +33,32 @@ export const Event = <RecordInfo<'event'>>{
     backgroundImage: {
       text: 'Background Image',
       inputType: 'single-image',
+      component: UrlColumn,
     },
-    'name+avatar': {
+    nameWithAvatar: {
       text: 'Name',
-      component: RecordColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
+      fields: ['name', 'avatar'],
+      component: NameAvatarColumn,
     },
-    'eventClass.id': {
+    eventClass: {
       text: 'Event Class',
+      fields: ['eventClass.id'],
       inputType: 'server-autocomplete',
       inputOptions: {
         hasAvatar: true,
         typename: 'eventClass',
       },
     },
-    'eventClass.name': {
+    eventClassRecord: {
       text: 'Event Class',
+      fields: [
+        'eventClass.name',
+        'eventClass.id',
+        'eventClass.__typename',
+        'eventClass.avatar',
+      ],
+      pathPrefix: 'eventClass',
+      component: RecordColumn,
     },
     minParticipants: {
       text: 'Min Participants',
@@ -76,8 +85,9 @@ export const Event = <RecordInfo<'event'>>{
       default: () => false,
       component: BooleanColumn,
     },
-    'createdBy.id': {
+    createdBy: {
       text: 'Created By',
+      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',
@@ -93,7 +103,7 @@ export const Event = <RecordInfo<'event'>>{
     filters: [],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {
@@ -116,7 +126,7 @@ export const Event = <RecordInfo<'event'>>{
   },
   addOptions: {
     fields: [
-      'eventClass.id',
+      'eventClass',
       'minParticipants',
       'maxParticipants',
       'releaseDate',
@@ -133,7 +143,7 @@ export const Event = <RecordInfo<'event'>>{
   },
   viewOptions: {
     fields: [
-      'eventClass.id',
+      'eventClassRecord',
       'minParticipants',
       'maxParticipants',
       'releaseDate',
@@ -143,7 +153,6 @@ export const Event = <RecordInfo<'event'>>{
       'backgroundImage',
       'isHardMode',
     ],
-    component: ViewRecordTableInterface,
   },
   enterOptions: {},
   deleteOptions: {},

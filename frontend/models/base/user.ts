@@ -19,12 +19,10 @@ export const User = <RecordInfo<'user'>>{
     name: {
       text: 'Name',
     },
-    'name+avatar': {
+    nameWithAvatar: {
       text: 'Name',
+      fields: ['name', 'avatar'],
       component: NameAvatarColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
     },
     email: {
       text: 'Email',
@@ -73,7 +71,7 @@ export const User = <RecordInfo<'user'>>{
     ],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {

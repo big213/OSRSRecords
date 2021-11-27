@@ -17,19 +17,17 @@ export type RecordInfo<T extends keyof MainTypes> = {
 
   // all of the "known" fields of the type. could be nested types (not included in type hints)
   fields?: {
-    [K in keyof MainTypes[T]['Type']]?: {
+    [K in string]?: {
+      // the fields involved in this field
+      fields?: string[]
+      // path leading up to the field. i.e. item.blah
+      pathPrefix?: string
+
       text?: string
       // hint field for helping the user to fill out the field
       hint?: string
       icon?: string
 
-      // if this is a compound field
-      compoundOptions?: {
-        // if this is a compound field, path is the prefix to get to the item
-        pathPrefix?: string
-        // which field should the primary field, for sort purposes
-        primaryField: string
-      }
       inputType?: InputType
 
       // special options pertaining to the specific inputType
@@ -62,7 +60,7 @@ export type RecordInfo<T extends keyof MainTypes> = {
       optional?: boolean
       default?: (that) => unknown
       // fetching from API, in editRecordInterface (when editing/viewing)
-      serialize?: (val: MainTypes[T]['Type'][K]) => unknown
+      serialize?: (val: unknown) => unknown
       // submitting to API, in filterBy and create/update functions
       parseValue?: (val: unknown) => unknown
       // for crudRecordPage. parsing the query params

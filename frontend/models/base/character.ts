@@ -1,13 +1,7 @@
 import type { RecordInfo } from '~/types'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
+import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import BooleanColumn from '~/components/table/common/booleanColumn.vue'
-import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
-import {
-  generateDateLocaleString,
-  generateParseDateTimeStringFn,
-} from '~/services/base'
 
 export const Character = <RecordInfo<'character'>>{
   typename: 'character',
@@ -29,27 +23,27 @@ export const Character = <RecordInfo<'character'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
-    'name+avatar': {
+    nameWithAvatar: {
       text: 'Name',
-      component: RecordColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
+      fields: ['name', 'avatar'],
+      component: NameAvatarColumn,
     },
     description: {
       text: 'Description',
       inputType: 'textarea',
     },
-    'ownedBy.id': {
+    ownedBy: {
       text: 'Owned By',
+      fields: ['ownedBy.id'],
       inputType: 'server-autocomplete',
       inputOptions: {
         hasAvatar: true,
         typename: 'user',
       },
     },
-    'createdBy.id': {
+    createdBy: {
       text: 'Created By',
+      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',
@@ -65,11 +59,11 @@ export const Character = <RecordInfo<'character'>>{
     filters: [],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {
-        field: 'ownedBy.id',
+        field: 'ownedBy',
         width: '150px',
         sortable: false,
       },
@@ -87,16 +81,7 @@ export const Character = <RecordInfo<'character'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: [
-      'ownedBy.id',
-      'minParticipants',
-      'maxParticipants',
-      'releaseDate',
-      'avatar',
-      'name',
-      'description',
-      'isHardMode',
-    ],
+    fields: ['ownedBy', 'avatar', 'name', 'description', 'isHardMode'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
@@ -109,7 +94,6 @@ export const Character = <RecordInfo<'character'>>{
       'description',
       // 'owedBy.id'
     ],
-    component: ViewRecordTableInterface,
   },
   enterOptions: {},
   deleteOptions: {},

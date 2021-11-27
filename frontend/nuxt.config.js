@@ -28,15 +28,14 @@ export default {
       {
         hid: 'description',
         name: 'description',
-        content: 'OSRSRecords',
+        content:
+          'Website for tracking PvM speedrun records in Old School Runescape',
       },
-      /*
       {
         property: 'og:image',
         content:
-          'https://alpha.cubepb.com/_nuxt/img/cubepb-trimmed.e9a5160.png',
+          'https://osrsrecords.com/_nuxt/static/android-chrome-384x384.png',
       },
-      */
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
   },

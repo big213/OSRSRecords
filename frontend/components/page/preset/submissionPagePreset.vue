@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="text-center pb-0" style="max-width: 1920px">
+  <v-container fluid class="text-center" style="max-width: 1920px">
     <v-progress-circular
       v-if="loading.presets"
       indeterminate
@@ -10,7 +10,7 @@
         :key="index"
         cols="12"
         lg="3"
-        class="pb-0"
+        class="pb-0 inputs-bg"
       >
         <GenericInput
           :item="inputObject"
@@ -34,12 +34,6 @@ import GenericInput from '~/components/input/genericInput.vue'
 
 export default {
   components: { GenericInput },
-  props: {
-    eventClearable: {
-      type: Boolean,
-      default: true,
-    },
-  },
   data() {
     return {
       loading: {
@@ -47,20 +41,20 @@ export default {
       },
       inputsArray: [
         {
-          field: 'era.id',
+          field: 'era',
           label: 'Era',
           inputType: 'select',
           value: null,
           clearable: false,
-          inputOptions: Submission.fields['era.id'].inputOptions,
+          inputOptions: Submission.fields['era'].inputOptions,
         },
         {
-          field: 'event.id',
+          field: 'event',
           label: 'Event Category',
           inputType: 'autocomplete',
           value: null,
           clearable: false,
-          inputOptions: Submission.fields['event.id'].inputOptions,
+          inputOptions: Submission.fields['event'].inputOptions,
         },
         {
           field: 'participants',
@@ -123,7 +117,7 @@ export default {
       const originalPageOptions = this.$route.query.pageOptions
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
         : null
-      // replace event.id filters with new ones
+      // replace event filters with new ones
       const excludeFilterKeys = [field]
       this.$router.push(
         generateCrudRecordInterfaceRoute(this.$route.path, {
@@ -151,8 +145,8 @@ export default {
 
     async loadPresets() {
       this.loading.presets = true
-      this.getInputObject('event.id').options = await getEvents(this)
-      this.getInputObject('era.id').options = await getEras(this)
+      this.getInputObject('event').options = await getEvents(this)
+      this.getInputObject('era').options = await getEras(this)
       this.loading.presets = false
     },
     // syncs preset inputs with filters
@@ -164,37 +158,37 @@ export default {
       if (originalPageOptions.filters) {
         // sync era filters
         const eraFilterObject = originalPageOptions.filters.find(
-          (filterObject) => filterObject.field === 'era.id'
+          (filterObject) => filterObject.field === 'era'
         )
         if (eraFilterObject) {
           this.setInputValue(
-            'era.id',
-            this.getInputObject('era.id').options.find(
+            'era',
+            this.getInputObject('era').options.find(
               (era) => era.id === eraFilterObject.value
             )
           )
         } else {
-          this.setInputValue('era.id', null)
+          this.setInputValue('era', null)
         }
 
         // sync event filters
         const eventFilterObject = originalPageOptions.filters.find(
-          (filterObject) => filterObject.field === 'event.id'
+          (filterObject) => filterObject.field === 'event'
         )
         if (eventFilterObject) {
           this.setInputValue(
-            'event.id',
-            this.getInputObject('event.id').options.find(
+            'event',
+            this.getInputObject('event').options.find(
               (event) => event.id === eventFilterObject.value
             )
           )
         } else {
-          this.setInputValue('event.id', null)
+          this.setInputValue('event', null)
         }
 
         // emit event update to parent
         this.$root.$emit('setBackgroundImage', {
-          url: this.getInputObject('event.id').value?.backgroundImage ?? null,
+          url: this.getInputObject('event').value?.backgroundImage ?? null,
         })
 
         // sync participants filters
@@ -217,3 +211,9 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.inputs-bg {
+  background-color: var(--v-accent-base);
+}
+</style>

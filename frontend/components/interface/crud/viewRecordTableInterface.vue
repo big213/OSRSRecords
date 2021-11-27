@@ -23,11 +23,7 @@
                     :is="item.fieldInfo.component"
                     v-if="item.fieldInfo.component"
                     :item="currentItem"
-                    :field-path="
-                      item.fieldInfo.compoundOptions
-                        ? item.fieldInfo.compoundOptions.pathPrefix
-                        : item.field
-                    "
+                    :field-path="getFieldPath(item)"
                     @submit="$emit('handleSubmit')"
                     @item-updated="handleItemUpdated()"
                   ></component>
@@ -141,6 +137,19 @@ export default {
   methods: {
     getNestedProperty,
 
+    getFieldPath(inputObject) {
+      const primaryField = inputObject.fieldInfo.fields
+        ? inputObject.fieldInfo.fields[0]
+        : inputObject.field
+
+      return (
+        inputObject.fieldInfo.pathPrefix ??
+        (inputObject.fieldInfo.fields && inputObject.fieldInfo.fields.length > 1
+          ? null
+          : primaryField)
+      )
+    },
+
     handleItemUpdated() {
       this.$emit('item-updated')
       this.reset()
@@ -166,36 +175,36 @@ export default {
                   // if field is hidden, exclude
                   if (fieldInfo.hidden) return total
 
-                  // if field has '+', add all of the fields
-                  if (fieldKey.match(/\+/)) {
-                    fieldKey.split(/\+/).forEach((field) => {
-                      total[field] = true
-                      // assuming all fields are valid
-                      serializeMap.set(
-                        field,
-                        this.recordInfo.fields[field].serialize
-                      )
+                  const fieldsToAdd = new Set()
+
+                  // add all fields
+                  if (fieldInfo.fields) {
+                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  } else {
+                    fieldsToAdd.add(fieldKey)
+                  }
+
+                  // process fields
+                  fieldsToAdd.forEach((field) => {
+                    total[field] = true
+
+                    // add a serializer if there is one for the field
+                    const currentFieldInfo = this.recordInfo.fields[field]
+                    if (currentFieldInfo) {
+                      if (currentFieldInfo.serialize) {
+                        serializeMap.set(field, currentFieldInfo.serialize)
+                      }
 
                       // if field has args, process them
-                      if (this.recordInfo.fields[field].args) {
-                        total[
-                          this.recordInfo.fields[field].args.path + '.__args'
-                        ] = this.recordInfo.fields[field].args.getArgs(this)
+                      if (currentFieldInfo.args) {
+                        total[currentFieldInfo.args.path + '.__args'] =
+                          currentFieldInfo.args.getArgs(this)
                       }
-                    })
-                  } else {
-                    total[fieldKey] = true
-                    serializeMap.set(fieldKey, fieldInfo.serialize)
-
-                    // if field has args, process them
-                    if (fieldInfo.args) {
-                      total[fieldInfo.args.path + '.__args'] =
-                        fieldInfo.args.getArgs(this)
                     }
-                  }
+                  })
                   return total
                 },
-                { id: true }
+                { id: true, __typename: true }
               )
             ),
             __args: {
@@ -230,7 +239,7 @@ export default {
               : getNestedProperty(data, fieldKey)
 
             const inputObject = {
-              field: fieldKey.split(/\+/)[0],
+              field: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldInfo,
               value: fieldValue, // already serialized
               options: [],

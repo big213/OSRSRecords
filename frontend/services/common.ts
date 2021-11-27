@@ -31,7 +31,7 @@ export function generateLeaderboardRoute(that) {
     sortDesc: [false],
     filters: [
       {
-        field: 'event.id',
+        field: 'event',
         operator: 'eq',
         value: 'c3xnykl6', // COX CM on prod db
       },
@@ -46,7 +46,7 @@ export function generateLeaderboardRoute(that) {
         value: 'APPROVED',
       },
       {
-        field: 'era.id',
+        field: 'era',
         operator: 'eq',
         value: that.$store.getters['era/currentEra']?.id,
       },

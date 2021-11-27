@@ -3,12 +3,11 @@ import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
 } from '~/services/base'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
+import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
-import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
 
 export const Era = <RecordInfo<'era'>>{
   typename: 'era',
@@ -30,12 +29,10 @@ export const Era = <RecordInfo<'era'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
-    'name+avatar': {
+    nameWithAvatar: {
       text: 'Name',
-      component: RecordColumn,
-      compoundOptions: {
-        primaryField: 'name',
-      },
+      fields: ['name', 'avatar'],
+      component: NameAvatarColumn,
     },
     description: {
       text: 'Description',
@@ -66,8 +63,9 @@ export const Era = <RecordInfo<'era'>>{
       inputType: 'switch',
       component: BooleanColumn,
     },
-    'createdBy.id': {
+    createdBy: {
       text: 'Created By',
+      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',
@@ -83,7 +81,7 @@ export const Era = <RecordInfo<'era'>>{
     filters: [],
     headers: [
       {
-        field: 'name+avatar',
+        field: 'nameWithAvatar',
         sortable: false,
       },
       {
@@ -111,8 +109,13 @@ export const Era = <RecordInfo<'era'>>{
     fields: ['avatar', 'name', 'description', 'beginDate', 'endDate'],
   },
   viewOptions: {
-    fields: ['name+avatar', 'description', 'beginDate', 'endDate', 'isCurrent'],
-    component: ViewRecordTableInterface,
+    fields: [
+      'nameWithAvatar',
+      'description',
+      'beginDate',
+      'endDate',
+      'isCurrent',
+    ],
   },
   enterOptions: {},
   deleteOptions: {},
