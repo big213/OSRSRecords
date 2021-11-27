@@ -34,7 +34,7 @@ export default {
       {
         property: 'og:image',
         content:
-          'https://osrsrecords.com/_nuxt/static/android-chrome-384x384.png',
+          'https://cdn.osrsrecords.com/permanent/android-chrome-384x384.png',
       },
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
