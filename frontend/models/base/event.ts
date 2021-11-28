@@ -49,6 +49,15 @@ export const Event = <RecordInfo<'event'>>{
         typename: 'eventClass',
       },
     },
+    eventGroup: {
+      text: 'Event Group',
+      fields: ['eventGroup.id'],
+      inputType: 'server-autocomplete',
+      inputOptions: {
+        hasAvatar: true,
+        typename: 'eventGroup',
+      },
+    },
     eventClassRecord: {
       text: 'Event Class',
       fields: [
@@ -127,6 +136,7 @@ export const Event = <RecordInfo<'event'>>{
   addOptions: {
     fields: [
       'eventClass',
+      'eventGroup',
       'minParticipants',
       'maxParticipants',
       'releaseDate',
@@ -139,11 +149,12 @@ export const Event = <RecordInfo<'event'>>{
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['avatar', 'name', 'description', 'backgroundImage'],
+    fields: ['eventGroup'],
   },
   viewOptions: {
     fields: [
       'eventClassRecord',
+      'eventGroup',
       'minParticipants',
       'maxParticipants',
       'releaseDate',

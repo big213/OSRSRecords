@@ -22,6 +22,7 @@ export class SubmissionService extends PaginatedService {
     id: {},
     createdAt: {},
     updatedAt: {},
+    happenedOn: {},
     score: {},
   };
 

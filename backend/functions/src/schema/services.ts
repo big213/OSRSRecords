@@ -5,7 +5,9 @@ import { UserService } from "./models/user/service";
 import { ApiKeyService } from "./models/apiKey/service";
 import { EraService } from "./models/era/service";
 import { EventClassService } from "./models/eventClass/service";
+import { EventGroupService } from "./models/eventGroup/service";
 import { EventService } from "./models/event/service";
+
 import { SubmissionService } from "./models/submission/service";
 import { CharacterService } from "./models/character/service";
 import { GithubService } from "./models/github/service";
@@ -17,6 +19,7 @@ export const User = new UserService();
 export const ApiKey = new ApiKeyService();
 export const Era = new EraService();
 export const EventClass = new EventClassService();
+export const EventGroup = new EventGroupService();
 export const Event = new EventService();
 export const Submission = new SubmissionService();
 export const Character = new CharacterService();

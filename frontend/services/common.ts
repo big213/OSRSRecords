@@ -26,7 +26,14 @@ export function serializeTime(ms: number | null): string | null {
 }
 
 export function generateLeaderboardRoute(that) {
-  return generateCrudRecordInterfaceRoute('/public-submissions', {
+  return generateCrudRecordInterfaceRoute(
+    '/leaderboard',
+    generateLeaderboardPageOptions(that)
+  )
+}
+
+export function generateLeaderboardPageOptions(that) {
+  return {
     sortBy: ['score'],
     sortDesc: [false],
     filters: [
@@ -41,15 +48,10 @@ export function generateLeaderboardRoute(that) {
         value: 1,
       },
       {
-        field: 'status',
-        operator: 'eq',
-        value: 'APPROVED',
-      },
-      {
         field: 'era',
         operator: 'eq',
         value: that.$store.getters['era/currentEra']?.id,
       },
     ],
-  })
+  }
 }

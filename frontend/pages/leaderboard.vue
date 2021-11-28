@@ -7,7 +7,7 @@
       :hidden-filters="hiddenFilters"
       :head="head"
       :title="title"
-      icon="mdi-star"
+      icon="mdi-podium"
     ></CrudRecordPage>
   </div>
 </template>
@@ -30,12 +30,14 @@ export default {
       head: {
         title: 'Leaderboard',
       },
-      lockedFilters: [],
+      lockedFilters: [
+        {
+          field: 'status',
+          operator: 'eq',
+          value: 'APPROVED',
+        },
+      ],
       title: 'Leaderboard',
-
-      loading: {
-        presets: false,
-      },
     }
   },
 }

@@ -117,6 +117,8 @@ export type FilterByField<T> = {
   eraGroupByKey: undefined;
   eventClassSortByKey: "id" | "createdAt" | "updatedAt";
   eventClassGroupByKey: undefined;
+  eventGroupSortByKey: "id" | "createdAt" | "updatedAt" | "name";
+  eventGroupGroupByKey: undefined;
   eventSortByKey: "id" | "createdAt" | "updatedAt" | "name";
   eventGroupByKey: undefined;
   submissionSortByKey: "id" | "createdAt" | "updatedAt" | "score";
@@ -297,6 +299,38 @@ export type FilterByField<T> = {
     item: InputTypes["eventClass"];
     fields: InputTypes["updateEventClassFields"];
   };
+  eventGroup: { id?: Scalars["id"] };
+  "eventGroupFilterByField/id": FilterByField<Scalars["id"]>;
+  "eventGroupFilterByField/createdBy.id": FilterByField<Scalars["id"]>;
+  eventGroupFilterByObject: {
+    id?: InputTypes["eventGroupFilterByField/id"];
+    "createdBy.id"?: InputTypes["eventGroupFilterByField/createdBy.id"];
+  };
+  eventGroupPaginator: {
+    first?: Scalars["number"];
+    last?: Scalars["number"];
+    after?: Scalars["string"];
+    before?: Scalars["string"];
+    sortBy?: Scalars["eventGroupSortByKey"][];
+    sortDesc?: Scalars["boolean"][];
+    filterBy?: InputTypes["eventGroupFilterByObject"][];
+    groupBy?: Scalars["eventGroupGroupByKey"][];
+    search?: Scalars["string"];
+  };
+  createEventGroup: {
+    eventClass: InputTypes["eventClass"];
+    avatar?: Scalars["string"] | null;
+    name: Scalars["string"];
+  };
+  updateEventGroupFields: {
+    eventClass?: InputTypes["eventClass"];
+    avatar?: Scalars["string"] | null;
+    name?: Scalars["string"];
+  };
+  updateEventGroup: {
+    item: InputTypes["eventGroup"];
+    fields: InputTypes["updateEventGroupFields"];
+  };
   event: { id?: Scalars["id"] };
   "eventFilterByField/id": FilterByField<Scalars["id"]>;
   "eventFilterByField/createdBy.id": FilterByField<Scalars["id"]>;
@@ -317,6 +351,7 @@ export type FilterByField<T> = {
   };
   createEvent: {
     eventClass: InputTypes["eventClass"];
+    eventGroup: InputTypes["eventGroup"];
     minParticipants?: Scalars["number"] | null;
     maxParticipants?: Scalars["number"] | null;
     releaseDate: Scalars["unixTimestamp"];
@@ -328,6 +363,7 @@ export type FilterByField<T> = {
   };
   updateEventFields: {
     eventClass?: InputTypes["eventClass"];
+    eventGroup?: InputTypes["eventGroup"];
     minParticipants?: Scalars["number"] | null;
     maxParticipants?: Scalars["number"] | null;
     releaseDate?: Scalars["unixTimestamp"];
@@ -507,6 +543,11 @@ export type FilterByField<T> = {
     Typename: "eventClassPaginator";
     Type: GetType<EventClassPaginator>;
   };
+  eventGroupEdge: { Typename: "eventGroupEdge"; Type: GetType<EventGroupEdge> };
+  eventGroupPaginator: {
+    Typename: "eventGroupPaginator";
+    Type: GetType<EventGroupPaginator>;
+  };
   eventEdge: { Typename: "eventEdge"; Type: GetType<EventEdge> };
   eventPaginator: { Typename: "eventPaginator"; Type: GetType<EventPaginator> };
   submissionEdge: { Typename: "submissionEdge"; Type: GetType<SubmissionEdge> };
@@ -541,6 +582,7 @@ export type FilterByField<T> = {
   apiKey: { Typename: "apiKey"; Type: GetType<ApiKey> };
   era: { Typename: "era"; Type: GetType<Era> };
   eventClass: { Typename: "eventClass"; Type: GetType<EventClass> };
+  eventGroup: { Typename: "eventGroup"; Type: GetType<EventGroup> };
   event: { Typename: "event"; Type: GetType<Event> };
   submission: { Typename: "submission"; Type: GetType<Submission> };
   character: { Typename: "character"; Type: GetType<Character> };
@@ -595,6 +637,15 @@ export type EventClassEdge = Edge<EventClass>;
   };
   paginatorInfo: { Type: PaginatorInfo; Args: undefined };
   edges: { Type: EventClassEdge[]; Args: undefined };
+};
+export type EventGroupEdge = Edge<EventGroup>;
+/**Paginator*/ export type EventGroupPaginator = {
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  paginatorInfo: { Type: PaginatorInfo; Args: undefined };
+  edges: { Type: EventGroupEdge[]; Args: undefined };
 };
 export type EventEdge = Edge<Event>;
 /**Paginator*/ export type EventPaginator = {
@@ -743,6 +794,25 @@ export type SubmissionCharacterParticipantLinkEdge =
   };
   createdBy: { Type: User; Args: undefined };
 };
+/**EventGroup type*/ export type EventGroup = {
+  /**The unique ID of the field*/ id: { Type: Scalars["id"]; Args: undefined };
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  eventClass: { Type: EventClass; Args: undefined };
+  avatar: { Type: Scalars["string"] | null; Args: undefined };
+  name: { Type: Scalars["string"]; Args: undefined };
+  /**When the record was created*/ createdAt: {
+    Type: Scalars["unixTimestamp"];
+    Args: undefined;
+  };
+  /**When the record was last updated*/ updatedAt: {
+    Type: Scalars["unixTimestamp"] | null;
+    Args: undefined;
+  };
+  createdBy: { Type: User; Args: undefined };
+};
 /**Event type*/ export type Event = {
   /**The unique ID of the field*/ id: { Type: Scalars["id"]; Args: undefined };
   /**The typename of the record*/ __typename: {
@@ -750,6 +820,7 @@ export type SubmissionCharacterParticipantLinkEdge =
     Args: [Scalars["number"]];
   };
   eventClass: { Type: EventClass; Args: undefined };
+  eventGroup: { Type: EventGroup; Args: undefined };
   minParticipants: { Type: Scalars["number"] | null; Args: undefined };
   maxParticipants: { Type: Scalars["number"] | null; Args: undefined };
   releaseDate: { Type: Scalars["unixTimestamp"]; Args: undefined };
@@ -794,6 +865,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   externalLinks: { Type: Scalars["url"][]; Args: undefined };
   privateComments: { Type: Scalars["string"] | null; Args: undefined };
   publicComments: { Type: Scalars["string"] | null; Args: undefined };
+  mainExternalLink: { Type: Scalars["url"] | null; Args: undefined };
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars["number"] | null;
     Args: undefined;
@@ -861,7 +933,6 @@ export type SubmissionCharacterParticipantLinkEdge =
   };
   submission: { Type: Submission; Args: undefined };
   character: { Type: Character; Args: undefined };
-  title: { Type: Scalars["string"] | null; Args: undefined };
   /**When the record was created*/ createdAt: {
     Type: Scalars["unixTimestamp"];
     Args: undefined;
@@ -870,7 +941,8 @@ export type SubmissionCharacterParticipantLinkEdge =
     Type: Scalars["unixTimestamp"] | null;
     Args: undefined;
   };
-  createdBy: { Type: User; Args: undefined };
+  createdBy: { Type: User | null; Args: undefined };
+  title: { Type: Scalars["string"] | null; Args: undefined };
 };
 /**All Root resolvers*/ export type Root = {
   getUserRoleEnumPaginator: { Type: UserRoleEnumPaginator; Args: undefined };
@@ -906,6 +978,14 @@ export type SubmissionCharacterParticipantLinkEdge =
   deleteEventClass: { Type: EventClass; Args: InputTypes["eventClass"] };
   createEventClass: { Type: EventClass; Args: InputTypes["createEventClass"] };
   updateEventClass: { Type: EventClass; Args: InputTypes["updateEventClass"] };
+  getEventGroup: { Type: EventGroup; Args: InputTypes["eventGroup"] };
+  getEventGroupPaginator: {
+    Type: EventGroupPaginator;
+    Args: InputTypes["eventGroupPaginator"];
+  };
+  deleteEventGroup: { Type: EventGroup; Args: InputTypes["eventGroup"] };
+  createEventGroup: { Type: EventGroup; Args: InputTypes["createEventGroup"] };
+  updateEventGroup: { Type: EventGroup; Args: InputTypes["updateEventGroup"] };
   getEvent: { Type: Event; Args: InputTypes["event"] };
   getEventPaginator: {
     Type: EventPaginator;

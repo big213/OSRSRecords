@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-divider></v-divider>
-    <v-list dense>
+    <v-list dense v-bind="$attrs">
       <v-list-group
         v-for="item in adminItems"
         :key="item.title"

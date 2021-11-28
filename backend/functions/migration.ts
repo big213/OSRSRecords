@@ -47,9 +47,19 @@ export async function up(knex: Knex): Promise<void[]> {
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
     }),
+    knex.schema.createTable("eventGroup", function (table) {
+      table.string("id").notNullable().primary();
+      table.string("event_class").notNullable();
+      table.string("avatar").nullable();
+      table.string("name").notNullable();
+      table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
+      table.dateTime("updated_at").nullable();
+      table.string("created_by").notNullable();
+    }),
     knex.schema.createTable("event", function (table) {
       table.string("id").notNullable().primary();
       table.string("event_class").notNullable();
+      table.string("event_group").notNullable();
       table.integer("min_participants").nullable();
       table.integer("max_participants").nullable();
       table.dateTime("release_date").notNullable();
@@ -127,6 +137,7 @@ export async function down(knex: Knex): Promise<void[]> {
     knex.schema.dropTable("apiKey"),
     knex.schema.dropTable("era"),
     knex.schema.dropTable("eventClass"),
+    knex.schema.dropTable("eventGroup"),
     knex.schema.dropTable("event"),
     knex.schema.dropTable("submission"),
     knex.schema.dropTable("character"),

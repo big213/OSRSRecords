@@ -186,7 +186,7 @@
                     :class="generatePlaceClass(renderRank(props.index))"
                     >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
                   >
-                  <span v-else>{{ renderRank(props.index) }}</span>
+                  <span v-else class="mr-2">{{ renderRank(props.index) }}</span>
                 </div>
                 <div v-else>
                   <component
@@ -244,7 +244,7 @@
                 :class="generatePlaceClass(renderRank(props.index))"
                 >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
               >
-              <span v-else>{{ renderRank(props.index) }}</span>
+              <span v-else class="mr-2">{{ renderRank(props.index) }}</span>
             </span>
             <span v-else>
               <component
@@ -342,7 +342,7 @@ export default {
   data() {
     return {
       rankIndex: null,
-      requiredFilters: ['era', 'event', 'participants', 'status'],
+      requiredFilters: ['era', 'event', 'status'],
     }
   },
 

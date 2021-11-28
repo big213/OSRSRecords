@@ -11,7 +11,7 @@ export const PublicSubmission = {
       {
         field: 'eventRecordWithParticipants',
         sortable: false,
-        width: '200px',
+        width: '250px',
       },
       {
         field: 'participantsListFlat',

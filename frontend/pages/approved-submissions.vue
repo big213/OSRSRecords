@@ -1,0 +1,44 @@
+<template>
+  <div>
+    <SubmissionPagePreset :event-clearable="false"></SubmissionPagePreset>
+    <CrudRecordPage
+      :record-info="recordInfo"
+      :locked-filters="lockedFilters"
+      :hidden-filters="hiddenFilters"
+      :head="head"
+      :title="title"
+      icon="mdi-star"
+    ></CrudRecordPage>
+  </div>
+</template>
+
+<script>
+import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
+import CrudRecordPage from '~/components/page/crudRecordPage.vue'
+import { PublicSubmission } from '~/models/public'
+
+export default {
+  components: {
+    CrudRecordPage,
+    SubmissionPagePreset,
+  },
+
+  data() {
+    return {
+      recordInfo: PublicSubmission,
+      hiddenFilters: ['status'],
+      head: {
+        title: 'Public Submissions',
+      },
+      lockedFilters: [
+        {
+          field: 'status',
+          operator: 'eq',
+          value: 'APPROVED',
+        },
+      ],
+      title: 'Public Submissions',
+    }
+  },
+}
+</script>

@@ -16,7 +16,11 @@ import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import ParticipantsColumn from '~/components/table/common/participantsColumn.vue'
 import ParticipantsPreviewColumn from '~/components/table/common/participantsPreviewColumn.vue'
-import { getEras, getEvents, getSubmissionStatuses } from '~/services/dropdown'
+import {
+  getEras,
+  getEventsByGroup,
+  getSubmissionStatuses,
+} from '~/services/dropdown'
 import { serializeTime } from '~/services/common'
 
 export const Submission = <RecordInfo<'submission'>>{
@@ -34,12 +38,12 @@ export const Submission = <RecordInfo<'submission'>>{
     event: {
       text: 'Event Category',
       fields: ['event.id'],
-      inputType: 'server-autocomplete',
+      inputType: 'autocomplete',
       inputOptions: {
         hasAvatar: true,
         typename: 'event',
       },
-      getOptions: getEvents,
+      getOptions: getEventsByGroup,
     },
     eventRecord: {
       text: 'Event Category',
@@ -130,7 +134,7 @@ export const Submission = <RecordInfo<'submission'>>{
       component: UrlColumn,
     },
     mainExternalLink: {
-      text: 'Main External Link',
+      text: 'Evidence Link',
       component: UrlColumn,
     },
     score: {

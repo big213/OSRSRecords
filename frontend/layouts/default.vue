@@ -6,6 +6,7 @@
       :clipped="clipped"
       fixed
       app
+      color="transparent"
     >
       <nuxt-link to="/" class="hidden-md-and-up">
         <v-img
@@ -15,7 +16,7 @@
         />
       </nuxt-link>
       <v-divider></v-divider>
-      <v-list dense>
+      <v-list dense color="accent">
         <v-list-item class="mb-2">
           <v-btn
             block
@@ -42,7 +43,7 @@
         </v-list-item>
       </v-list>
       <v-divider></v-divider>
-      <v-list dense>
+      <v-list dense color="accent">
         <v-list-item :key="-1" :to="generateLeaderboardRoute()" router exact>
           <v-list-item-action>
             <v-icon>mdi-podium</v-icon>
@@ -92,7 +93,7 @@
       </v-list>
       -->
       <v-divider></v-divider>
-      <v-list v-if="isAdmin" dense>
+      <v-list v-if="isAdmin" dense color="accent">
         <v-list-item
           v-for="(item, i) in moderatorItems"
           :key="i"
@@ -111,7 +112,7 @@
 
       <v-divider></v-divider>
 
-      <AdminNavRoutes v-if="isAdmin"></AdminNavRoutes>
+      <AdminNavRoutes v-if="isAdmin" color="accent"></AdminNavRoutes>
     </v-navigation-drawer>
     <v-app-bar :clipped-left="clipped" fixed app color="transparent">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
@@ -315,42 +316,15 @@ export default {
 
       backgroundImage: null,
       navItems: [
-        /*         
-        {
-          icon: 'mdi-podium',
-          title: 'Leaderboard',
-          to: generateCrudRecordInterfaceRoute('/public-submissions', {
-            sortBy: ['score'],
-            sortDesc: [false],
-            filters: [
-              {
-                field: 'event.id',
-                operator: 'eq',
-                value: 'c3xnykl6', // COX CM on prod db
-              },
-              {
-                field: 'participants',
-                operator: 'eq',
-                value: 1,
-              },
-              {
-                field: 'status',
-                operator: 'eq',
-                value: 'APPROVED',
-              },
-            ],
-          }),
-          loginRequired: false,
-        },
         {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
-          to: generateCrudRecordInterfaceRoute('/public-submissions', {
+          to: generateCrudRecordInterfaceRoute('/approved-submissions', {
             sortBy: ['happenedOn'],
             sortDesc: [true],
           }),
           loginRequired: false,
-        }, */
+        },
       ],
       userItems: [
         {

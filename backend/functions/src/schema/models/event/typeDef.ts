@@ -1,4 +1,4 @@
-import { User, Event, EventClass } from "../../services";
+import { User, Event, EventClass, EventGroup } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
@@ -26,6 +26,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       sqlOptions: {
         field: "event_class",
         unique: "compositeKey",
+      },
+    }),
+    eventGroup: generateJoinableField({
+      service: EventGroup,
+      allowNull: false,
+      sqlOptions: {
+        field: "event_group",
       },
     }),
     minParticipants: generateIntegerField({

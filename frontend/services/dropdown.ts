@@ -68,6 +68,78 @@ export const getEras = <any>(
   })
 )
 
+export const getEventsByGroup = <any>(
+  memoize(async function (that, _forceReload = false, filterBy = []) {
+    const eventGroups = await collectPaginatorData(
+      that,
+      'getEventGroupPaginator',
+      {
+        id: true,
+        name: true,
+        avatar: true,
+      },
+      {
+        filterBy,
+        sortBy: ['name'],
+      }
+    )
+
+    const eventGroupsMap: Map<string, any> = new Map()
+
+    const eventGroupsArray = eventGroups.map((eventGroup) => {
+      const eventGroupObject: { data: any; childEvents: any[] } = {
+        data: eventGroup,
+        childEvents: [],
+      }
+
+      eventGroupsMap.set(eventGroupObject.data.id, eventGroupObject)
+
+      return eventGroupObject
+    })
+
+    const events = await collectPaginatorData(
+      that,
+      'getEventPaginator',
+      {
+        id: true,
+        name: true,
+        avatar: true,
+        backgroundImage: true,
+        eventGroup: {
+          id: true,
+        },
+      },
+      {
+        filterBy,
+        sortBy: ['name'],
+      }
+    )
+
+    events.forEach((event) => {
+      eventGroupsMap.get(event.eventGroup?.id)?.childEvents.push(event)
+    })
+
+    const returnArray: any[] = []
+
+    // generate the output from eventGroupsArray
+    eventGroupsArray.forEach((eventGroupObject) => {
+      returnArray.push({
+        header: eventGroupObject.data.name,
+      })
+
+      eventGroupObject.childEvents.forEach((event) => {
+        returnArray.push(event)
+      })
+
+      returnArray.push({
+        divider: true,
+      })
+    })
+
+    return returnArray
+  })
+)
+
 export const getEvents = <any>(
   memoize(function (that, _forceReload = false, filterBy = []) {
     return collectPaginatorData(
@@ -83,7 +155,7 @@ export const getEvents = <any>(
         filterBy,
         sortBy: ['name'],
       }
-    )
+    ).then((res) => res.concat({ header: 'blah' }))
   })
 )
 

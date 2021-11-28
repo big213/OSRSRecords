@@ -1,6 +1,6 @@
 <template>
   <v-layout column justify-center align-center>
-    <v-flex xs12 sm8 md6>
+    <v-container xs12 style="max-width: 600px">
       <div class="text-center">
         <img
           src="../static/logo-raw-horizontal-trimmed.png"
@@ -47,7 +47,7 @@
         </v-card-actions>
       </v-card>
       <ReleaseHistory v-if="user" class="mt-3" />
-    </v-flex>
+    </v-container>
   </v-layout>
 </template>
 
