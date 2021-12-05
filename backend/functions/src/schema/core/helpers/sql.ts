@@ -244,8 +244,8 @@ function processFields(relevantFields: Set<string>, table: string) {
         }
 
         // set currentTableAlias
-        currentTableAlias = currentJoinObject[linkJoinTypeStr].normalJoin!
-          .alias;
+        currentTableAlias =
+          currentJoinObject[linkJoinTypeStr].normalJoin!.alias;
 
         // advance the join object
         currentJoinObject = currentJoinObject[linkJoinTypeStr].nested;
@@ -467,14 +467,27 @@ function applyWhere(
           if (Array.isArray(whereSubObject.value)) {
             // if array is empty, is equivalent of FALSE
             if (whereSubObject.value.length < 1) {
-              whereSubstatement = "FALSE";
+              whereSubstatement = " FALSE";
+              throw new Error(
+                "Must provide non-empty array for (n)in operators"
+              );
             } else {
-              whereSubstatement += ` IN (${whereSubObject.value.map(
-                () => "?"
-              )})`;
-              whereSubObject.value.forEach((ele) => {
-                bindings.push(ele);
-              });
+              // if trying to do IN (null), adjust accordingly
+              if (whereSubObject.value.some((ele) => ele === null)) {
+                whereSubstatement = `(${whereSubstatement} IN (${whereSubObject.value
+                  .filter((ele) => ele !== null)
+                  .map(() => "?")}) OR ${whereSubstatement} IS NULL)`;
+              } else {
+                whereSubstatement += ` IN (${whereSubObject.value.map(
+                  () => "?"
+                )})`;
+              }
+
+              whereSubObject.value
+                .filter((ele) => ele !== null)
+                .forEach((ele) => {
+                  bindings.push(ele);
+                });
             }
           } else {
             throw new Error("Must provide array for in/nin operators");
@@ -484,14 +497,27 @@ function applyWhere(
           if (Array.isArray(whereSubObject.value)) {
             // if array is empty, is equivalent of TRUE
             if (whereSubObject.value.length < 1) {
-              whereSubstatement = "TRUE";
+              // whereSubstatement = " TRUE";
+              throw new Error(
+                "Must provide non-empty array for (n)in operators"
+              );
             } else {
-              whereSubstatement += ` NOT IN (${whereSubObject.value.map(
-                () => "?"
-              )})`;
-              whereSubObject.value.forEach((ele) => {
-                bindings.push(ele);
-              });
+              // if trying to do IN (null), adjust accordingly
+              if (whereSubObject.value.some((ele) => ele === null)) {
+                whereSubstatement = `(${whereSubstatement} NOT IN (${whereSubObject.value
+                  .filter((ele) => ele !== null)
+                  .map(() => "?")}) OR ${whereSubstatement} IS NULL)`;
+              } else {
+                whereSubstatement += ` NOT IN (${whereSubObject.value.map(
+                  () => "?"
+                )})`;
+              }
+
+              whereSubObject.value
+                .filter((ele) => ele !== null)
+                .forEach((ele) => {
+                  bindings.push(ele);
+                });
             }
           } else {
             throw new Error("Must provide array for in/nin operators");

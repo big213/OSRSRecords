@@ -82,4 +82,6 @@ export const api = functions.https.onRequest(app);
 
 export { serveImage } from "./misc/serveImage";
 
+export { handleDiscordInteraction } from "./misc/handleDiscordInteraction";
+
 app.post("/pusher/auth", handlePusherAuth);

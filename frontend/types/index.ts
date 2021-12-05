@@ -80,9 +80,7 @@ export type RecordInfo<T extends keyof MainTypes> = {
         : false
       : false
     // all of the possible usable filters
-    filters: `${T}FilterByObject` extends keyof InputTypes
-      ? RecordFilter<InputTypes[`${T}FilterByObject`]>[]
-      : []
+    filters: `${T}FilterByObject` extends keyof InputTypes ? RecordFilter[] : []
 
     // the headers of the table
     headers: {
@@ -217,8 +215,8 @@ type FilterObject = {
   value: any
 }
 
-type RecordFilter<T> = {
-  field: keyof T
+type RecordFilter = {
+  field: string
   title?: string
   operator: keyof FilterByField<any>
   inputType?: InputType

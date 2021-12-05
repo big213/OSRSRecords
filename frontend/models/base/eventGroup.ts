@@ -2,7 +2,6 @@ import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
 
 export const EventGroup = <RecordInfo<'eventGroup'>>{
   typename: 'eventGroup',
@@ -24,27 +23,6 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
-    eventClass: {
-      text: 'Event Class',
-      fields: ['eventClass.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventClass',
-      },
-    },
-    eventClassRecord: {
-      text: 'Event Class',
-      fields: [
-        'eventClass.name',
-        'eventClass.id',
-        'eventClass.__typename',
-        'eventClass.avatar',
-      ],
-      pathPrefix: 'eventClass',
-      component: RecordColumn,
-    },
-
     nameWithAvatar: {
       text: 'Name',
       fields: ['name', 'avatar'],
@@ -85,14 +63,14 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['eventClass', 'avatar', 'name'],
+    fields: ['avatar', 'name'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
     fields: ['avatar', 'name'],
   },
   viewOptions: {
-    fields: ['nameWithAvatar', 'eventClassRecord'],
+    fields: ['nameWithAvatar'],
   },
   enterOptions: {},
   deleteOptions: {},

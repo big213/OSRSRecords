@@ -68,7 +68,7 @@ export const Submission = <RecordInfo<'submission'>>{
     era: {
       text: 'Era',
       fields: ['era.id'],
-      inputType: 'server-autocomplete',
+      inputType: 'autocomplete',
       inputOptions: {
         hasAvatar: true,
         typename: 'era',
@@ -187,6 +187,12 @@ export const Submission = <RecordInfo<'submission'>>{
       serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
+      component: TruthyOrNoneColumn,
+    },
+    previousRecordHappenedOn: {
+      text: 'Previous Record Time',
+      // unix timestamp to YYYY-MM-DD HH:MM:SS
+      serialize: generateDateLocaleString,
       component: TruthyOrNoneColumn,
     },
     status: {
@@ -347,6 +353,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'status',
       'world',
       'ranking',
+      'previousRecordHappenedOn',
       // 'files',
       'externalLinks',
       'privateComments',

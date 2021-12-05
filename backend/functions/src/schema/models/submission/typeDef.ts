@@ -26,9 +26,10 @@ import {
   generateEnumField,
   generatePaginatorPivotResolverObject,
   generatePivotResolverObject,
+  generateBooleanField,
 } from "../../core/helpers/typeDef";
 import { Scalars } from "../..";
-import { countTableRows } from "../../core/helpers/sql";
+import { countTableRows, fetchTableRows } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
@@ -40,14 +41,17 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     event: generateJoinableField({
       service: Event,
       allowNull: false,
+      typeDefOptions: { addable: true, updateable: false },
     }),
     era: generateJoinableField({
       service: Era,
       allowNull: false,
+      typeDefOptions: { addable: true, updateable: false },
     }),
     participants: generateIntegerField({
       allowNull: false,
       defaultValue: 0,
+      typeDefOptions: { addable: false, updateable: false },
     }),
     participantsLinks: generatePaginatorPivotResolverObject({
       pivotService: SubmissionCharacterParticipantLink,
@@ -66,6 +70,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       sqlOptions: {
         field: "time_elapsed",
       },
+      typeDefOptions: { addable: true, updateable: false },
     }),
     happenedOn: generateUnixTimestampField({
       allowNull: false,
@@ -118,7 +123,14 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         return parentValue.externalLinks[0] ?? null;
       },
     },
-
+    isRecord: generateBooleanField({
+      allowNull: false,
+      defaultValue: false,
+      typeDefOptions: { addable: false, updateable: false },
+      sqlOptions: {
+        field: "is_record",
+      },
+    }),
     ranking: {
       type: Scalars.number,
       description:
@@ -131,24 +143,42 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "status",
         "era.id",
       ],
+      resolver({ parentValue }) {
+        return Submission.calculateRank({
+          eventId: parentValue.event.id,
+          participants: parentValue.participants,
+          eraId: parentValue.era.id,
+          status: submissionStatusKenum.fromUnknown(parentValue.status),
+          score: parentValue.score,
+        });
+      },
+    },
+    previousRecordHappenedOn: {
+      type: Scalars.unixTimestamp,
+      description:
+        "The date of the previous record given the event.id, participants, and era.id, if any",
+      allowNull: true,
+      requiredSqlFields: [
+        "isRecord",
+        "happenedOn",
+        "event.id",
+        "participants",
+        "era.id",
+      ],
       async resolver({ parentValue }) {
-        // if status is not approved, return null
-        if (
-          submissionStatusKenum.fromUnknown(parentValue.status) !==
-          submissionStatusKenum.APPROVED
-        ) {
-          return null;
-        }
+        // is !isRecord, return null
+        if (!parentValue.isRecord) return null;
 
-        const resultsCount = await countTableRows({
+        // check when the previous record for the event.id, participants, status === 'approved', era.id is
+        const results = await fetchTableRows({
+          select: [
+            {
+              field: "happenedOn",
+            },
+          ],
           from: Submission.typename,
           where: {
             fields: [
-              {
-                field: "score",
-                operator: "lt",
-                value: parentValue.score,
-              },
               {
                 field: "event.id",
                 operator: "eq",
@@ -169,13 +199,38 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
                 operator: "eq",
                 value: parentValue.era.id,
               },
+              {
+                field: "isRecord",
+                operator: "eq",
+                value: true,
+              },
+              {
+                field: "happenedOn",
+                operator: "lt",
+                value: parentValue.happenedOn,
+              },
             ],
           },
+          orderBy: [
+            {
+              field: "happenedOn",
+              desc: true,
+            },
+          ],
+          limit: 1,
         });
 
-        return resultsCount + 1;
+        // if no previous record, return null
+        if (results.length < 1) {
+          return null;
+        }
+
+        const previousResult = results[0];
+
+        return previousResult.happenedOn;
       },
     },
+
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),
     ...generateCreatedByField(User, true),

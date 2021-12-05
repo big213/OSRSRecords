@@ -121,12 +121,21 @@ export type FilterByField<T> = {
   eventGroupGroupByKey: undefined;
   eventSortByKey: "id" | "createdAt" | "updatedAt" | "name";
   eventGroupByKey: undefined;
-  submissionSortByKey: "id" | "createdAt" | "updatedAt" | "score";
+  submissionSortByKey:
+    | "id"
+    | "createdAt"
+    | "updatedAt"
+    | "happenedOn"
+    | "score";
   submissionGroupByKey: undefined;
   characterSortByKey: "id" | "createdAt" | "updatedAt";
   characterGroupByKey: undefined;
   fileSortByKey: "id" | "createdAt";
   fileGroupByKey: undefined;
+  discordChannelSortByKey: "id" | "createdAt" | "updatedAt";
+  discordChannelGroupByKey: undefined;
+  discordChannelOutputSortByKey: "id" | "createdAt" | "updatedAt" | "sort";
+  discordChannelOutputGroupByKey: undefined;
 };
 /**All Input types*/ export type InputTypes = {
   "submissionCharacterParticipantLinkFilterByField/submission.id": FilterByField<
@@ -318,12 +327,10 @@ export type FilterByField<T> = {
     search?: Scalars["string"];
   };
   createEventGroup: {
-    eventClass: InputTypes["eventClass"];
     avatar?: Scalars["string"] | null;
     name: Scalars["string"];
   };
   updateEventGroupFields: {
-    eventClass?: InputTypes["eventClass"];
     avatar?: Scalars["string"] | null;
     name?: Scalars["string"];
   };
@@ -507,6 +514,80 @@ export type FilterByField<T> = {
     item: InputTypes["file"];
     fields: InputTypes["updateFileFields"];
   };
+  discordChannel: { id?: Scalars["id"] };
+  "discordChannelFilterByField/id": FilterByField<Scalars["id"]>;
+  "discordChannelFilterByField/createdBy.id": FilterByField<Scalars["id"]>;
+  discordChannelFilterByObject: {
+    id?: InputTypes["discordChannelFilterByField/id"];
+    "createdBy.id"?: InputTypes["discordChannelFilterByField/createdBy.id"];
+  };
+  discordChannelPaginator: {
+    first?: Scalars["number"];
+    last?: Scalars["number"];
+    after?: Scalars["string"];
+    before?: Scalars["string"];
+    sortBy?: Scalars["discordChannelSortByKey"][];
+    sortDesc?: Scalars["boolean"][];
+    filterBy?: InputTypes["discordChannelFilterByObject"][];
+    groupBy?: Scalars["discordChannelGroupByKey"][];
+    search?: Scalars["string"];
+  };
+  createDiscordChannel: {
+    name: Scalars["string"];
+    channelId: Scalars["string"];
+    primaryMessageId?: Scalars["string"] | null;
+  };
+  updateDiscordChannelFields: {
+    name?: Scalars["string"];
+    channelId?: Scalars["string"];
+    primaryMessageId?: Scalars["string"] | null;
+  };
+  updateDiscordChannel: {
+    item: InputTypes["discordChannel"];
+    fields: InputTypes["updateDiscordChannelFields"];
+  };
+  discordChannelOutput: { id?: Scalars["id"] };
+  "discordChannelOutputFilterByField/id": FilterByField<Scalars["id"]>;
+  "discordChannelOutputFilterByField/createdBy.id": FilterByField<
+    Scalars["id"]
+  >;
+  "discordChannelOutputFilterByField/discordChannel.id": FilterByField<
+    Scalars["id"]
+  >;
+  discordChannelOutputFilterByObject: {
+    id?: InputTypes["discordChannelOutputFilterByField/id"];
+    "createdBy.id"?: InputTypes["discordChannelOutputFilterByField/createdBy.id"];
+    "discordChannel.id"?: InputTypes["discordChannelOutputFilterByField/discordChannel.id"];
+  };
+  discordChannelOutputPaginator: {
+    first?: Scalars["number"];
+    last?: Scalars["number"];
+    after?: Scalars["string"];
+    before?: Scalars["string"];
+    sortBy?: Scalars["discordChannelOutputSortByKey"][];
+    sortDesc?: Scalars["boolean"][];
+    filterBy?: InputTypes["discordChannelOutputFilterByObject"][];
+    groupBy?: Scalars["discordChannelOutputGroupByKey"][];
+    search?: Scalars["string"];
+  };
+  createDiscordChannelOutput: {
+    discordChannel: InputTypes["discordChannel"];
+    event: InputTypes["event"];
+    participants?: Scalars["number"] | null;
+    era?: InputTypes["era"] | null;
+    sort: Scalars["number"];
+  };
+  updateDiscordChannelOutputFields: {
+    discordChannel?: InputTypes["discordChannel"];
+    event?: InputTypes["event"];
+    participants?: Scalars["number"] | null;
+    era?: InputTypes["era"] | null;
+    sort?: Scalars["number"];
+  };
+  updateDiscordChannelOutput: {
+    item: InputTypes["discordChannelOutput"];
+    fields: InputTypes["updateDiscordChannelOutputFields"];
+  };
   submissionCharacterParticipantLink: {
     id?: Scalars["id"];
     submission?: InputTypes["submission"];
@@ -562,6 +643,22 @@ export type FilterByField<T> = {
   };
   fileEdge: { Typename: "fileEdge"; Type: GetType<FileEdge> };
   filePaginator: { Typename: "filePaginator"; Type: GetType<FilePaginator> };
+  discordChannelEdge: {
+    Typename: "discordChannelEdge";
+    Type: GetType<DiscordChannelEdge>;
+  };
+  discordChannelPaginator: {
+    Typename: "discordChannelPaginator";
+    Type: GetType<DiscordChannelPaginator>;
+  };
+  discordChannelOutputEdge: {
+    Typename: "discordChannelOutputEdge";
+    Type: GetType<DiscordChannelOutputEdge>;
+  };
+  discordChannelOutputPaginator: {
+    Typename: "discordChannelOutputPaginator";
+    Type: GetType<DiscordChannelOutputPaginator>;
+  };
   submissionCharacterParticipantLinkEdge: {
     Typename: "submissionCharacterParticipantLinkEdge";
     Type: GetType<SubmissionCharacterParticipantLinkEdge>;
@@ -587,6 +684,11 @@ export type FilterByField<T> = {
   submission: { Typename: "submission"; Type: GetType<Submission> };
   character: { Typename: "character"; Type: GetType<Character> };
   file: { Typename: "file"; Type: GetType<File> };
+  discordChannel: { Typename: "discordChannel"; Type: GetType<DiscordChannel> };
+  discordChannelOutput: {
+    Typename: "discordChannelOutput";
+    Type: GetType<DiscordChannelOutput>;
+  };
   submissionCharacterParticipantLink: {
     Typename: "submissionCharacterParticipantLink";
     Type: GetType<SubmissionCharacterParticipantLink>;
@@ -682,6 +784,24 @@ export type FileEdge = Edge<File>;
   };
   paginatorInfo: { Type: PaginatorInfo; Args: undefined };
   edges: { Type: FileEdge[]; Args: undefined };
+};
+export type DiscordChannelEdge = Edge<DiscordChannel>;
+/**Paginator*/ export type DiscordChannelPaginator = {
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  paginatorInfo: { Type: PaginatorInfo; Args: undefined };
+  edges: { Type: DiscordChannelEdge[]; Args: undefined };
+};
+export type DiscordChannelOutputEdge = Edge<DiscordChannelOutput>;
+/**Paginator*/ export type DiscordChannelOutputPaginator = {
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  paginatorInfo: { Type: PaginatorInfo; Args: undefined };
+  edges: { Type: DiscordChannelOutputEdge[]; Args: undefined };
 };
 export type SubmissionCharacterParticipantLinkEdge =
   Edge<SubmissionCharacterParticipantLink>;
@@ -800,7 +920,6 @@ export type SubmissionCharacterParticipantLinkEdge =
     Type: Scalars["string"];
     Args: [Scalars["number"]];
   };
-  eventClass: { Type: EventClass; Args: undefined };
   avatar: { Type: Scalars["string"] | null; Args: undefined };
   name: { Type: Scalars["string"]; Args: undefined };
   /**When the record was created*/ createdAt: {
@@ -866,8 +985,13 @@ export type SubmissionCharacterParticipantLinkEdge =
   privateComments: { Type: Scalars["string"] | null; Args: undefined };
   publicComments: { Type: Scalars["string"] | null; Args: undefined };
   mainExternalLink: { Type: Scalars["url"] | null; Args: undefined };
+  isRecord: { Type: Scalars["boolean"]; Args: undefined };
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars["number"] | null;
+    Args: undefined;
+  };
+  /**The date of the previous record given the event.id, participants, and era.id, if any*/ previousRecordHappenedOn: {
+    Type: Scalars["unixTimestamp"] | null;
     Args: undefined;
   };
   /**When the record was created*/ createdAt: {
@@ -915,6 +1039,46 @@ export type SubmissionCharacterParticipantLinkEdge =
   contentType: { Type: Scalars["string"]; Args: undefined };
   signedUrl: { Type: Scalars["string"]; Args: undefined };
   parentKey: { Type: Scalars["string"] | null; Args: undefined };
+  /**When the record was created*/ createdAt: {
+    Type: Scalars["unixTimestamp"];
+    Args: undefined;
+  };
+  /**When the record was last updated*/ updatedAt: {
+    Type: Scalars["unixTimestamp"] | null;
+    Args: undefined;
+  };
+  createdBy: { Type: User; Args: undefined };
+};
+/**DiscordChannel type*/ export type DiscordChannel = {
+  /**The unique ID of the field*/ id: { Type: Scalars["id"]; Args: undefined };
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  name: { Type: Scalars["string"]; Args: undefined };
+  channelId: { Type: Scalars["string"]; Args: undefined };
+  primaryMessageId: { Type: Scalars["string"] | null; Args: undefined };
+  /**When the record was created*/ createdAt: {
+    Type: Scalars["unixTimestamp"];
+    Args: undefined;
+  };
+  /**When the record was last updated*/ updatedAt: {
+    Type: Scalars["unixTimestamp"] | null;
+    Args: undefined;
+  };
+  createdBy: { Type: User; Args: undefined };
+};
+/**DiscordChannelOutput type*/ export type DiscordChannelOutput = {
+  /**The unique ID of the field*/ id: { Type: Scalars["id"]; Args: undefined };
+  /**The typename of the record*/ __typename: {
+    Type: Scalars["string"];
+    Args: [Scalars["number"]];
+  };
+  discordChannel: { Type: DiscordChannel; Args: undefined };
+  event: { Type: Event; Args: undefined };
+  participants: { Type: Scalars["number"] | null; Args: undefined };
+  era: { Type: Era | null; Args: undefined };
+  sort: { Type: Scalars["number"]; Args: undefined };
   /**When the record was created*/ createdAt: {
     Type: Scalars["unixTimestamp"];
     Args: undefined;
@@ -1023,6 +1187,46 @@ export type SubmissionCharacterParticipantLinkEdge =
   deleteFile: { Type: File; Args: InputTypes["file"] };
   createFile: { Type: File; Args: InputTypes["createFile"] };
   updateFile: { Type: File; Args: InputTypes["updateFile"] };
+  getDiscordChannel: {
+    Type: DiscordChannel;
+    Args: InputTypes["discordChannel"];
+  };
+  getDiscordChannelPaginator: {
+    Type: DiscordChannelPaginator;
+    Args: InputTypes["discordChannelPaginator"];
+  };
+  deleteDiscordChannel: {
+    Type: DiscordChannel;
+    Args: InputTypes["discordChannel"];
+  };
+  createDiscordChannel: {
+    Type: DiscordChannel;
+    Args: InputTypes["createDiscordChannel"];
+  };
+  updateDiscordChannel: {
+    Type: DiscordChannel;
+    Args: InputTypes["updateDiscordChannel"];
+  };
+  getDiscordChannelOutput: {
+    Type: DiscordChannelOutput;
+    Args: InputTypes["discordChannelOutput"];
+  };
+  getDiscordChannelOutputPaginator: {
+    Type: DiscordChannelOutputPaginator;
+    Args: InputTypes["discordChannelOutputPaginator"];
+  };
+  deleteDiscordChannelOutput: {
+    Type: DiscordChannelOutput;
+    Args: InputTypes["discordChannelOutput"];
+  };
+  createDiscordChannelOutput: {
+    Type: DiscordChannelOutput;
+    Args: InputTypes["createDiscordChannelOutput"];
+  };
+  updateDiscordChannelOutput: {
+    Type: DiscordChannelOutput;
+    Args: InputTypes["updateDiscordChannelOutput"];
+  };
   getSubmissionCharacterParticipantLink: {
     Type: SubmissionCharacterParticipantLink;
     Args: InputTypes["submissionCharacterParticipantLink"];

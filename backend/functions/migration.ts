@@ -49,7 +49,6 @@ export async function up(knex: Knex): Promise<void[]> {
     }),
     knex.schema.createTable("eventGroup", function (table) {
       table.string("id").notNullable().primary();
-      table.string("event_class").notNullable();
       table.string("avatar").nullable();
       table.string("name").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
@@ -87,6 +86,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.json("external_links").notNullable().defaultTo([]);
       table.text("private_comments").nullable();
       table.text("public_comments").nullable();
+      table.boolean("is_record").notNullable().defaultTo(false);
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").nullable();
@@ -111,6 +111,27 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("location").notNullable();
       table.string("content_type").notNullable();
       table.string("parent_key").nullable();
+      table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
+      table.dateTime("updated_at").nullable();
+      table.string("created_by").notNullable();
+    }),
+    knex.schema.createTable("discordChannel", function (table) {
+      table.string("id").notNullable().primary();
+      table.string("name").notNullable();
+      table.string("channel_id").notNullable();
+      table.string("primary_message_id").nullable();
+      table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
+      table.dateTime("updated_at").nullable();
+      table.string("created_by").notNullable();
+    }),
+    knex.schema.createTable("discordChannelOutput", function (table) {
+      table.string("id").notNullable().primary();
+      table.string("discord_channel").notNullable();
+      table.string("event").notNullable();
+      table.integer("participants").nullable();
+      table.string("era").nullable();
+      table.integer("ranks_to_show").notNullable().defaultTo(1);
+      table.integer("sort").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
@@ -142,6 +163,8 @@ export async function down(knex: Knex): Promise<void[]> {
     knex.schema.dropTable("submission"),
     knex.schema.dropTable("character"),
     knex.schema.dropTable("file"),
+    knex.schema.dropTable("discordChannel"),
+    knex.schema.dropTable("discordChannelOutput"),
     knex.schema.dropTable("submissionCharacterParticipantLink"),
   ]);
 }

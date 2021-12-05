@@ -1,23 +1,25 @@
-import { User, EventGroup } from "../../services";
+import { User, {{ capitalizedTypename }} } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
   generateCreatedAtField,
   generateUpdatedAtField,
   generateCreatedByField,
-  generateTypenameField,
   generateStringField,
+  generateTextField,
+  generateTypenameField,
 } from "../../core/helpers/typeDef";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
-  name: EventGroup.typename,
-  description: "EventGroup type",
+  name: {{ capitalizedTypename }}.typename,
+  description: "{{ capitalizedTypename }} type",
   fields: {
     ...generateIdField(),
-    ...generateTypenameField(EventGroup),
+    ...generateTypenameField({{ capitalizedTypename }}),
+    name: generateStringField({ allowNull: false }),
     avatar: generateStringField({ allowNull: true }),
-    name: generateStringField({
-      allowNull: false,
+    description: generateTextField({
+      allowNull: true,
     }),
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),

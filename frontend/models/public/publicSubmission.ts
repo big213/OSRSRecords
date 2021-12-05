@@ -46,6 +46,7 @@ export const PublicSubmission = {
       'status',
       'world',
       'ranking',
+      'previousRecordHappenedOn',
       // 'files',
       'externalLinks',
       //'privateComments',

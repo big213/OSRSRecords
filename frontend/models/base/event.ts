@@ -58,6 +58,17 @@ export const Event = <RecordInfo<'event'>>{
         typename: 'eventGroup',
       },
     },
+    eventGroupRecord: {
+      text: 'Event Group',
+      fields: [
+        'eventGroup.name',
+        'eventGroup.id',
+        'eventGroup.__typename',
+        'eventGroup.avatar',
+      ],
+      pathPrefix: 'eventGroup',
+      component: RecordColumn,
+    },
     eventClassRecord: {
       text: 'Event Class',
       fields: [
@@ -154,7 +165,7 @@ export const Event = <RecordInfo<'event'>>{
   viewOptions: {
     fields: [
       'eventClassRecord',
-      'eventGroup',
+      'eventGroupRecord',
       'minParticipants',
       'maxParticipants',
       'releaseDate',

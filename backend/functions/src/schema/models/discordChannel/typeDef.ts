@@ -1,23 +1,28 @@
-import { User, EventGroup } from "../../services";
+import { User, DiscordChannel } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
   generateCreatedAtField,
   generateUpdatedAtField,
   generateCreatedByField,
-  generateTypenameField,
   generateStringField,
+  generateTypenameField,
 } from "../../core/helpers/typeDef";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
-  name: EventGroup.typename,
-  description: "EventGroup type",
+  name: DiscordChannel.typename,
+  description: "DiscordChannel type",
   fields: {
     ...generateIdField(),
-    ...generateTypenameField(EventGroup),
-    avatar: generateStringField({ allowNull: true }),
-    name: generateStringField({
+    ...generateTypenameField(DiscordChannel),
+    name: generateStringField({ allowNull: false }),
+    channelId: generateStringField({
       allowNull: false,
+      sqlOptions: { field: "channel_id" },
+    }),
+    primaryMessageId: generateStringField({
+      allowNull: true,
+      sqlOptions: { field: "primary_message_id" },
     }),
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),

@@ -146,7 +146,6 @@ export default {
     async loadPresets() {
       this.loading.presets = true
       this.getInputObject('event').options = await getEventsByGroup(this)
-      console.log(this.getInputObject('event').options)
       this.getInputObject('era').options = await getEras(this)
       this.loading.presets = false
     },

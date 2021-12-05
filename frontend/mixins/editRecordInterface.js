@@ -588,7 +588,7 @@ export default {
             // is the field in selectedItem? if so, use that and set field to readonly
             if (fieldKey in this.selectedItem) {
               inputObject.value = this.selectedItem[fieldKey]
-              readonly = true
+              inputObject.readonly = true
             } else {
               inputObject.value = fieldInfo.default
                 ? await fieldInfo.default(this)
