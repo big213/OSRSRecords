@@ -88,7 +88,7 @@
 </template>
 
 <script>
-import ViewRecordInterface from '~/components/interface/crud/viewRecordInterface.vue'
+import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import RecordActionMenu from '~/components/menu/recordActionMenu.vue'
 import { executeGiraffeql } from '~/services/giraffeql'
@@ -102,7 +102,7 @@ import CrudRecordInterface from '~/components/interface/crud/crudRecordInterface
 
 export default {
   components: {
-    ViewRecordInterface,
+    ViewRecordTableInterface,
     EditRecordDialog,
     RecordActionMenu,
   },
@@ -146,7 +146,7 @@ export default {
       return !!this.expandTypeObject
     },
     currentInterface() {
-      return this.recordInfo.viewOptions.component || ViewRecordInterface
+      return this.recordInfo.viewOptions.component || ViewRecordTableInterface
     },
     hiddenSubFilters() {
       if (!this.isExpanded) return []

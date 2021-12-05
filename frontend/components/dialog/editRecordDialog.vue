@@ -49,7 +49,6 @@
 <script>
 import EditRecordInterface from '~/components/interface/crud/editRecordInterface.vue'
 import ImportRecordInterface from '~/components/interface/crud/importRecordInterface.vue'
-import ViewRecordInterface from '~/components/interface/crud/viewRecordInterface.vue'
 import DeleteRecordInterface from '~/components/interface/crud/deleteRecordInterface.vue'
 import ShareRecordInterface from '~/components/interface/crud/shareRecordInterface.vue'
 import ViewRecordTableInterface from '~/components/interface/crud/viewRecordTableInterface.vue'

@@ -517,20 +517,27 @@ export class SubmissionService extends PaginatedService {
           .join(", ")}\`\`\`\n🔸 to **Top 3 ${submission["event.name"]} - ${
           submission.participants
         }-Man**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>`,
-        embeds: [
+        components: [
           {
-            title: `Top 3 Alert: ${submission["event.name"]} - ${submission.participants}-Man`,
-            url: generateCrudRecordInterfaceUrl(
-              "/leaderboard",
-              generateLeaderboardPageOptions({
-                eventId: submission["event.id"],
-                eraId: submission["era.id"],
-                participants: submission.participants,
-              })
-            ),
-            description: "Click link to view full leaderboard",
+            type: 1,
+            components: [
+              {
+                type: 2,
+                label: "View Full Leaderboard",
+                style: 5,
+                url: generateCrudRecordInterfaceUrl(
+                  "/leaderboard",
+                  generateLeaderboardPageOptions({
+                    eventId: submission["event.id"],
+                    eraId: submission["era.id"],
+                    participants: submission.participants,
+                  })
+                ),
+              },
+            ],
           },
         ],
+
         /*
         embeds: [
           {
