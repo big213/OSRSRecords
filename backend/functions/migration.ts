@@ -86,6 +86,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.json("external_links").notNullable().defaultTo([]);
       table.text("private_comments").nullable();
       table.text("public_comments").nullable();
+      table.string("discord_message_id").nullable();
       table.boolean("is_record").notNullable().defaultTo(false);
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();

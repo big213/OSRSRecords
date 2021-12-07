@@ -113,6 +113,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "public_comments",
       },
     }),
+    discordMessageId: generateStringField({
+      allowNull: true,
+      sqlOptions: {
+        field: "discord_message_id",
+      },
+      typeDefOptions: { addable: false, updateable: false }, // automatically generated
+    }),
     mainExternalLink: {
       type: Scalars.url,
       allowNull: true,

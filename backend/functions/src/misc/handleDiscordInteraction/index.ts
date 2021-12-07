@@ -24,12 +24,15 @@ app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
       });
     } else if (message.type === InteractionType.MESSAGE_COMPONENT) {
       const customIdParts = message.data.custom_id.split("_");
+
       const command = customIdParts[0];
       const submissionId = customIdParts[1];
+      const status = message.data.values[0];
+
+      if (!status) throw new Error("Status required");
 
       switch (command) {
-        case "approve":
-        case "reject":
+        case "updateSubmissionStatus":
           // call API with api-key to reject or approve
           await executeGiraffeql({
             updateSubmission: {
@@ -38,40 +41,11 @@ app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
                   id: submissionId,
                 },
                 fields: {
-                  status: command === "approve" ? "APPROVED" : "REJECTED",
+                  status,
                 },
               },
             },
           });
-          // update the message
-          res.send({
-            type: InteractionResponseType.UPDATE_MESSAGE,
-            data: {
-              embeds: [
-                {
-                  title: `New submission ${
-                    command === "approve" ? "Approved" : "Rejected"
-                  }`,
-                  url: "https://osrsrecords.com/submissions?pageOptions=eyJzb3J0QnkiOlsiY3JlYXRlZEF0Il0sInNvcnREZXNjIjpbdHJ1ZV0sImZpbHRlcnMiOlt7ImZpZWxkIjoic3RhdHVzIiwib3BlcmF0b3IiOiJpbiIsInZhbHVlIjpbIlVOREVSX1JFVklFVyIsIlNVQk1JVFRFRCJdfV19",
-                  color: command === "approve" ? 65280 : 16711680,
-                },
-              ],
-              components: [
-                {
-                  type: 1,
-                  components: [
-                    {
-                      type: 2,
-                      label: "View Submission",
-                      style: 5,
-                      url: `https://osrsrecords.com/a/view?id=${submissionId}&expand=0&type=submission`,
-                    },
-                  ],
-                },
-              ],
-            },
-          });
-          break;
         default:
           throw new Error("Invalid button command");
       }

@@ -6,12 +6,16 @@ import {
   updateObjectType,
 } from "../../core/helpers/resolver";
 import { PaginatedService } from "../../core/services";
-import { sendDiscordMessage, channelMap } from "../../helpers/discord";
+import {
+  sendDiscordMessage,
+  channelMap,
+  generateSubmissionMessage,
+  updateDiscordMessage,
+} from "../../helpers/discord";
 import {
   countTableRows,
   deleteTableRow,
   fetchTableRows,
-  SqlWhereFieldObject,
   updateTableRow,
 } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
@@ -209,38 +213,24 @@ export class SubmissionService extends PaginatedService {
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
   ) {
-    sendDiscordMessage(channelMap.subAlerts, {
-      embeds: [
-        {
-          title: "New submission received",
-          url: "https://osrsrecords.com/submissions?pageOptions=eyJzb3J0QnkiOlsiY3JlYXRlZEF0Il0sInNvcnREZXNjIjpbdHJ1ZV0sImZpbHRlcnMiOlt7ImZpZWxkIjoic3RhdHVzIiwib3BlcmF0b3IiOiJpbiIsInZhbHVlIjpbIlVOREVSX1JFVklFVyIsIlNVQk1JVFRFRCJdfV19",
-          color: 15105570,
-        },
-      ],
-      components: [
-        {
-          type: 1,
-          components: [
-            {
-              type: 2,
-              label: "Approve",
-              style: 3,
-              custom_id: "approve_" + itemId,
-            },
-          ],
-        },
-        {
-          type: 1,
-          components: [
-            {
-              type: 2,
-              label: "Reject",
-              style: 4,
-              custom_id: "reject_" + itemId,
-            },
-          ],
-        },
-      ],
+    const discordMessage = await sendDiscordMessage(
+      channelMap.subAlerts,
+      generateSubmissionMessage(itemId, submissionStatusKenum.SUBMITTED)
+    );
+
+    await updateTableRow({
+      fields: {
+        discordMessageId: discordMessage.id,
+      },
+      table: this.typename,
+      where: {
+        fields: [
+          {
+            field: "id",
+            value: itemId,
+          },
+        ],
+      },
     });
 
     /*
@@ -267,7 +257,15 @@ export class SubmissionService extends PaginatedService {
     const validatedArgs = <any>args;
 
     const item = await this.lookupRecord(
-      ["id", "event.id", "participants", "era.id", "score", "status"],
+      [
+        "id",
+        "event.id",
+        "participants",
+        "era.id",
+        "score",
+        "status",
+        "discordMessageId",
+      ],
       validatedArgs.item,
       fieldPath
     );
@@ -298,9 +296,7 @@ export class SubmissionService extends PaginatedService {
         eventId: item["event.id"],
         participants: item.participants,
         eraId: item["era.id"],
-        status: validatedArgs.fields.status
-          ? submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
-          : null,
+        status: submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
         score: item.score,
       });
 
@@ -331,6 +327,18 @@ export class SubmissionService extends PaginatedService {
         ranking,
         fieldPath,
       });
+
+      // if the status was updated, also force refresh of the discordMessage, if any
+      if (item.discordMessageId) {
+        await updateDiscordMessage(
+          channelMap.subAlerts,
+          item.discordMessageId,
+          generateSubmissionMessage(
+            item.id,
+            submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
+          )
+        );
+      }
     }
 
     // do post-update fn, if any
