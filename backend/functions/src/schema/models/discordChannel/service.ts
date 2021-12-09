@@ -3,6 +3,9 @@ import { fetchTableRows, SqlWhereFieldObject } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 import { submissionStatusKenum } from "../../enums";
 import {
+  decimalColors,
+  generateParticipantsText,
+  placeColorCodes,
   sendDiscordMessage,
   updateDiscordMessage,
 } from "../../helpers/discord";
@@ -24,10 +27,10 @@ type outputObject = {
   event: any;
   era: any;
   participants: any;
-  submissions: {
+  submissions: ({
     submission: any;
     characters: any[];
-  }[];
+  } | null)[];
 };
 
 export class DiscordChannelService extends PaginatedService {
@@ -180,8 +183,15 @@ export class DiscordChannelService extends PaginatedService {
         }))
       );
 
-      // for each submission, also populate the characters field
+      // if submissions is not the correct length, fill in with nulls until it is
+      while (heading.submissions.length < output.ranksToShow) {
+        heading.submissions.push(null);
+      }
+
+      // for each submission, also populate the characters field if non-null
       for (const submissionObject of heading.submissions) {
+        if (!submissionObject) continue;
+
         const submissionLinks = await fetchTableRows({
           select: [{ field: "character.name" }],
           from: SubmissionCharacterParticipantLink.typename,
@@ -217,7 +227,9 @@ export class DiscordChannelService extends PaginatedService {
 
     outputArray.forEach((outputObject) => {
       embeds.push({
-        title: `${outputObject.event.name} ${outputObject.participants}-Man`,
+        title: `${outputObject.event.name} ${generateParticipantsText(
+          outputObject.participants
+        )}`,
         url: generateCrudRecordInterfaceUrl(
           "/leaderboard",
           generateLeaderboardPageOptions({
@@ -229,14 +241,20 @@ export class DiscordChannelService extends PaginatedService {
         description: "Click link to view full leaderboard",
       });
 
-      outputObject.submissions.forEach((submissionObject) => {
-        embeds.push({
-          title: `${serializeTime(
-            submissionObject.submission.score
-          )} - ${submissionObject.characters.join(", ")}`,
-          url: submissionObject.submission.externalLinks[0],
-          color: 15105570,
-        });
+      outputObject.submissions.forEach((submissionObject, index) => {
+        if (!submissionObject) {
+          embeds.push({
+            title: "N/A",
+          });
+        } else {
+          embeds.push({
+            title: `${serializeTime(
+              submissionObject.submission.score
+            )} - ${submissionObject.characters.join(", ")}`,
+            url: submissionObject.submission.externalLinks[0],
+            color: placeColorCodes[index] ?? decimalColors.ORANGE,
+          });
+        }
       });
     });
 

@@ -105,6 +105,8 @@ export const getEventsByGroup = <any>(
         name: true,
         avatar: true,
         backgroundImage: true,
+        minParticipants: true,
+        maxParticipants: true,
         eventGroup: {
           id: true,
         },

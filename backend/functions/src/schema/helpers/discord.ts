@@ -44,36 +44,53 @@ export async function updateDiscordMessage(
   return data;
 }
 
+export const decimalColors = {
+  ORANGE: 16752660,
+  YELLOW: 16772426,
+  GREEN: 5944670,
+  PURPLE: 10762422,
+  RED: 16077382,
+  GOLD: 16766720,
+  SILVER: 12632256,
+  BRONZE: 13808780,
+};
+
+export const placeColorCodes = [
+  decimalColors.GOLD,
+  decimalColors.SILVER,
+  decimalColors.BRONZE,
+];
+
 export const submissionStatusArray = [
   {
     text: "Submitted",
     value: "SUBMITTED",
     emoji: "🟧",
-    colorId: 16752660,
+    colorId: decimalColors.ORANGE,
   },
   {
     text: "Under Review",
     value: "UNDER_REVIEW",
     emoji: "🟨",
-    colorId: 16772426,
+    colorId: decimalColors.YELLOW,
   },
   {
     text: "Approved",
     value: "APPROVED",
     emoji: "🟩",
-    colorId: 5944670,
+    colorId: decimalColors.GREEN,
   },
   {
     text: "Information Requested",
     value: "INFORMATION_REQUESTED",
     emoji: "🟪",
-    colorId: 10762422,
+    colorId: decimalColors.PURPLE,
   },
   {
     text: "Rejected",
     value: "REJECTED",
     emoji: "🟥",
-    colorId: 16077382,
+    colorId: decimalColors.RED,
   },
 ];
 
@@ -134,4 +151,14 @@ export function generateSubmissionMessage(
       generateSubmissionStatusDropdownComponent(submissionId, selectedOption),
     ],
   };
+}
+
+const participantsTextMap = {
+  "1": "Solo",
+  "2": "Duo",
+  "3": "Trio",
+};
+
+export function generateParticipantsText(participants: number) {
+  return participantsTextMap[participants] ?? participants + "-Man";
 }

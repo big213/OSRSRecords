@@ -163,9 +163,17 @@ export default {
           if (inputs.participantsList.length < 1)
             throw new Error('Must specify at least 1 team member')
 
-          // changed: if any participants are null or falsey
+          // changed: if any participants are null or falsey, throw err
           if (inputs.participantsList.some((ele) => !ele.value))
             throw new Error('No empty participant values allowed')
+
+          // changed: if participants length > event.maxParticipants or < event.minParticipants, throw err
+          if(this.event.minParticipants && inputs.participantsList.length < this.event.minParticipants)
+            throw new Error(`This event has a minimum of ${this.event.minParticipants} team members`)
+
+          if(this.event.maxParticipants && inputs.participantsList.length > this.event.maxParticipants)
+            throw new Error(`This event has a maximum of ${this.event.maxParticipants} team members`)
+
           // changed: map of participant characters by Map<id,obj>
           inputs.participantsList.forEach((ele) => {
             participantsMap.set(ele.value, ele)

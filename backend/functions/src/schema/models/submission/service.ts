@@ -11,6 +11,7 @@ import {
   channelMap,
   generateSubmissionMessage,
   updateDiscordMessage,
+  generateParticipantsText,
 } from "../../helpers/discord";
 import {
   countTableRows,
@@ -516,15 +517,17 @@ export class SubmissionService extends PaginatedService {
                 .map((channelId) => "<#" + channelId + ">")
                 .join(" ") + "\n\n"
             : ""
-        }🔸 Added ** ${submission["event.name"]} - ${
+        }🔸 Added ** ${submission["event.name"]} - ${generateParticipantsText(
           submission.participants
-        }-Man - ${serializeTime(
+        )} - ${serializeTime(
           submission.score
         )}** by\n\`\`\`fix\n${submissionLinks
           .map((link) => link["character.name"])
-          .join(", ")}\`\`\`\n🔸 to **Top 3 ${submission["event.name"]} - ${
+          .join(", ")}\`\`\`\n🔸 to **Top 3 ${
+          submission["event.name"]
+        } - ${generateParticipantsText(
           submission.participants
-        }-Man**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>`,
+        )}**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>`,
         components: [
           {
             type: 1,
