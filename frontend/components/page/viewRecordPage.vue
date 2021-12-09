@@ -35,6 +35,9 @@
                     {{ recordInfo.name }}
                   </v-toolbar-title>
                   <v-spacer></v-spacer>
+                  <v-btn icon @click="reset()">
+                    <v-icon>mdi-refresh</v-icon>
+                  </v-btn>
                   <RecordActionMenu
                     :record-info="recordInfo"
                     :item="selectedItem"

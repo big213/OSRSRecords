@@ -13,8 +13,8 @@ const authHeaders = {
 };
 
 export const channelMap = {
-  subAlerts: "910711209450430514",
-  updateLogs: "914575134692606023",
+  subAlerts: env.discord.sub_alerts_channel_id,
+  updateLogs: env.discord.update_logs_channel_id,
 };
 
 export async function sendDiscordMessage(

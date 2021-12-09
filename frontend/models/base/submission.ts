@@ -99,6 +99,7 @@ export const Submission = <RecordInfo<'submission'>>{
         nestedValueText: 'RSN',
         typename: 'character',
       },
+      default: () => [{ key: null, value: null }],
     },
     participantsListFlat: {
       text: 'Team Members',

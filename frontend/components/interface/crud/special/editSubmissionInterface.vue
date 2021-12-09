@@ -159,6 +159,10 @@ export default {
         // changed: for add mode only
         const participantsMap = new Map()
         if (this.mode === 'add') {
+          // changed: if no participants, throw err
+          if (inputs.participantsList.length < 1)
+            throw new Error('Must specify at least 1 team member')
+
           // changed: if any participants are null or falsey
           if (inputs.participantsList.some((ele) => !ele.value))
             throw new Error('No empty participant values allowed')

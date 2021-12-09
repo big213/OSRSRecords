@@ -33,6 +33,13 @@ app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
 
       switch (command) {
         case "updateSubmissionStatus":
+          // acknowledge immediately
+          res.send({
+            type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE,
+            data: {
+              content: "PONG",
+            },
+          });
           // call API with api-key to reject or approve
           await executeGiraffeql({
             updateSubmission: {
@@ -46,22 +53,26 @@ app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
               },
             },
           });
+          break;
         default:
           throw new Error("Invalid button command");
       }
-    } else {
+    } else if (message.type === InteractionType.PING) {
       res.send({
         type: InteractionResponseType.PONG,
         data: {
           content: "PONG",
         },
       });
+    } else {
+      throw new Error("Unhandled request type");
     }
   } catch (err: any) {
+    console.log(err);
     res.send({
-      type: InteractionResponseType.PONG,
+      type: InteractionResponseType.UPDATE_MESSAGE,
       data: {
-        content: "PONG - But an error has occurred: " + err.message,
+        content: `An error has occurred: ${err.message}`,
       },
     });
   }
