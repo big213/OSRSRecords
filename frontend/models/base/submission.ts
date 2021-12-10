@@ -132,6 +132,7 @@ export const Submission = <RecordInfo<'submission'>>{
         nestedInputType: 'text',
         nestedValueText: 'Link URL',
       },
+      default: () => [null],
       component: UrlColumn,
     },
     mainExternalLink: {

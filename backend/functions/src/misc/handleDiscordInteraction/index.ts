@@ -35,9 +35,9 @@ app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
         case "updateSubmissionStatus":
           // acknowledge immediately
           res.send({
-            type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE,
+            type: InteractionResponseType.UPDATE_MESSAGE,
             data: {
-              content: "PONG",
+              content: "Processing...",
             },
           });
           // call API with api-key to reject or approve

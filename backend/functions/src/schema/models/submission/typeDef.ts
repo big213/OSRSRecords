@@ -41,12 +41,10 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     event: generateJoinableField({
       service: Event,
       allowNull: false,
-      typeDefOptions: { addable: true, updateable: false },
     }),
     era: generateJoinableField({
       service: Era,
       allowNull: false,
-      typeDefOptions: { addable: true, updateable: false },
     }),
     participants: generateIntegerField({
       allowNull: false,
@@ -70,7 +68,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       sqlOptions: {
         field: "time_elapsed",
       },
-      typeDefOptions: { addable: true, updateable: false },
+      typeDefOptions: { addable: true, updateable: true },
     }),
     happenedOn: generateUnixTimestampField({
       allowNull: false,

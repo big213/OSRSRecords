@@ -4,6 +4,8 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
 import { countTableRows, updateTableRow } from "../../core/helpers/sql";
 import { Submission } from "../../services";
+import { submissionStatusKenum } from "../../enums";
+import { GiraffeqlBaseError } from "giraffeql";
 
 export class SubmissionCharacterParticipantLinkService extends LinkService {
   defaultTypename = "submissionCharacterParticipantLink";
@@ -45,6 +47,39 @@ export class SubmissionCharacterParticipantLinkService extends LinkService {
     // args should be validated already
     const validatedArgs = <any>args;
     await this.handleLookupArgs(args, fieldPath);
+
+    // changed: check the status of the submission
+    const submission = await Submission.lookupRecord(
+      ["status", "participants", "event.maxParticipants"],
+      {
+        id: validatedArgs.submission,
+      },
+      fieldPath,
+      false
+    );
+
+    // if the status is APPROVED, don't allow adding of more links
+    if (
+      submissionStatusKenum.fromUnknown(submission.status) ===
+      submissionStatusKenum.APPROVED
+    ) {
+      throw new GiraffeqlBaseError({
+        message: "Cannot add more participant links to an approved submission",
+        fieldPath,
+      });
+    }
+
+    // make sure the number of participants is not already >= event.maxParticipants
+    if (
+      submission["event.maxParticipants"] &&
+      submission.participants >= submission["event.maxParticipants"]
+    ) {
+      throw new GiraffeqlBaseError({
+        message:
+          "The number of participants on this submission is already greater than or equal to the maximum participants allowed for the event",
+        fieldPath,
+      });
+    }
 
     const addResults = await createObjectType({
       typename: this.typename,

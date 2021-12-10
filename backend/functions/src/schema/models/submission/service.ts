@@ -31,6 +31,8 @@ import {
   generateLeaderboardPageOptions,
   serializeTime,
 } from "../../helpers/common";
+import { objectOnlyHasFields } from "../../core/helpers/shared";
+import { GiraffeqlBaseError } from "giraffeql";
 
 export class SubmissionService extends PaginatedService {
   defaultTypename = "submission";
@@ -271,6 +273,18 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
+    // changed: if more than status is being updated, the status must be !APPROVED
+    if (
+      !objectOnlyHasFields(validatedArgs.fields, ["status"]) &&
+      submissionStatusKenum.fromUnknown(item.status) ===
+        submissionStatusKenum.APPROVED
+    ) {
+      throw new GiraffeqlBaseError({
+        message: "Cannot update a submission if it is APPROVED",
+        fieldPath,
+      });
+    }
+
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
 
@@ -279,6 +293,7 @@ export class SubmissionService extends PaginatedService {
       id: item.id,
       updateFields: {
         ...validatedArgs.fields,
+        score: validatedArgs.fields.timeElapsed ?? undefined,
         updatedAt: 1,
       },
       req,

@@ -3,9 +3,8 @@ import { fetchTableRows, SqlWhereFieldObject } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 import { submissionStatusKenum } from "../../enums";
 import {
-  decimalColors,
   generateParticipantsText,
-  placeColorCodes,
+  placeEmojis,
   sendDiscordMessage,
   updateDiscordMessage,
 } from "../../helpers/discord";
@@ -97,6 +96,7 @@ export class DiscordChannelService extends PaginatedService {
           desc: false,
         },
       ],
+      limit: 10, // maximum of 10 embeds allowed per discord message
     });
 
     const outputArray: outputObject[] = [];
@@ -227,7 +227,7 @@ export class DiscordChannelService extends PaginatedService {
 
     outputArray.forEach((outputObject) => {
       embeds.push({
-        title: `${outputObject.event.name} ${generateParticipantsText(
+        title: `${outputObject.event.name} - ${generateParticipantsText(
           outputObject.participants
         )}`,
         url: generateCrudRecordInterfaceUrl(
@@ -238,23 +238,21 @@ export class DiscordChannelService extends PaginatedService {
             participants: outputObject.participants,
           })
         ),
-        description: "Click link to view full leaderboard",
-      });
-
-      outputObject.submissions.forEach((submissionObject, index) => {
-        if (!submissionObject) {
-          embeds.push({
-            title: "N/A",
-          });
-        } else {
-          embeds.push({
-            title: `${serializeTime(
-              submissionObject.submission.score
-            )} - ${submissionObject.characters.join(", ")}`,
-            url: submissionObject.submission.externalLinks[0],
-            color: placeColorCodes[index] ?? decimalColors.ORANGE,
-          });
-        }
+        description: outputObject.submissions
+          .map((submissionObject, index) => {
+            if (submissionObject) {
+              return `${
+                placeEmojis[index] ?? "(" + (index + 1) + ")"
+              } ${serializeTime(
+                submissionObject.submission.score
+              )} - ${submissionObject.characters.join(", ")} - [Proof](${
+                submissionObject.submission.externalLinks[0]
+              })`;
+            } else {
+              return `${placeEmojis[index] ?? "(" + (index + 1) + ")"} N/A`;
+            }
+          })
+          .join("\n"),
       });
     });
 

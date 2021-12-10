@@ -55,11 +55,7 @@ export const decimalColors = {
   BRONZE: 13808780,
 };
 
-export const placeColorCodes = [
-  decimalColors.GOLD,
-  decimalColors.SILVER,
-  decimalColors.BRONZE,
-];
+export const placeEmojis = ["🥇", "🥈", "🥉"];
 
 export const submissionStatusArray = [
   {
@@ -140,6 +136,7 @@ export function generateSubmissionMessage(
   selectedOption?: submissionStatusKenum
 ) {
   return {
+    content: null,
     embeds: [
       {
         title: `Submission ID ${submissionId}`,
