@@ -2,6 +2,8 @@ import type { RecordInfo } from '~/types'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
+import UrlColumn from '~/components/table/common/urlColumn.vue'
+import RecordColumn from '~/components/table/common/recordColumn.vue'
 
 export const EventClass = <RecordInfo<'eventClass'>>{
   typename: 'eventClass',
@@ -23,6 +25,31 @@ export const EventClass = <RecordInfo<'eventClass'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
+    parent: {
+      text: 'Parent Event Class',
+      fields: ['parent.id'],
+      inputType: 'server-autocomplete',
+      inputOptions: {
+        hasAvatar: true,
+        typename: 'eventClass',
+      },
+    },
+    parentRecord: {
+      text: 'Parent Event Class',
+      fields: [
+        'parent.name',
+        'parent.id',
+        'parent.__typename',
+        'parent.avatar',
+      ],
+      pathPrefix: 'parent',
+      component: RecordColumn,
+    },
+    backgroundImage: {
+      text: 'Background Image',
+      inputType: 'single-image',
+      component: UrlColumn,
+    },
     nameWithAvatar: {
       text: 'Name',
       fields: ['name', 'avatar'],
@@ -34,11 +61,6 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     },
     'createdBy.id': {
       text: 'Created By',
-    },
-    isSubEvent: {
-      text: 'Sub Event',
-      inputType: 'switch',
-      default: () => false,
     },
     createdAt: {
       text: 'Created At',
@@ -71,14 +93,19 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['avatar', 'name', 'description', 'isSubEvent'],
+    fields: ['avatar', 'name', 'description', 'backgroundImage', 'parent'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['avatar', 'name', 'description', 'isSubEvent'],
+    fields: ['avatar', 'name', 'description', 'backgroundImage', 'parent'],
   },
   viewOptions: {
-    fields: ['nameWithAvatar', 'description', 'isSubEvent'],
+    fields: [
+      'nameWithAvatar',
+      'description',
+      'backgroundImage',
+      'parentRecord',
+    ],
   },
   enterOptions: {},
   deleteOptions: {},

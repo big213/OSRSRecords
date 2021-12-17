@@ -7,7 +7,10 @@ import {
   generateCreatedByField,
   generateTypenameField,
   generateStringField,
+  generateArrayField,
+  generateIntegerField,
 } from "../../core/helpers/typeDef";
+import { Scalars } from "../..";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: EventGroup.typename,
@@ -17,6 +20,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     ...generateTypenameField(EventGroup),
     avatar: generateStringField({ allowNull: true }),
     name: generateStringField({
+      allowNull: false,
+    }),
+    contents: generateArrayField({
+      allowNull: false,
+      type: Scalars.id,
+    }),
+    sort: generateIntegerField({
       allowNull: false,
     }),
     ...generateCreatedAtField(),

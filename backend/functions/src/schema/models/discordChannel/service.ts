@@ -71,6 +71,12 @@ export class DiscordChannelService extends PaginatedService {
           field: "event.name",
         },
         {
+          field: "event.avatarOverride",
+        },
+        {
+          field: "event.eventClass.avatar",
+        },
+        {
           field: "participants",
         },
         {
@@ -106,6 +112,8 @@ export class DiscordChannelService extends PaginatedService {
         event: {
           id: output["event.id"],
           name: output["event.name"],
+          avatar:
+            output["event.avatarOverride"] ?? output["event.eventClass.avatar"],
         },
         era: {
           id: output["era.id"],
@@ -238,6 +246,11 @@ export class DiscordChannelService extends PaginatedService {
             participants: outputObject.participants,
           })
         ),
+        thumbnail: outputObject.event.avatar
+          ? {
+              url: outputObject.event.avatar,
+            }
+          : undefined,
         description: outputObject.submissions
           .map((submissionObject, index) => {
             if (submissionObject) {

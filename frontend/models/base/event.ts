@@ -2,13 +2,13 @@ import type { RecordInfo } from '~/types'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
 } from '~/services/base'
+import { getEventDifficulties } from '~/services/dropdown'
 
 export const Event = <RecordInfo<'event'>>{
   typename: 'event',
@@ -25,10 +25,20 @@ export const Event = <RecordInfo<'event'>>{
     name: {
       text: 'Name',
     },
-    avatar: {
-      text: 'Avatar',
+    avatarOverride: {
+      text: 'Avatar (Override)',
       inputType: 'avatar',
       component: AvatarColumn,
+    },
+    avatar: {
+      text: 'avatar',
+      inputType: 'avatar',
+      component: AvatarColumn,
+    },
+    backgroundImageOverride: {
+      text: 'Background Image (Override)',
+      inputType: 'single-image',
+      component: UrlColumn,
     },
     backgroundImage: {
       text: 'Background Image',
@@ -48,26 +58,6 @@ export const Event = <RecordInfo<'event'>>{
         hasAvatar: true,
         typename: 'eventClass',
       },
-    },
-    eventGroup: {
-      text: 'Event Group',
-      fields: ['eventGroup.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventGroup',
-      },
-    },
-    eventGroupRecord: {
-      text: 'Event Group',
-      fields: [
-        'eventGroup.name',
-        'eventGroup.id',
-        'eventGroup.__typename',
-        'eventGroup.avatar',
-      ],
-      pathPrefix: 'eventGroup',
-      component: RecordColumn,
     },
     eventClassRecord: {
       text: 'Event Class',
@@ -99,11 +89,10 @@ export const Event = <RecordInfo<'event'>>{
       text: 'Description',
       inputType: 'textarea',
     },
-    isHardMode: {
-      text: 'Is Hard Mode',
-      inputType: 'switch',
-      default: () => false,
-      component: BooleanColumn,
+    difficulty: {
+      text: 'Difficulty',
+      getOptions: getEventDifficulties,
+      inputType: 'select',
     },
     createdBy: {
       text: 'Created By',
@@ -127,7 +116,7 @@ export const Event = <RecordInfo<'event'>>{
         sortable: false,
       },
       {
-        field: 'isHardMode',
+        field: 'difficulty',
         width: '150px',
         sortable: false,
       },
@@ -147,25 +136,23 @@ export const Event = <RecordInfo<'event'>>{
   addOptions: {
     fields: [
       'eventClass',
-      'eventGroup',
       'minParticipants',
       'maxParticipants',
       'releaseDate',
-      'avatar',
+      'avatarOverride',
       'name',
       'description',
-      'backgroundImage',
-      'isHardMode',
+      'backgroundImageOverride',
+      'difficulty',
     ],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['eventGroup'],
+    fields: ['avatarOverride', 'backgroundImageOverride'],
   },
   viewOptions: {
     fields: [
       'eventClassRecord',
-      'eventGroupRecord',
       'minParticipants',
       'maxParticipants',
       'releaseDate',
@@ -173,7 +160,7 @@ export const Event = <RecordInfo<'event'>>{
       'name',
       'description',
       'backgroundImage',
-      'isHardMode',
+      'difficulty',
     ],
   },
   enterOptions: {},

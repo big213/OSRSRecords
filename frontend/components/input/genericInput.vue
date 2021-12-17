@@ -804,10 +804,6 @@ export default {
             }
           : valueInputObject
       )
-
-      // if keyValue and inputValue is defined, update the entries
-      if (keyValue) {
-      }
     },
 
     removeRow(index) {
@@ -1058,13 +1054,6 @@ export default {
           break
         case 'datepicker':
           this.syncDatePickerInput(this.item.value)
-          break
-        case 'key-value-array':
-        case 'value-array':
-          if (Array.isArray(this.item.value))
-            this.item.value.forEach((ele) =>
-              this.addRow(this.item.inputType === 'key-value-array', ele)
-            )
           break
       }
     },

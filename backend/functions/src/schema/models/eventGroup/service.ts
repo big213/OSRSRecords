@@ -14,6 +14,7 @@ export class EventGroupService extends PaginatedService {
     createdAt: {},
     updatedAt: {},
     name: {},
+    sort: {},
   };
 
   searchFieldsMap = {

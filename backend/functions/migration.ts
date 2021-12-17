@@ -42,7 +42,8 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("name").notNullable();
       table.string("avatar").nullable();
       table.text("description").nullable();
-      table.boolean("is_sub_event").notNullable();
+      table.string("parent").nullable();
+      table.string("background_image").nullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
@@ -51,6 +52,8 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("id").notNullable().primary();
       table.string("avatar").nullable();
       table.string("name").notNullable();
+      table.json("contents").notNullable().defaultTo([]);
+      table.integer("sort").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
@@ -58,19 +61,18 @@ export async function up(knex: Knex): Promise<void[]> {
     knex.schema.createTable("event", function (table) {
       table.string("id").notNullable().primary();
       table.string("event_class").notNullable();
-      table.string("event_group").notNullable();
       table.integer("min_participants").nullable();
       table.integer("max_participants").nullable();
       table.dateTime("release_date").notNullable();
-      table.string("avatar").nullable();
-      table.string("background_image").nullable();
+      table.string("avatar_override").nullable();
+      table.string("background_image_override").nullable();
       table.string("name").notNullable();
       table.text("description").nullable();
-      table.boolean("is_hard_mode").notNullable();
+      table.integer("difficulty").notNullable().defaultTo(2);
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
-      table.unique(["event_class", "is_hard_mode"]);
+      table.unique(["event_class", "difficulty"]);
     }),
     knex.schema.createTable("submission", function (table) {
       table.string("id").notNullable().primary();

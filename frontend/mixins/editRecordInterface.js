@@ -455,47 +455,21 @@ export default {
                 : getNestedProperty(data, primaryField)
             }
 
-            // if inputType === 'server-autocomplete', only populate the options with the specific entry, if any, and if inputObject.value not null
+            // if it is an array, populate the nestedInputsArray
             if (
-              fieldInfo.inputType === 'server-autocomplete' ||
-              fieldInfo.inputType === 'server-combobox'
+              inputObject.inputType === 'key-value-array' ||
+              inputObject.inputType === 'value-array'
             ) {
-              const originalFieldValue = inputObject.value
-              inputObject.value = null // set this to null initially while the results load, to prevent console error
-
-              console.log(originalFieldValue)
-              if (originalFieldValue) {
-                dropdownPromises.push(
-                  executeGiraffeql(this, {
-                    [`get${capitalizeString(fieldInfo.inputOptions.typename)}`]:
-                      {
-                        id: true,
-                        name: true,
-                        ...(fieldInfo.inputOptions?.hasAvatar && {
-                          avatar: true,
-                        }),
-                        __args: {
-                          id: originalFieldValue,
-                        },
-                      },
-                  })
-                    .then((res) => {
-                      // change value to object
-                      inputObject.value = res
-
-                      inputObject.options = [res]
-                    })
-                    .catch((e) => e)
+              if (Array.isArray(inputObject.value)) {
+                inputObject.value.forEach((ele) =>
+                  this.addNestedInputObject(inputObject, ele)
                 )
               }
-            } else {
-              fieldInfo.getOptions &&
-                dropdownPromises.push(
-                  fieldInfo
-                    .getOptions(this)
-                    .then((res) => (inputObject.options = res))
-                )
             }
+
+            // populate inputObjects if we need to translate any IDs to objects
+            dropdownPromises.push(...this.populateInputObject(inputObject))
+
             return inputObject
           })
         )
@@ -537,6 +511,92 @@ export default {
 
         inputObject.generation++
       })
+    },
+
+    // loops through inputObject recursively and populates the options
+    populateInputObject(inputObject) {
+      const promisesArray = []
+      if (
+        inputObject.inputType === 'server-autocomplete' ||
+        inputObject.inputType === 'server-combobox'
+      ) {
+        const originalFieldValue = inputObject.value
+        inputObject.value = null // set this to null initially while the results load, to prevent console error
+
+        if (originalFieldValue) {
+          promisesArray.push(
+            executeGiraffeql(this, {
+              [`get${capitalizeString(inputObject.inputOptions.typename)}`]: {
+                id: true,
+                name: true,
+                ...(inputObject.inputOptions?.hasAvatar && {
+                  avatar: true,
+                }),
+                __args: {
+                  id: originalFieldValue,
+                },
+              },
+            })
+              .then((res) => {
+                // change value to object
+                inputObject.value = res
+                inputObject.options = [res]
+              })
+              .catch((e) => e)
+          )
+        }
+      } else if (inputObject.inputType === 'value-array') {
+        // if it is a value-array, recursively process the nestedValueArray
+        inputObject.nestedInputsArray.forEach((nestedInputObject) => {
+          promisesArray.push(...this.populateInputObject(nestedInputObject))
+        })
+      } else if (inputObject.inputType === 'key-value-array') {
+        // if it is a key-value-array, recursively process the nestedValueArray
+        inputObject.nestedInputsArray
+          .map((ele) => ele.value)
+          .forEach((nestedInputObject) => {
+            promisesArray.push(...this.populateInputObject(nestedInputObject))
+          })
+      } else {
+        if (inputObject.fieldInfo.getOptions) {
+          promisesArray.push(
+            inputObject.fieldInfo
+              .getOptions(this)
+              .then((res) => (inputObject.options = res))
+          )
+        }
+      }
+
+      return promisesArray
+    },
+
+    addNestedInputObject(parentInputObject, inputValue = null) {
+      const isKeyValue = parentInputObject.inputType === 'key-value-array'
+
+      const valueInputObject = {
+        ...parentInputObject,
+        isNested: true,
+        clearable: true,
+        label: parentInputObject.inputOptions?.nestedValueText ?? 'Element',
+        inputType: parentInputObject.inputOptions?.nestedInputType,
+        value: isKeyValue ? (inputValue ? inputValue.value : null) : inputValue,
+        options: [],
+        nestedInputsArray: [],
+      }
+      parentInputObject.nestedInputsArray.push(
+        isKeyValue
+          ? {
+              key: {
+                isNested: false,
+                label: parentInputObject.inputOptions?.nestedKeyText ?? 'Key',
+                inputType: 'text',
+                clearable: true,
+                value: inputValue ? inputValue.key : null,
+              },
+              value: valueInputObject,
+            }
+          : valueInputObject
+      )
     },
 
     async reset() {

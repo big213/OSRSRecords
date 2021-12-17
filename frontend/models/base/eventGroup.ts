@@ -28,6 +28,20 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
       fields: ['name', 'avatar'],
       component: NameAvatarColumn,
     },
+    contents: {
+      text: 'Contents',
+      inputType: 'value-array',
+      inputOptions: {
+        nestedInputType: 'server-autocomplete',
+        nestedValueText: 'Event',
+        typename: 'event',
+        hasAvatar: true,
+      },
+    },
+    sort: {
+      text: 'Sort Order',
+      default: (_that) => 10,
+    },
     createdBy: {
       text: 'Created By',
       fields: ['createdBy.id'],
@@ -46,6 +60,11 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
     filters: [],
     headers: [
       {
+        field: 'sort',
+        sortable: true,
+        width: '110px',
+      },
+      {
         field: 'nameWithAvatar',
         sortable: false,
       },
@@ -63,14 +82,14 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['avatar', 'name'],
+    fields: ['sort', 'avatar', 'name', 'contents'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
-    fields: ['avatar', 'name'],
+    fields: ['sort', 'avatar', 'name', 'contents'],
   },
   viewOptions: {
-    fields: ['nameWithAvatar'],
+    fields: ['sort', 'nameWithAvatar', 'contents'],
   },
   enterOptions: {},
   deleteOptions: {},

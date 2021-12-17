@@ -325,6 +325,15 @@ export default {
           }),
           loginRequired: false,
         },
+        {
+          icon: 'mdi-account',
+          title: 'Characters',
+          to: generateCrudRecordInterfaceRoute('/public-characters', {
+            sortBy: ['createdAt'],
+            sortDesc: [true],
+          }),
+          loginRequired: false,
+        },
       ],
       userItems: [
         {

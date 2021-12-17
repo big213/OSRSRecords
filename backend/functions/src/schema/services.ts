@@ -1,4 +1,8 @@
-import { submissionStatusKenum, userRoleKenum } from "./enums";
+import {
+  eventDifficultyKenum,
+  submissionStatusKenum,
+  userRoleKenum,
+} from "./enums";
 import { KenumService } from "./core/services";
 
 import { UserService } from "./models/user/service";
@@ -11,8 +15,8 @@ import { SubmissionService } from "./models/submission/service";
 import { CharacterService } from "./models/character/service";
 import { GithubService } from "./models/github/service";
 import { FileService } from "./models/file/service";
-import { DiscordChannelService } from "./models/discordChannel/service"
-import { DiscordChannelOutputService } from "./models/discordChannelOutput/service"
+import { DiscordChannelService } from "./models/discordChannel/service";
+import { DiscordChannelOutputService } from "./models/discordChannelOutput/service";
 /** END Service Import */
 
 import { SubmissionCharacterParticipantLinkService } from "./links/submissionCharacterParticipantLink/service";
@@ -56,4 +60,9 @@ export const UserRole = new KenumService("userRole", userRoleKenum);
 export const SubmissionStatus = new KenumService(
   "submissionStatus",
   submissionStatusKenum
+);
+
+export const EventDifficulty = new KenumService(
+  "eventDifficulty",
+  eventDifficultyKenum
 );

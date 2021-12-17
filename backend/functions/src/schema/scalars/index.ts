@@ -6,6 +6,7 @@ import {
   userRoleKenum,
   submissionStatusKenum,
   userPermissionEnum,
+  eventDifficultyKenum,
 } from "../enums";
 
 import { BaseScalars, GiraffeqlScalarType } from "giraffeql";
@@ -30,6 +31,10 @@ export { jsonString } from "./jsonString";
 // generated scalars
 export const submissionStatus = new GiraffeqlScalarType(
   generateKenumScalarDefinition("submissionStatus", submissionStatusKenum)
+);
+
+export const eventDifficulty = new GiraffeqlScalarType(
+  generateKenumScalarDefinition("eventDifficulty", eventDifficultyKenum)
 );
 
 export const userRole = new GiraffeqlScalarType(

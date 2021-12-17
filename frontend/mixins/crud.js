@@ -960,7 +960,7 @@ export default {
               if (matchingInputObject.value) {
                 executeGiraffeql(this, {
                   [`get${capitalizeString(
-                    matchingInputObject.fieldInfo.typename
+                    matchingInputObject.inputOptions.typename
                   )}`]: {
                     id: true,
                     name: true,
@@ -1045,6 +1045,7 @@ export default {
               fieldInfo,
               filterInfo: ele,
               inputType: ele.inputType ?? fieldInfo.inputType,
+              inputOptions: fieldInfo.inputOptions,
               options: [],
               value: null,
               loading: false,

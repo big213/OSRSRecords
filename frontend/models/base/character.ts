@@ -2,6 +2,7 @@ import type { RecordInfo } from '~/types'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
+import { Submission } from './submission'
 
 export const Character = <RecordInfo<'character'>>{
   typename: 'character',
@@ -55,7 +56,7 @@ export const Character = <RecordInfo<'character'>>{
     },
   },
   paginationOptions: {
-    hasSearch: false,
+    hasSearch: true,
     filters: [],
     headers: [
       {
@@ -98,5 +99,28 @@ export const Character = <RecordInfo<'character'>>{
   enterOptions: {},
   deleteOptions: {},
   shareOptions: {},
-  expandTypes: [],
+  expandTypes: [
+    {
+      recordInfo: Submission,
+      name: 'Approved Submissions',
+      lockedFilters: (_that, item) => {
+        return [
+          {
+            field: 'submissionCharacterParticipantLink/character',
+            operator: 'eq',
+            value: item.id,
+          },
+          {
+            field: 'status',
+            operator: 'eq',
+            value: 'APPROVED',
+          },
+        ]
+      },
+      initialSortOptions: {
+        sortBy: ['createdAt'],
+        sortDesc: [true],
+      },
+    },
+  ],
 }

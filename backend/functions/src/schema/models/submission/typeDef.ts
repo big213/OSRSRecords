@@ -5,12 +5,7 @@ import {
   Submission,
   SubmissionCharacterParticipantLink,
 } from "../../services";
-import {
-  GiraffeqlInputFieldType,
-  GiraffeqlInputType,
-  GiraffeqlObjectType,
-  ObjectTypeDefinition,
-} from "giraffeql";
+import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
   generateCreatedAtField,
@@ -29,7 +24,7 @@ import {
   generateBooleanField,
 } from "../../core/helpers/typeDef";
 import { Scalars } from "../..";
-import { countTableRows, fetchTableRows } from "../../core/helpers/sql";
+import { fetchTableRows } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{

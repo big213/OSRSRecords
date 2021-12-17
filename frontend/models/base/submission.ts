@@ -80,6 +80,15 @@ export const Submission = <RecordInfo<'submission'>>{
         return eras.find((era) => era.isCurrent)?.id ?? null
       },
     },
+    'submissionCharacterParticipantLink/character': {
+      text: 'Character Name',
+      fields: ['submissionCharacterParticipantLink/character.id'],
+      inputType: 'server-autocomplete',
+      inputOptions: {
+        hasAvatar: true,
+        typename: 'character',
+      },
+    },
     eraRecord: {
       text: 'Era',
       fields: ['era.name', 'era.avatar', 'era.id', 'era.__typename'],
@@ -277,6 +286,11 @@ export const Submission = <RecordInfo<'submission'>>{
         field: 'participants',
         operator: 'eq',
         inputType: 'text',
+      },
+      {
+        field: 'submissionCharacterParticipantLink/character',
+        operator: 'eq',
+        inputType: 'server-autocomplete',
       },
     ],
     headers: [

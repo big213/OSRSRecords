@@ -237,9 +237,7 @@ export default {
       )
     },
     icon() {
-      return this.item.fieldInfo.typename
-        ? getIcon(this.item.fieldInfo.typename)
-        : null
+      return getIcon(this.item.inputOptions?.typename)
     },
   },
 
@@ -292,7 +290,9 @@ export default {
       inputObject.loading = true
       try {
         const results = await executeGiraffeql(this, {
-          [`get${capitalizeString(inputObject.fieldInfo.typename)}Paginator`]: {
+          [`get${capitalizeString(
+            inputObject.inputOptions.typename
+          )}Paginator`]: {
             edges: {
               node: {
                 id: true,

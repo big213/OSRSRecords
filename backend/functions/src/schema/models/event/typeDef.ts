@@ -1,4 +1,4 @@
-import { User, Event, EventClass, EventGroup } from "../../services";
+import { User, Event, EventClass } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
@@ -9,10 +9,11 @@ import {
   generateTypenameField,
   generateJoinableField,
   generateIntegerField,
-  generateBooleanField,
   generateStringField,
   generateUnixTimestampField,
+  generateEnumField,
 } from "../../core/helpers/typeDef";
+import * as Scalars from "../../scalars";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: Event.typename,
@@ -26,13 +27,6 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       sqlOptions: {
         field: "event_class",
         unique: "compositeKey",
-      },
-    }),
-    eventGroup: generateJoinableField({
-      service: EventGroup,
-      allowNull: false,
-      sqlOptions: {
-        field: "event_group",
       },
     }),
     minParticipants: generateIntegerField({
@@ -53,20 +47,51 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "release_date",
       },
     }),
-    avatar: generateStringField({ allowNull: true }),
-    backgroundImage: generateStringField({
+    avatarOverride: generateStringField({
       allowNull: true,
-      sqlOptions: { field: "background_image" },
+      sqlOptions: { field: "avatar_override" },
     }),
+    avatar: {
+      type: Scalars.string,
+      requiredSqlFields: ["avatarOverride", "eventClass.avatar"],
+      allowNull: true,
+      resolver({ parentValue }) {
+        return (
+          parentValue.avatarOverride ?? parentValue.eventClass?.avatar ?? null
+        );
+      },
+    },
+    backgroundImageOverride: generateStringField({
+      allowNull: true,
+      sqlOptions: { field: "background_image_override" },
+    }),
+    backgroundImage: {
+      type: Scalars.string,
+      requiredSqlFields: [
+        "backgroundImageOverride",
+        "eventClass.backgroundImage",
+      ],
+      allowNull: true,
+      resolver({ parentValue }) {
+        return (
+          parentValue.backgroundImageOverride ??
+          parentValue.eventClass?.backgroundImage ??
+          null
+        );
+      },
+    },
     name: generateStringField({
       allowNull: false,
     }),
     description: generateTextField({
       allowNull: true,
     }),
-    isHardMode: generateBooleanField({
+    difficulty: generateEnumField({
+      scalarDefinition: Scalars.eventDifficulty,
       allowNull: false,
-      sqlOptions: { field: "is_hard_mode", unique: "compositeKey" },
+      defaultValue: "NORMAL",
+      isKenum: true,
+      sqlOptions: { unique: "compositeKey" },
     }),
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),

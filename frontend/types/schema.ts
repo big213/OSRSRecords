@@ -92,6 +92,10 @@ export type FilterByField<T> = {
     | 'APPROVED'
     | 'INFORMATION_REQUESTED'
     | 'REJECTED'
+  /**Enum stored as a separate key value*/ eventDifficulty:
+    | 'EASY'
+    | 'NORMAL'
+    | 'HARD'
   /**Enum stored as a separate key value*/ userRole:
     | 'NONE'
     | 'NORMAL'
@@ -291,13 +295,15 @@ export type FilterByField<T> = {
     name: Scalars['string']
     avatar?: Scalars['string'] | null
     description?: Scalars['string'] | null
-    isSubEvent: Scalars['boolean']
+    parent?: InputTypes['eventClass'] | null
+    backgroundImage?: Scalars['string'] | null
   }
   updateEventClassFields: {
     name?: Scalars['string']
     avatar?: Scalars['string'] | null
     description?: Scalars['string'] | null
-    isSubEvent?: Scalars['boolean']
+    parent?: InputTypes['eventClass'] | null
+    backgroundImage?: Scalars['string'] | null
   }
   updateEventClass: {
     item: InputTypes['eventClass']
@@ -324,10 +330,12 @@ export type FilterByField<T> = {
   createEventGroup: {
     avatar?: Scalars['string'] | null
     name: Scalars['string']
+    contents?: Scalars['id'][]
   }
   updateEventGroupFields: {
     avatar?: Scalars['string'] | null
     name?: Scalars['string']
+    contents?: Scalars['id'][]
   }
   updateEventGroup: {
     item: InputTypes['eventGroup']
@@ -353,27 +361,25 @@ export type FilterByField<T> = {
   }
   createEvent: {
     eventClass: InputTypes['eventClass']
-    eventGroup: InputTypes['eventGroup']
     minParticipants?: Scalars['number'] | null
     maxParticipants?: Scalars['number'] | null
     releaseDate: Scalars['unixTimestamp']
-    avatar?: Scalars['string'] | null
-    backgroundImage?: Scalars['string'] | null
+    avatarOverride?: Scalars['string'] | null
+    backgroundImageOverride?: Scalars['string'] | null
     name: Scalars['string']
     description?: Scalars['string'] | null
-    isHardMode: Scalars['boolean']
+    difficulty?: Scalars['eventDifficulty']
   }
   updateEventFields: {
     eventClass?: InputTypes['eventClass']
-    eventGroup?: InputTypes['eventGroup']
     minParticipants?: Scalars['number'] | null
     maxParticipants?: Scalars['number'] | null
     releaseDate?: Scalars['unixTimestamp']
-    avatar?: Scalars['string'] | null
-    backgroundImage?: Scalars['string'] | null
+    avatarOverride?: Scalars['string'] | null
+    backgroundImageOverride?: Scalars['string'] | null
     name?: Scalars['string']
     description?: Scalars['string'] | null
-    isHardMode?: Scalars['boolean']
+    difficulty?: Scalars['eventDifficulty']
   }
   updateEvent: {
     item: InputTypes['event']
@@ -386,6 +392,9 @@ export type FilterByField<T> = {
   'submissionFilterByField/era.id': FilterByField<Scalars['id']>
   'submissionFilterByField/participants': FilterByField<Scalars['number']>
   'submissionFilterByField/status': FilterByField<Scalars['submissionStatus']>
+  'submissionFilterByField/submissionCharacterParticipantLink/character.id': FilterByField<
+    Scalars['id']
+  >
   submissionFilterByObject: {
     id?: InputTypes['submissionFilterByField/id']
     'createdBy.id'?: InputTypes['submissionFilterByField/createdBy.id']
@@ -393,6 +402,7 @@ export type FilterByField<T> = {
     'era.id'?: InputTypes['submissionFilterByField/era.id']
     participants?: InputTypes['submissionFilterByField/participants']
     status?: InputTypes['submissionFilterByField/status']
+    'submissionCharacterParticipantLink/character.id'?: InputTypes['submissionFilterByField/submissionCharacterParticipantLink/character.id']
   }
   submissionPaginator: {
     first?: Scalars['number']
@@ -408,7 +418,6 @@ export type FilterByField<T> = {
   createSubmission: {
     event: InputTypes['event']
     era: InputTypes['era']
-    participants?: Scalars['number']
     timeElapsed: Scalars['number']
     happenedOn: Scalars['unixTimestamp']
     world?: Scalars['number'] | null
@@ -422,7 +431,6 @@ export type FilterByField<T> = {
   updateSubmissionFields: {
     event?: InputTypes['event']
     era?: InputTypes['era']
-    participants?: Scalars['number']
     timeElapsed?: Scalars['number']
     happenedOn?: Scalars['unixTimestamp']
     status?: Scalars['submissionStatus']
@@ -568,6 +576,7 @@ export type FilterByField<T> = {
     event: InputTypes['event']
     participants?: Scalars['number'] | null
     era?: InputTypes['era'] | null
+    ranksToShow?: Scalars['number']
     sort: Scalars['number']
   }
   updateDiscordChannelOutputFields: {
@@ -575,6 +584,7 @@ export type FilterByField<T> = {
     event?: InputTypes['event']
     participants?: Scalars['number'] | null
     era?: InputTypes['era'] | null
+    ranksToShow?: Scalars['number']
     sort?: Scalars['number']
   }
   updateDiscordChannelOutput: {
@@ -667,6 +677,10 @@ export type FilterByField<T> = {
   submissionStatusEnumPaginator: {
     Typename: 'submissionStatusEnumPaginator'
     Type: GetType<SubmissionStatusEnumPaginator>
+  }
+  eventDifficultyEnumPaginator: {
+    Typename: 'eventDifficultyEnumPaginator'
+    Type: GetType<EventDifficultyEnumPaginator>
   }
   user: { Typename: 'user'; Type: GetType<User> }
   apiKey: { Typename: 'apiKey'; Type: GetType<ApiKey> }
@@ -820,6 +834,13 @@ export type SubmissionCharacterParticipantLinkEdge =
   }
   values: { Type: Scalars['submissionStatus'][]; Args: undefined }
 }
+/**EnumPaginator*/ export type EventDifficultyEnumPaginator = {
+  /**The typename of the record*/ __typename: {
+    Type: Scalars['string']
+    Args: [Scalars['number']]
+  }
+  values: { Type: Scalars['eventDifficulty'][]; Args: undefined }
+}
 /**User type*/ export type User = {
   /**The unique ID of the field*/ id: { Type: Scalars['id']; Args: undefined }
   /**The typename of the record*/ __typename: {
@@ -896,7 +917,8 @@ export type SubmissionCharacterParticipantLinkEdge =
   name: { Type: Scalars['string']; Args: undefined }
   avatar: { Type: Scalars['string'] | null; Args: undefined }
   description: { Type: Scalars['string'] | null; Args: undefined }
-  isSubEvent: { Type: Scalars['boolean']; Args: undefined }
+  parent: { Type: EventClass | null; Args: undefined }
+  backgroundImage: { Type: Scalars['string'] | null; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
     Args: undefined
@@ -915,6 +937,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   }
   avatar: { Type: Scalars['string'] | null; Args: undefined }
   name: { Type: Scalars['string']; Args: undefined }
+  contents: { Type: Scalars['id'][]; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
     Args: undefined
@@ -932,15 +955,16 @@ export type SubmissionCharacterParticipantLinkEdge =
     Args: [Scalars['number']]
   }
   eventClass: { Type: EventClass; Args: undefined }
-  eventGroup: { Type: EventGroup; Args: undefined }
   minParticipants: { Type: Scalars['number'] | null; Args: undefined }
   maxParticipants: { Type: Scalars['number'] | null; Args: undefined }
   releaseDate: { Type: Scalars['unixTimestamp']; Args: undefined }
+  avatarOverride: { Type: Scalars['string'] | null; Args: undefined }
   avatar: { Type: Scalars['string'] | null; Args: undefined }
+  backgroundImageOverride: { Type: Scalars['string'] | null; Args: undefined }
   backgroundImage: { Type: Scalars['string'] | null; Args: undefined }
   name: { Type: Scalars['string']; Args: undefined }
   description: { Type: Scalars['string'] | null; Args: undefined }
-  isHardMode: { Type: Scalars['boolean']; Args: undefined }
+  difficulty: { Type: Scalars['eventDifficulty']; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
     Args: undefined
@@ -977,6 +1001,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   externalLinks: { Type: Scalars['url'][]; Args: undefined }
   privateComments: { Type: Scalars['string'] | null; Args: undefined }
   publicComments: { Type: Scalars['string'] | null; Args: undefined }
+  discordMessageId: { Type: Scalars['string'] | null; Args: undefined }
   mainExternalLink: { Type: Scalars['url'] | null; Args: undefined }
   isRecord: { Type: Scalars['boolean']; Args: undefined }
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
@@ -1071,6 +1096,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   event: { Type: Event; Args: undefined }
   participants: { Type: Scalars['number'] | null; Args: undefined }
   era: { Type: Era | null; Args: undefined }
+  ranksToShow: { Type: Scalars['number']; Args: undefined }
   sort: { Type: Scalars['number']; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
@@ -1105,6 +1131,10 @@ export type SubmissionCharacterParticipantLinkEdge =
   getUserRoleEnumPaginator: { Type: UserRoleEnumPaginator; Args: undefined }
   getSubmissionStatusEnumPaginator: {
     Type: SubmissionStatusEnumPaginator
+    Args: undefined
+  }
+  getEventDifficultyEnumPaginator: {
+    Type: EventDifficultyEnumPaginator
     Args: undefined
   }
   getCurrentUser: { Type: User; Args: undefined }

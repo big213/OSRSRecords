@@ -77,59 +77,46 @@ export const getEventsByGroup = <any>(
         id: true,
         name: true,
         avatar: true,
+        contents: true,
       },
       {
         filterBy,
-        sortBy: ['name'],
+        sortBy: ['sort'],
       }
     )
 
-    const eventGroupsMap: Map<string, any> = new Map()
-
-    const eventGroupsArray = eventGroups.map((eventGroup) => {
-      const eventGroupObject: { data: any; childEvents: any[] } = {
-        data: eventGroup,
-        childEvents: [],
-      }
-
-      eventGroupsMap.set(eventGroupObject.data.id, eventGroupObject)
-
-      return eventGroupObject
+    // get all the events, cuz they will probably mostly be needed
+    const events = await collectPaginatorData(that, 'getEventPaginator', {
+      id: true,
+      name: true,
+      avatar: true,
+      backgroundImage: true,
+      minParticipants: true,
+      maxParticipants: true,
     })
 
-    const events = await collectPaginatorData(
-      that,
-      'getEventPaginator',
-      {
-        id: true,
-        name: true,
-        avatar: true,
-        backgroundImage: true,
-        minParticipants: true,
-        maxParticipants: true,
-        eventGroup: {
-          id: true,
-        },
-      },
-      {
-        filterBy,
-        sortBy: ['name'],
-      }
-    )
+    // create the lookup map
+    const eventsMap: Map<string, any> = new Map()
 
     events.forEach((event) => {
-      eventGroupsMap.get(event.eventGroup?.id)?.childEvents.push(event)
+      eventsMap.set(event.id, event)
+    })
+
+    // replace the contents
+    eventGroups.forEach((eventGroup) => {
+      eventGroup.contents = eventGroup.contents.map((eventId) =>
+        eventsMap.get(eventId)
+      )
     })
 
     const returnArray: any[] = []
 
-    // generate the output from eventGroupsArray
-    eventGroupsArray.forEach((eventGroupObject) => {
+    eventGroups.forEach((eventGroup) => {
       returnArray.push({
-        header: eventGroupObject.data.name,
+        header: eventGroup.name,
       })
 
-      eventGroupObject.childEvents.forEach((event) => {
+      eventGroup.contents.forEach((event) => {
         returnArray.push(event)
       })
 
@@ -186,6 +173,19 @@ export const getSubmissionStatuses = memoize(async function (
       },
     }
   )
+
+  return data.values
+})
+
+export const getEventDifficulties = memoize(async function (
+  that,
+  _forceReload = false
+) {
+  const data = await executeGiraffeql<'getEventDifficultyEnumPaginator'>(that, {
+    getEventDifficultyEnumPaginator: {
+      values: true,
+    },
+  })
 
   return data.values
 })

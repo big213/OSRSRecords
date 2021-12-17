@@ -44,6 +44,7 @@ export class SubmissionService extends PaginatedService {
     "era.id": {},
     participants: {},
     status: {},
+    "submissionCharacterParticipantLink/character.id": {}
   };
 
   sortFieldsMap = {
