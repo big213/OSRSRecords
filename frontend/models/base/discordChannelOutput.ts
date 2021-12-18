@@ -24,6 +24,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         typename: 'discordChannel',
       },
     },
+    'discordChannel.id': {},
     discordChannelName: {
       text: 'Discord Channel Name',
       fields: ['discordChannel.name'],
@@ -38,6 +39,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       },
       getOptions: getEventsByGroup,
     },
+    'event.id': {},
     eventRecord: {
       text: 'Event',
       fields: ['event.name', 'event.avatar', 'event.id', 'event.__typename'],
@@ -54,6 +56,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       },
       getOptions: getEras,
     },
+    'era.id': {},
     eraRecord: {
       text: 'Era',
       fields: ['era.name', 'era.avatar', 'era.id', 'era.__typename'],
@@ -129,7 +132,17 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         sortable: true,
       },
     ],
-    downloadOptions: {},
+    downloadOptions: {
+      fields: [
+        'id',
+        'sort',
+        'discordChannel.id',
+        'event.id',
+        'participants',
+        'era.id',
+        'ranksToShow',
+      ],
+    },
   },
   addOptions: {
     fields: [
@@ -138,6 +151,16 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'event',
       'participants',
       'era',
+      'ranksToShow',
+    ],
+  },
+  importOptions: {
+    fields: [
+      'sort',
+      'discordChannel.id',
+      'event.id',
+      'participants',
+      'era.id',
       'ranksToShow',
     ],
   },

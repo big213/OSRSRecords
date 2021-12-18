@@ -34,6 +34,7 @@ export const EventClass = <RecordInfo<'eventClass'>>{
         typename: 'eventClass',
       },
     },
+    'parent.id': {},
     parentRecord: {
       text: 'Parent Event Class',
       fields: [
@@ -90,12 +91,16 @@ export const EventClass = <RecordInfo<'eventClass'>>{
         sortable: true,
       },
     ],
-    downloadOptions: {},
+    downloadOptions: {
+      fields: ['id', 'name', 'avatar', 'backgroundImage', 'parent.id'],
+    },
   },
   addOptions: {
     fields: ['avatar', 'name', 'description', 'backgroundImage', 'parent'],
   },
-  // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
+  importOptions: {
+    fields: ['avatar', 'name', 'description', 'backgroundImage', 'parent.id'],
+  },
   editOptions: {
     fields: ['avatar', 'name', 'description', 'backgroundImage', 'parent'],
   },

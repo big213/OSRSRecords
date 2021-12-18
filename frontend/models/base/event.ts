@@ -59,6 +59,7 @@ export const Event = <RecordInfo<'event'>>{
         typename: 'eventClass',
       },
     },
+    'eventClass.id': {},
     eventClassRecord: {
       text: 'Event Class',
       fields: [
@@ -84,6 +85,14 @@ export const Event = <RecordInfo<'event'>>{
       serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
+      parseImportValue: (val: string) => {
+        if (!val) return null
+
+        // only works on certain browsers
+        const msTimestamp = new Date(val).getTime()
+
+        return msTimestamp / 1000
+      },
     },
     description: {
       text: 'Description',
@@ -131,7 +140,20 @@ export const Event = <RecordInfo<'event'>>{
         sortable: true,
       },
     ],
-    downloadOptions: {},
+    downloadOptions: {
+      fields: [
+        'id',
+        'eventClass.id',
+        'minParticipants',
+        'maxParticipants',
+        'releaseDate',
+        'avatarOverride',
+        'name',
+        'description',
+        'backgroundImageOverride',
+        'difficulty',
+      ],
+    },
   },
   addOptions: {
     fields: [
@@ -146,7 +168,19 @@ export const Event = <RecordInfo<'event'>>{
       'difficulty',
     ],
   },
-  // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
+  importOptions: {
+    fields: [
+      'eventClass.id',
+      'minParticipants',
+      'maxParticipants',
+      'releaseDate',
+      'avatarOverride',
+      'name',
+      'description',
+      'backgroundImageOverride',
+      'difficulty',
+    ],
+  },
   editOptions: {
     fields: ['avatarOverride', 'backgroundImageOverride'],
   },

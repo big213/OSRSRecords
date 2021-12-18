@@ -51,12 +51,17 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
         sortable: true,
       },
     ],
-    downloadOptions: {},
+    downloadOptions: {
+      fields: ['id', 'name'],
+    },
   },
   addOptions: {
     fields: ['name', 'channelId', 'primaryMessageId'],
   },
   editOptions: {
+    fields: ['name', 'channelId', 'primaryMessageId'],
+  },
+  importOptions: {
     fields: ['name', 'channelId', 'primaryMessageId'],
   },
   viewOptions: {

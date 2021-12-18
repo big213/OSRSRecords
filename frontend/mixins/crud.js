@@ -572,9 +572,9 @@ export default {
 
                 const fieldsToAdd = new Set()
 
-                // add all fields
+                // add only the first field
                 if (fieldInfo.fields) {
-                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  fieldsToAdd.add(fieldInfo.fields[0])
                 } else {
                   fieldsToAdd.add(field)
                 }
@@ -677,7 +677,16 @@ export default {
           ? results.map((item) => {
               const returnItem = {}
               customFields.forEach((field) => {
-                returnItem[field] = getNestedProperty(item, field)
+                const fieldInfo = this.recordInfo.fields[field]
+
+                // field unknown, abort
+                if (!fieldInfo) throw new Error('Unknown field: ' + field)
+
+                const actualField = fieldInfo.fields
+                  ? fieldInfo.fields[0]
+                  : field
+
+                returnItem[actualField] = getNestedProperty(item, actualField)
               })
               return returnItem
             })
