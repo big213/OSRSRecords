@@ -1,22 +1,16 @@
 <template>
   <div :class="{ 'expanded-table-bg': isChildComponent }">
     <v-data-table
-      :headers="headers"
+      :headers="headerOptions"
       :items="records"
       class="elevation-1"
       :loading="loading.loadData"
-      :options.sync="options"
       loading-text="Loading... Please wait"
-      :server-items-length="nextPaginatorInfo.total"
-      :footer-props="footerOptions"
+      :server-items-length="totalRecords"
       :dense="dense"
       :expanded.sync="expandedItems"
       :single-expand="hasNested"
-      @update:options="handleTableOptionsUpdated"
-      @update:sort-by="setTableOptionsUpdatedTrigger('sort')"
-      @update:sort-desc="setTableOptionsUpdatedTrigger('sort')"
-      @update:items-per-page="setTableOptionsUpdatedTrigger('itemsPerPage')"
-      @update:page="setTableOptionsUpdatedTrigger('page')"
+      hide-default-footer
     >
       <template v-slot:top>
         <v-toolbar flat color="accent" dense>
@@ -36,7 +30,7 @@
             @click="openAddRecordDialog()"
           >
             <v-icon left>mdi-plus</v-icon>
-            New<span class="hidden-xs-only">&nbsp;{{ recordInfo.name }}</span>
+            New
           </v-btn>
           <v-divider
             v-if="recordInfo.paginationOptions.hasSearch"
@@ -56,12 +50,39 @@
             </template>
           </SearchDialog>
           <v-spacer></v-spacer>
+          <v-menu v-if="sortOptions.length > 0" offset-y left>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                :text="!isXsViewport"
+                :icon="isXsViewport"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon :left="!isXsViewport">mdi-sort</v-icon>
+                <span v-if="!isXsViewport"
+                  >Sort By: {{ currentSort ? currentSort.text : 'None' }}</span
+                ></v-btn
+              >
+            </template>
+            <v-list dense>
+              <v-list-item
+                v-for="(crudSortObject, index) in sortOptions"
+                :key="index"
+                :class="{ 'selected-bg': currentSort === crudSortObject }"
+                @click="setCurrentSort(crudSortObject)"
+              >
+                <v-list-item-title>{{ crudSortObject.text }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
           <v-switch
             v-if="pollInterval > 0"
             v-model="isPolling"
             class="mt-5"
             label="Auto-Refresh"
           ></v-switch>
+
           <v-btn
             v-if="hasFilters"
             icon
@@ -93,7 +114,7 @@
           <v-btn
             :loading="loading.loadData || loading.syncData"
             icon
-            @click="syncFilters() || reset()"
+            @click="reset()"
           >
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -115,22 +136,22 @@
                 outlined
                 prepend-icon="mdi-magnify"
                 clearable
-                @change="filterChanged = true"
+                @click:clear="handleClearSearch()"
                 @keyup.enter="updatePageOptions()"
               ></v-text-field>
             </v-col>
             <v-col
-              v-for="(item, i) in visibleFiltersArray"
+              v-for="(crudFilterObject, i) in visibleFiltersArray"
               :key="i"
               cols="12"
               lg="3"
               class="py-0"
             >
-              <GenericFilterInput
-                :item="item"
-                @handle-submit="updatePageOptions"
+              <GenericInput
+                :item="crudFilterObject.inputObject"
+                @change="updatePageOptions"
                 @handle-input="filterChanged = true"
-              ></GenericFilterInput>
+              ></GenericInput>
             </v-col>
           </v-row>
           <v-toolbar v-if="filterChanged" dense flat color="transparent">
@@ -150,7 +171,7 @@
           @click="handleRowClick(props.item)"
         >
           <td
-            v-for="(headerItem, i) in headers"
+            v-for="(headerItem, i) in headerOptions"
             :key="i"
             class="v-data-table__mobile-row"
           >
@@ -204,7 +225,7 @@
           @click="handleRowClick(props.item)"
         >
           <td
-            v-for="(headerItem, i) in headers"
+            v-for="(headerItem, i) in headerOptions"
             :key="i"
             :class="headerItem.align ? 'text-' + headerItem.align : null"
             class="truncate"
@@ -244,6 +265,20 @@
           </td>
         </tr>
       </template>
+      <template v-slot:footer>
+        <div class="text-center">
+          <v-divider></v-divider>
+          <v-btn
+            v-if="records.length < totalRecords"
+            text
+            block
+            @click="loadMore()"
+            >View More</v-btn
+          >
+          (Showing {{ records.length }} of {{ totalRecords }} Records)
+        </div>
+      </template>
+
       <template v-if="hasNested" v-slot:expanded-item="{ headers }">
         <td :colspan="headers.length" class="pr-0">
           <component
@@ -323,5 +358,9 @@ export default {
   > tbody
   > tr.expanded-row-bg:hover:not(.v-data-table__expanded__content):not(.v-data-table__empty-wrapper) {
   background: var(--v-secondary-base);
+}
+
+.selected-bg {
+  background-color: var(--v-primary-base);
 }
 </style>

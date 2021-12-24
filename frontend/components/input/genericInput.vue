@@ -29,7 +29,7 @@
       </v-container>
       <div v-cloak @drop.prevent="handleMultipleDropFile" @dragover.prevent>
         <v-file-input
-          v-model="item.input"
+          v-model="item.inputValue"
           :label="
             item.label +
             ' (Drag and Drop)' +
@@ -87,7 +87,7 @@
       </v-container>
       <div v-cloak @drop.prevent="handleMultipleDropFile" @dragover.prevent>
         <v-file-input
-          v-model="item.input"
+          v-model="item.inputValue"
           :label="
             item.label +
             ' (Drag and Drop)' +
@@ -150,7 +150,7 @@
       </v-container>
       <div v-cloak @drop.prevent="handleMultipleDropFile" @dragover.prevent>
         <v-file-input
-          v-model="item.input"
+          v-model="item.inputValue"
           :label="
             item.label +
             ' (Drag and Drop)' +
@@ -194,9 +194,9 @@
       <div v-cloak @drop.prevent="handleSingleDropFile" @dragover.prevent>
         <v-file-input
           v-if="!item.readonly"
-          v-model="item.input"
+          v-model="item.inputValue"
           :append-icon="item.value ? 'mdi-close' : null"
-          :append-outer-icon="item.isNested ? 'mdi-close' : null"
+          :append-outer-icon="item.closeable ? 'mdi-close' : null"
           :clearable="false"
           accept="image/*"
           :label="item.label + (item.optional ? ' (optional)' : '')"
@@ -238,9 +238,9 @@
       </v-avatar>
       <v-file-input
         v-if="!item.readonly"
-        v-model="item.input"
+        v-model="item.inputValue"
         :append-icon="item.value ? 'mdi-close' : null"
-        :append-outer-icon="item.isNested ? 'mdi-close' : null"
+        :append-outer-icon="item.closeable ? 'mdi-close' : null"
         :clearable="false"
         class="pl-2"
         accept="image/*"
@@ -282,10 +282,10 @@
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     ></v-textarea>
     <v-switch
@@ -294,10 +294,10 @@
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     ></v-switch>
     <v-menu
@@ -315,7 +315,7 @@
           :label="item.label + (item.optional ? ' (optional)' : '')"
           :readonly="isReadonly"
           :append-icon="appendIcon"
-          :append-outer-icon="item.isNested ? 'mdi-close' : null"
+          :append-outer-icon="item.closeable ? 'mdi-close' : null"
           :hint="item.hint"
           persistent-hint
           filled
@@ -323,7 +323,7 @@
           v-bind="attrs"
           v-on="on"
           @input="syncDatePickerInput"
-          @click:append="item.value = null"
+          @click:append="handleClear()"
           @click:append-outer="handleClose()"
         ></v-text-field>
       </template>
@@ -346,12 +346,12 @@
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
       class="py-0"
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     ></v-combobox>
     <v-combobox
@@ -359,14 +359,14 @@
       ref="combobox"
       v-model="item.value"
       :loading="item.loading"
-      :search-input.sync="item.input"
+      :search-input.sync="item.inputValue"
       :items="item.options"
       item-text="name"
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
@@ -377,7 +377,7 @@
       @update:search-input="handleSearchUpdate(item)"
       @blur="item.focused = false"
       @focus="item.focused = true"
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     >
       <template
@@ -422,14 +422,14 @@
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
       return-object
       class="py-0"
       v-on="$listeners"
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     >
       <template
@@ -469,14 +469,14 @@
       v-else-if="item.inputType === 'server-autocomplete'"
       v-model="item.value"
       :loading="item.loading"
-      :search-input.sync="item.input"
+      :search-input.sync="item.inputValue"
       :items="item.options"
       item-text="name"
       item-value="id"
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       filled
@@ -488,7 +488,7 @@
       @update:search-input="handleSearchUpdate(item)"
       @blur="item.focused = false"
       @focus="item.focused = true"
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     >
       <template
@@ -535,7 +535,7 @@
       :label="item.label + (item.optional ? ' (optional)' : '')"
       :readonly="isReadonly"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
       persistent-hint
       return-object
@@ -543,7 +543,7 @@
       item-value="id"
       class="py-0"
       v-on="$listeners"
-      @click:append="handleClear"
+      @click:append="handleClear()"
       @click:append-outer="handleClose()"
     >
       <template
@@ -580,15 +580,15 @@
       </template>
     </v-select>
     <div
-      v-else-if="item.inputType === 'key-value-array'"
+      v-else-if="item.inputType === 'value-array'"
       class="accent rounded-sm mb-4"
     >
-      <v-container>
+      <v-container class="highlighted-bg">
         <v-row>
           <v-col cols="12">
             <div class="subtitle-1">
               {{ item.label + (item.optional ? ' (optional)' : '') }}
-              <v-btn v-if="!isReadonly" icon @click="addRow(true)">
+              <v-btn v-if="!isReadonly" icon @click="addRow()">
                 <v-icon>mdi-plus</v-icon>
               </v-btn>
               <v-spacer></v-spacer>
@@ -598,19 +598,26 @@
         <div v-if="item.nestedInputsArray.length > 0">
           <Draggable v-model="item.nestedInputsArray" :disabled="item.readonly">
             <v-row
-              v-for="(nestedInputObject, i) in item.nestedInputsArray"
+              v-for="(nestedInputArray, i) in item.nestedInputsArray"
               :key="i"
+              class="highlighted-bg"
             >
-              <v-col cols="6" class="py-0">
-                <GenericInput
-                  :item="nestedInputObject.key"
-                  @handle-close="removeRow(i)"
-                ></GenericInput>
+              <v-col cols="12" class="pa-0" key="-1">
+                <v-system-bar lights-out>
+                  <v-icon @click="void 0">mdi-arrow-all</v-icon>
+                  Entry #{{ i + 1 }}
+                  <v-spacer></v-spacer>
+                  <v-icon @click="removeRow(i)" color="error">mdi-close</v-icon>
+                </v-system-bar>
               </v-col>
-              <v-col cols="6" class="py-0">
+              <v-col
+                v-for="(nestedInputObject, j) in nestedInputArray"
+                cols="12"
+                class="py-0"
+                :key="j"
+              >
                 <GenericInput
-                  :item="nestedInputObject.value"
-                  @handle-close="removeRow(i)"
+                  :item="nestedInputObject.inputObject"
                 ></GenericInput>
               </v-col>
             </v-row>
@@ -619,7 +626,7 @@
         <div v-else>No elements</div>
       </v-container>
     </div>
-    <div
+    <!--     <div
       v-else-if="item.inputType === 'value-array'"
       class="accent rounded-sm mb-4"
     >
@@ -652,7 +659,7 @@
         </div>
         <div v-else>No elements</div>
       </v-container>
-    </div>
+    </div> -->
 
     <v-text-field
       v-else
@@ -662,15 +669,16 @@
       :rules="item.inputRules"
       :hint="item.hint"
       :append-icon="appendIcon"
-      :append-outer-icon="item.isNested ? 'mdi-close' : null"
+      :append-outer-icon="item.closeable ? 'mdi-close' : null"
       persistent-hint
       filled
       dense
       class="py-0"
       v-on="$listeners"
-      @click:append="item.value = null"
+      @click:append="handleClear()"
       @keyup.enter="triggerSubmit()"
       @click:append-outer="handleClose()"
+      @input="triggerInput()"
     ></v-text-field>
   </div>
 </template>
@@ -684,6 +692,7 @@ import {
   handleError,
   getIcon,
   collectPaginatorData,
+  addNestedInputObject,
 } from '~/services/base'
 import { executeGiraffeql } from '~/services/giraffeql'
 import FileChip from '~/components/chip/fileChip.vue'
@@ -697,6 +706,7 @@ export default {
     MediaChip,
   },
   props: {
+    // type: CrudInputObject
     item: {
       type: Object,
       required: true,
@@ -762,6 +772,10 @@ export default {
       this.$emit('handle-close')
     },
 
+    triggerInput() {
+      this.$emit('handle-input')
+    },
+
     triggerSubmit() {
       this.$emit('handle-submit')
     },
@@ -779,31 +793,8 @@ export default {
       }
     },
 
-    addRow(keyValue = false, inputValue = null) {
-      const valueInputObject = {
-        ...this.item,
-        isNested: true,
-        clearable: true,
-        label: this.item.inputOptions?.nestedValueText ?? 'Element',
-        inputType: this.item.inputOptions?.nestedInputType,
-        value: keyValue ? (inputValue ? inputValue.value : null) : inputValue,
-        options: [],
-        nestedInputsArray: [],
-      }
-      this.item.nestedInputsArray.push(
-        keyValue
-          ? {
-              key: {
-                isNested: false,
-                label: this.item.inputOptions?.nestedKeyText ?? 'Key',
-                inputType: 'text',
-                clearable: true,
-                value: inputValue ? inputValue.key : null,
-              },
-              value: valueInputObject,
-            }
-          : valueInputObject
-      )
+    addRow() {
+      addNestedInputObject(this.item)
     },
 
     removeRow(index) {
@@ -812,12 +803,12 @@ export default {
 
     handleSearchUpdate(inputObject) {
       // if empty input, don't do the update
-      if (!inputObject.input) return
+      if (!inputObject.inputValue) return
 
       // if inputObject is object and search === value.name, skip
       if (
         isObject(inputObject.value) &&
-        inputObject.input === inputObject.value.name
+        inputObject.inputValue === inputObject.value.name
       ) {
         return
       }
@@ -854,30 +845,30 @@ export default {
     },
 
     handleMultipleFileInputClear(inputObject, file) {
-      const index = inputObject.input.indexOf(file)
+      const index = inputObject.inputValue.indexOf(file)
 
       if (index !== -1) {
-        inputObject.input[index].fileUploadObject?.uploadTask.cancel()
-        inputObject.input.splice(index, 1)
+        inputObject.inputValue[index].fileUploadObject?.uploadTask.cancel()
+        inputObject.inputValue.splice(index, 1)
       }
 
       // if no files left, set loading to false
-      if (inputObject.input.length < 1) {
+      if (inputObject.inputValue.length < 1) {
         inputObject.loading = false
       }
     },
 
     handleMultipleDropFile(e) {
-      if (!this.item.input) this.item.input = []
-      this.item.input.push(...Array.from(e.dataTransfer.files))
+      if (!this.item.inputValue) this.item.inputValue = []
+      this.item.inputValue.push(...Array.from(e.dataTransfer.files))
 
       this.handleMultipleFileInputChange(this.item)
     },
 
     handleSingleDropFile(e) {
-      if (!this.item.input) this.item.input = []
+      if (!this.item.inputValue) this.item.inputValue = []
       const filesArray = Array.from(e.dataTransfer.files)
-      this.item.input = filesArray[filesArray.length - 1]
+      this.item.inputValue = filesArray[filesArray.length - 1]
 
       this.handleSingleFileInputChange(this.item)
     },
@@ -885,8 +876,8 @@ export default {
     handleMultipleFileInputChange(inputObject, removeFromInput = true) {
       this.$set(inputObject, 'loading', true)
 
-      // inputObject.input expected to be array
-      inputObject.input.forEach((currentFile) => {
+      // inputObject.inputValue expected to be array
+      inputObject.inputValue.forEach((currentFile) => {
         // add each file to the processing queue if the file is not already in there
         if (!this.filesProcessingQueue.has(currentFile)) {
           this.filesProcessingQueue.set(currentFile, false)
@@ -905,8 +896,8 @@ export default {
 
           // remove file from input
           if (removeFromInput) {
-            const index = inputObject.input.indexOf(file)
-            if (index !== -1) inputObject.input.splice(index, 1)
+            const index = inputObject.inputValue.indexOf(file)
+            if (index !== -1) inputObject.inputValue.splice(index, 1)
           }
 
           // remove file from the queue by the key (filename)
@@ -916,7 +907,7 @@ export default {
           this.$emit('file-added', inputObject, fileRecord)
 
           // if no files left, finish up
-          if (inputObject.input.length < 1) {
+          if (inputObject.inputValue.length < 1) {
             inputObject.loading = false
             this.handleFilesDataUpdate()
             this.$notifier.showSnackbar({
@@ -936,12 +927,12 @@ export default {
         })
       }
       inputObject.filesQueue = []
-      inputObject.input = null
+      inputObject.inputValue = null
       inputObject.loading = false
     },
 
     handleSingleFileInputChange(inputObject) {
-      if (!inputObject.input) {
+      if (!inputObject.inputValue) {
         this.handleSingleFileInputClear(inputObject)
         return
       }
@@ -955,10 +946,10 @@ export default {
       }
 
       // reset the filesQueue
-      inputObject.filesQueue = [inputObject.input]
+      inputObject.filesQueue = [inputObject.inputValue]
 
       // upload the file(s) to CDN, then load them into value on finish
-      uploadFile(this, inputObject.input, (file) => {
+      uploadFile(this, inputObject.inputValue, (file) => {
         inputObject.value = file.fileUploadObject.servingUrl
         inputObject.loading = false
 
@@ -991,7 +982,7 @@ export default {
             },
             __args: {
               first: 20,
-              search: inputObject.input,
+              search: inputObject.inputValue,
               filterBy: inputObject.fieldInfo.lookupFilters
                 ? inputObject.fieldInfo.lookupFilters(this, this.allItems)
                 : [],

@@ -11,41 +11,34 @@ export const PublicCharacter = {
         ...PublicSubmission,
         paginationOptions: {
           ...PublicSubmission.paginationOptions,
-          headers: [
+          headerOptions: [
             {
               field: 'ranking',
-              sortable: false,
               width: '100px',
             },
             {
               field: 'eventRecordWithParticipants',
-              sortable: false,
               width: '250px',
             },
             {
-              field: 'eraRecord',
-              sortable: false,
+              field: 'eventEraRecord',
               width: '250px',
             },
             {
               field: 'participantsListFlat',
-              sortable: false,
             },
             {
               field: 'score',
               width: '200px',
-              sortable: true,
               align: 'right',
             },
             {
               field: 'mainExternalLink',
-              sortable: false,
               width: '150px',
             },
             {
               field: 'happenedOn',
               width: '150px',
-              sortable: true,
             },
           ],
           downloadOptions: undefined,
@@ -67,8 +60,8 @@ export const PublicCharacter = {
         ]
       },
       initialSortOptions: {
-        sortBy: ['happenedOn'],
-        sortDesc: [true],
+        field: 'happenedOn',
+        desc: true,
       },
     },
   ],

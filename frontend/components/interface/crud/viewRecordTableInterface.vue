@@ -61,6 +61,7 @@ import {
   collapseObject,
   capitalizeString,
   serializeNestedProperty,
+  lookupFieldInfo,
 } from '~/services/base'
 import CircularLoader from '~/components/common/circularLoader.vue'
 
@@ -229,10 +230,7 @@ export default {
         // build inputs Array
         this.inputsArray = await Promise.all(
           fields.map((fieldKey) => {
-            const fieldInfo = this.recordInfo.fields[fieldKey]
-
-            // field unknown, abort
-            if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
+            const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
 
             const fieldValue = fieldInfo.hidden
               ? null

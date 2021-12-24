@@ -1,22 +1,16 @@
 <template>
   <div :class="{ 'expanded-table-bg': isChildComponent }">
     <v-data-table
-      :headers="headers"
+      :headers="headerOptions"
       :items="records"
       class="elevation-1"
       :loading="loading.loadData"
-      :options.sync="options"
       loading-text="Loading... Please wait"
-      :server-items-length="nextPaginatorInfo.total"
-      :footer-props="footerOptions"
+      :server-items-length="totalRecords"
       :dense="dense"
       :expanded.sync="expandedItems"
       :single-expand="hasNested"
-      @update:options="handleTableOptionsUpdated"
-      @update:sort-by="setTableOptionsUpdatedTrigger('sort')"
-      @update:sort-desc="setTableOptionsUpdatedTrigger('sort')"
-      @update:items-per-page="setTableOptionsUpdatedTrigger('itemsPerPage')"
-      @update:page="setTableOptionsUpdatedTrigger('page')"
+      hide-default-footer
     >
       <template v-slot:top>
         <v-toolbar flat color="accent" dense>
@@ -36,7 +30,7 @@
             @click="openAddRecordDialog()"
           >
             <v-icon left>mdi-plus</v-icon>
-            New<span class="hidden-xs-only">&nbsp;{{ recordInfo.name }}</span>
+            New
           </v-btn>
           <v-divider
             v-if="recordInfo.paginationOptions.hasSearch"
@@ -56,12 +50,39 @@
             </template>
           </SearchDialog>
           <v-spacer></v-spacer>
+          <v-menu v-if="sortOptions.length > 0" offset-y left>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                :text="!isXsViewport"
+                :icon="isXsViewport"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon :left="!isXsViewport">mdi-sort</v-icon>
+                <span v-if="!isXsViewport"
+                  >Sort By: {{ currentSort ? currentSort.text : 'None' }}</span
+                ></v-btn
+              >
+            </template>
+            <v-list dense>
+              <v-list-item
+                v-for="(crudSortObject, index) in sortOptions"
+                :key="index"
+                :class="{ 'selected-bg': currentSort === crudSortObject }"
+                @click="setCurrentSort(crudSortObject)"
+              >
+                <v-list-item-title>{{ crudSortObject.text }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
           <v-switch
             v-if="pollInterval > 0"
             v-model="isPolling"
             class="mt-5"
             label="Auto-Refresh"
           ></v-switch>
+
           <v-btn
             v-if="hasFilters"
             icon
@@ -93,7 +114,7 @@
           <v-btn
             :loading="loading.loadData || loading.syncData"
             icon
-            @click="syncFilters() || reset()"
+            @click="reset()"
           >
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -115,22 +136,22 @@
                 outlined
                 prepend-icon="mdi-magnify"
                 clearable
-                @change="filterChanged = true"
+                @click:clear="handleClearSearch()"
                 @keyup.enter="updatePageOptions()"
               ></v-text-field>
             </v-col>
             <v-col
-              v-for="(item, i) in visibleFiltersArray"
+              v-for="(crudFilterObject, i) in visibleFiltersArray"
               :key="i"
               cols="12"
               lg="3"
               class="py-0"
             >
-              <GenericFilterInput
-                :item="item"
-                @handle-submit="updatePageOptions"
+              <GenericInput
+                :item="crudFilterObject.inputObject"
+                @change="updatePageOptions"
                 @handle-input="filterChanged = true"
-              ></GenericFilterInput>
+              ></GenericInput>
             </v-col>
           </v-row>
           <v-toolbar v-if="filterChanged" dense flat color="transparent">
@@ -150,7 +171,7 @@
           @click="handleRowClick(props.item)"
         >
           <td
-            v-for="(headerItem, i) in headers"
+            v-for="(headerItem, i) in headerOptions"
             :key="i"
             class="v-data-table__mobile-row"
           >
@@ -180,27 +201,17 @@
                 {{ headerItem.text }}
               </div>
               <div class="v-data-table__mobile-row__cell truncate-mobile-row">
-                <div v-if="headerItem.value === 'rank'">
-                  <v-icon
-                    v-if="renderRank(props.index) < 4"
-                    :class="generatePlaceClass(renderRank(props.index))"
-                    >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
-                  >
-                  <span v-else class="mr-2">{{ renderRank(props.index) }}</span>
-                </div>
-                <div v-else>
-                  <component
-                    :is="headerItem.fieldInfo.component"
-                    v-if="headerItem.fieldInfo.component"
-                    :item="props.item"
-                    :field-path="headerItem.path"
-                    @submit="reset({ resetExpanded: false })"
-                    @item-updated="reset({ resetExpanded: false })"
-                  ></component>
-                  <span v-else>
-                    {{ getTableRowData(headerItem, props.item) }}
-                  </span>
-                </div>
+                <component
+                  :is="headerItem.fieldInfo.component"
+                  v-if="headerItem.fieldInfo.component"
+                  :item="props.item"
+                  :field-path="headerItem.path"
+                  @submit="reset({ resetExpanded: false })"
+                  @item-updated="reset({ resetExpanded: false })"
+                ></component>
+                <span v-else>
+                  {{ getTableRowData(headerItem, props.item) }}
+                </span>
               </div>
             </template>
           </td>
@@ -214,7 +225,7 @@
           @click="handleRowClick(props.item)"
         >
           <td
-            v-for="(headerItem, i) in headers"
+            v-for="(headerItem, i) in headerOptions"
             :key="i"
             :class="headerItem.align ? 'text-' + headerItem.align : null"
             class="truncate"
@@ -238,14 +249,6 @@
                 </template>
               </RecordActionMenu>
             </div>
-            <span v-else-if="headerItem.value === 'rank'">
-              <v-icon
-                v-if="renderRank(props.index) < 4"
-                :class="generatePlaceClass(renderRank(props.index))"
-                >mdi-numeric-{{ renderRank(props.index) }}-box</v-icon
-              >
-              <span v-else class="mr-2">{{ renderRank(props.index) }}</span>
-            </span>
             <span v-else>
               <component
                 :is="headerItem.fieldInfo.component"
@@ -262,6 +265,20 @@
           </td>
         </tr>
       </template>
+      <template v-slot:footer>
+        <div class="text-center">
+          <v-divider></v-divider>
+          <v-btn
+            v-if="records.length < totalRecords"
+            text
+            block
+            @click="loadMore()"
+            >View More</v-btn
+          >
+          (Showing {{ records.length }} of {{ totalRecords }} Records)
+        </div>
+      </template>
+
       <template v-if="hasNested" v-slot:expanded-item="{ headers }">
         <td :colspan="headers.length" class="pr-0">
           <component
@@ -332,154 +349,37 @@ import {
   handleError,
   getPaginatorData,
   serializeNestedProperty,
+  lookupFieldInfo,
 } from '~/services/base'
+
+// changed
+const requiredFilters = ['eventEra', 'event', 'status']
 
 export default {
   name: 'CrudRecordInterface',
 
   mixins: [crudMixin],
 
-  data() {
-    return {
-      rankIndex: null,
-      requiredFilters: ['era', 'event', 'status'],
-    }
-  },
-
   computed: {
-    // render the rank header ONLY if sorting by score AND with event, pbClass, setSize, isPublic, and isCurrent filters applied
+    // changed
     isRankMode() {
       let rankMode = false
-      if (this.options.sortBy[0] === 'score') {
-        const requiredFiltersSet = new Set(this.requiredFilters)
-        this.filters.concat(this.lockedFilters).forEach((filterObject) => {
-          if (requiredFiltersSet.has(filterObject.field)) {
-            requiredFiltersSet.delete(filterObject.field)
-          }
-        })
-        // if all required fields were present, add the header
-        if (requiredFiltersSet.size < 1) {
-          rankMode = true
-        }
+      if (this.currentSort?.field === 'score') {
+        rankMode =
+          requiredFilters.every((field) => {
+            return this.allFilters.find(
+              (rawFilterObject) => rawFilterObject.field === field
+            )
+          }) &&
+          this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'status'
+          )?.value === 'APPROVED'
       }
       return rankMode
-    },
-
-    headers() {
-      return (
-        this.isRankMode
-          ? [
-              {
-                text: 'Rank',
-                sortable: false,
-                value: 'rank',
-                align: 'right',
-                width: '50px',
-              },
-            ]
-          : []
-      ).concat(
-        this.recordInfo.paginationOptions.headers
-          .filter(
-            (headerInfo) => !this.hiddenHeaders.includes(headerInfo.field)
-          )
-          .filter((headerInfo) => {
-            // if there is a hideIf function, check it
-            if (headerInfo.hideIf && headerInfo.hideIf(this)) return false
-
-            // if isDialog, hide column if isDialog === true
-            if (this.isDialog && headerInfo.hideIfDialog) return false
-
-            // allow if no hideUnder
-            if (!headerInfo.hideUnder) return true
-
-            // filter out if current viewport is less than the specified hideUnder
-            return (
-              viewportToPixelsMap[this.$vuetify.breakpoint.name] >=
-              viewportToPixelsMap[headerInfo.hideUnder]
-            )
-          })
-          .map((headerInfo) => {
-            const fieldInfo = this.recordInfo.fields[headerInfo.field]
-
-            // field unknown, abort
-            if (!fieldInfo)
-              throw new Error('Unknown field: ' + headerInfo.field)
-
-            const primaryField = fieldInfo.fields
-              ? fieldInfo.fields[0]
-              : headerInfo.field
-
-            return {
-              text: fieldInfo.text ?? headerInfo.field,
-              align: headerInfo.align ?? 'left',
-              sortable: headerInfo.sortable,
-              value: primaryField,
-              width: headerInfo.width ?? null,
-              fieldInfo,
-              // equal to pathPrefix if provided
-              // else equal to the field if single-field
-              // else equal to null if multiple-field
-              path:
-                fieldInfo.pathPrefix ??
-                (fieldInfo.fields && fieldInfo.fields.length > 1
-                  ? null
-                  : primaryField),
-            }
-          })
-          .concat({
-            text: 'Actions',
-            sortable: false,
-            value: null,
-            width: '50px',
-            ...this.recordInfo.paginationOptions.headerActionOptions,
-          })
-      )
     },
   },
 
   methods: {
-    renderRank(index) {
-      // if sorting desc, index must be negative
-      const diff = this.pageOptions.sortDesc[0] ? -1 * index : index
-      return this.rankIndex ? this.rankIndex + diff : ''
-    },
-
-    generatePlaceClass(place) {
-      return place === 1
-        ? 'first-place-color'
-        : place === 2
-        ? 'second-place-color'
-        : place === 3
-        ? 'third-place-color'
-        : null
-    },
-
-    generateTrClass(props) {
-      // if descending OR not sorting by score, return null
-      if (
-        this.pageOptions.sortDesc[0] ||
-        this.pageOptions.sortBy[0] !== 'score'
-      )
-        return null
-
-      const classArray = []
-
-      classArray.push(
-        props.index === 0
-          ? 'first-place-bg'
-          : props.index === 1
-          ? 'second-place-bg'
-          : props.index === 2
-          ? 'third-place-bg'
-          : null
-      )
-
-      classArray.push(props.isExpanded ? 'expanded-row-bg' : null)
-
-      return classArray.filter((ele) => ele).join(' ')
-    },
-
     async loadData(showLoader = true, currentReloadGeneration) {
       this.loading.syncData = true
       if (showLoader) this.loading.loadData = true
@@ -489,7 +389,7 @@ export default {
 
         const query = {
           ...collapseObject(
-            this.recordInfo.paginationOptions.headers
+            this.recordInfo.paginationOptions.headerOptions
               .concat(
                 (this.recordInfo.requiredFields ?? []).map((field) => ({
                   field,
@@ -497,11 +397,14 @@ export default {
               )
               .reduce(
                 (total, headerInfo) => {
-                  const fieldInfo = this.recordInfo.fields[headerInfo.field]
+                  // changed: if field is ranking, exclude if in rank mode
+                  if (this.isRankMode && headerInfo.field === 'ranking')
+                    return total
 
-                  // field unknown, abort
-                  if (!fieldInfo)
-                    throw new Error('Unknown field: ' + headerInfo.field)
+                  const fieldInfo = lookupFieldInfo(
+                    this.recordInfo,
+                    headerInfo.field
+                  )
 
                   const fieldsToAdd = new Set()
 
@@ -539,50 +442,42 @@ export default {
         }
 
         const args = {
-          [this.positivePageDelta ? 'first' : 'last']:
-            this.options.itemsPerPage,
-          ...(this.options.page > 1 &&
-            this.positivePageDelta && {
-              after: this.currentPaginatorInfo.endCursor,
-            }),
-          ...(!this.positivePageDelta && {
-            before: this.currentPaginatorInfo.startCursor,
-          }),
-          sortBy: this.options.sortBy,
-          sortDesc: this.options.sortDesc,
+          first: this.resultsPerPage,
+          after: this.endCursor ?? undefined,
+          sortBy: this.currentSort ? [this.currentSort.field] : [],
+          sortDesc: this.currentSort ? [this.currentSort.desc] : [],
           filterBy: [
-            this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              // check if there is a parser on the fieldInfo
-              const fieldInfo = this.recordInfo.fields[ele.field]
+            this.rawFilters
+              .concat(this.lockedFilters)
+              .reduce((total, rawFilterObject) => {
+                const fieldInfo = lookupFieldInfo(
+                  this.recordInfo,
+                  rawFilterObject.field
+                )
 
-              // field unknown, abort
-              if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+                const primaryField = fieldInfo.fields
+                  ? fieldInfo.fields[0]
+                  : rawFilterObject.field
 
-              const primaryField = fieldInfo.fields
-                ? fieldInfo.fields[0]
-                : ele.field
+                if (!total[primaryField]) total[primaryField] = {}
 
-              if (!total[primaryField]) total[primaryField] = {}
+                // parse '__null' to null first
+                // also parse '__now()' to current date string
+                const value =
+                  rawFilterObject.value === '__null'
+                    ? null
+                    : rawFilterObject.value === '__now()'
+                    ? generateDateLocaleString(new Date().getTime() / 1000)
+                    : rawFilterObject.value
 
-              // parse '__null' to null first
-              // also parse '__now()' to current date string
-              const value =
-                ele.value === '__null'
-                  ? null
-                  : ele.value === '__now()'
-                  ? generateDateLocaleString(new Date().getTime() / 1000)
-                  : ele.value
+                // apply parseValue function, if any
+                total[primaryField][rawFilterObject.operator] =
+                  fieldInfo.parseValue ? fieldInfo.parseValue(value) : value
 
-              // apply parseValue function, if any
-              total[primaryField][ele.operator] = fieldInfo.parseValue
-                ? fieldInfo.parseValue(value)
-                : value
-
-              return total
-            }, {}),
+                return total
+              }, {}),
           ],
           ...(this.search && { search: this.search }),
-          ...(this.groupBy && { groupBy: this.groupBy }),
         }
 
         const results = await getPaginatorData(
@@ -595,8 +490,12 @@ export default {
         // if reloadGeneration is behind the latest one, end execution early, as the loadData request has been superseded
         if (currentReloadGeneration < this.reloadGeneration) return
 
-        // if any rows returned AND in isRankMode, fetch the rank of the first row
-        if (results.edges.length > 0 && this.isRankMode) {
+        // changed: if any rows returned, no rows currently in the table, AND in isRankMode, fetch and set the ranking of the first row
+        if (
+          results.edges.length > 0 &&
+          this.records.length < 1 &&
+          this.isRankMode
+        ) {
           const rankResults = await executeGiraffeql(this, {
             getSubmission: {
               ranking: true,
@@ -605,9 +504,7 @@ export default {
               },
             },
           })
-          this.rankIndex = rankResults.ranking
-        } else {
-          this.rankIndex = null
+          this.$set(results.edges[0].node, 'ranking', rankResults.ranking)
         }
 
         // remove any undefined serializeMap elements
@@ -622,9 +519,27 @@ export default {
           })
         })
 
-        this.records = results.edges.map((ele) => ele.node)
+        this.records.push(...results.edges.map((ele) => ele.node))
 
-        this.nextPaginatorInfo = results.paginatorInfo
+        // changed: go through all of the entries and populate the ranking field based on the first entry's ranking
+        if (this.isRankMode && this.records.length > 0) {
+          const firstResultRanking = this.records[0].ranking
+
+          this.records.forEach((record, index) => {
+            this.$set(
+              record,
+              'ranking',
+              firstResultRanking === null
+                ? null
+                : this.currentSort.desc
+                ? firstResultRanking - index
+                : firstResultRanking + index
+            )
+          })
+        }
+
+        this.totalRecords = results.paginatorInfo.total
+        this.endCursor = results.paginatorInfo.endCursor
       } catch (err) {
         handleError(this, err)
       }
@@ -644,15 +559,7 @@ export default {
   background: var(--v-secondary-base);
 }
 
-.first-place-color {
-  color: gold;
-}
-
-.second-place-color {
-  color: silver;
-}
-
-.third-place-color {
-  color: tan;
+.selected-bg {
+  background-color: var(--v-primary-base);
 }
 </style>

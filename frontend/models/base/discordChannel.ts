@@ -34,8 +34,14 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'name',
         sortable: false,
@@ -83,8 +89,8 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
         ]
       },
       initialSortOptions: {
-        sortBy: ['sort'],
-        sortDesc: [false],
+        field: 'sort',
+        desc: false,
       },
     },
   ],

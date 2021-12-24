@@ -100,6 +100,7 @@ import {
   handleError,
   collapseObject,
   serializeNestedProperty,
+  lookupFieldInfo,
 } from '~/services/base'
 import CrudRecordInterface from '~/components/interface/crud/crudRecordInterface.vue'
 
@@ -268,8 +269,7 @@ export default {
         this.subPageOptions = {
           search: null,
           filters: expandTypeObject.initialFilters ?? [],
-          sortBy: expandTypeObject.initialSortOptions?.sortBy ?? [],
-          sortDesc: expandTypeObject.initialSortOptions?.sortDesc ?? [],
+          sort: expandTypeObject.initialSortOptions ?? null,
         }
       }
     },
@@ -315,10 +315,7 @@ export default {
         if (this.recordInfo.requiredfields) {
           // check if there is a parser on the fieldInfo
           this.recordInfo.requiredfields.forEach((field) => {
-            const fieldInfo = this.recordInfo.fields[field]
-
-            // field unknown, abort
-            if (!fieldInfo) throw new Error('Unknown field: ' + field)
+            const fieldInfo = lookupFieldInfo(this.recordInfo, field)
 
             if (fieldInfo.serialize)
               serializeNestedProperty(data, field, fieldInfo.serialize)

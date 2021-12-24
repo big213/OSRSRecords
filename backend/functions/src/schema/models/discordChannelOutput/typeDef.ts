@@ -3,7 +3,7 @@ import {
   DiscordChannelOutput,
   DiscordChannel,
   Event,
-  Era,
+  EventEra,
 } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
@@ -36,9 +36,10 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     participants: generateIntegerField({
       allowNull: true,
     }),
-    era: generateJoinableField({
-      service: Era,
+    eventEra: generateJoinableField({
+      service: EventEra,
       allowNull: true,
+      sqlOptions: { field: "event_era " },
     }),
     ranksToShow: generateIntegerField({
       allowNull: false,

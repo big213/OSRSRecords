@@ -7,12 +7,14 @@ export class EventClassService extends PaginatedService {
   filterFieldsMap = {
     id: {},
     "createdBy.id": {},
+    "parent.id": {},
   };
 
   sortFieldsMap = {
     id: {},
     createdAt: {},
     updatedAt: {},
+    name: {},
   };
 
   searchFieldsMap = {

@@ -69,10 +69,10 @@ export default {
         CrudRecordInterface
       )
     },
-
     capitalizedTypename() {
       return capitalizeString(this.recordInfo.typename)
     },
+    // type: CrudPageOptions | null
     pageOptions() {
       return this.$route.query.pageOptions
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
@@ -81,21 +81,6 @@ export default {
   },
 
   methods: {
-    /** 
-     * Page Options expected structure:
-       pageOptions: {
-        search: "foo",
-        filters: [
-          {
-            field: "field1",
-            operator: "eq",
-            value: 1
-          }
-        ],
-        sortBy: ["field1"],
-        sortDesc: [true]
-      }
-     */
     handlePageOptionsUpdated(pageOptions) {
       const query = {
         ...this.$route.query,
@@ -105,7 +90,7 @@ export default {
       if (
         pageOptions.search ||
         pageOptions.filters.length ||
-        pageOptions.sortBy.length
+        pageOptions.sort
       ) {
         query.pageOptions = encodeURIComponent(
           btoa(JSON.stringify(pageOptions))

@@ -341,6 +341,34 @@ export function generateArrayField(
     sqlOptions,
     typeDefOptions,
   } = params;
+
+  // if adding a GiraffeqlObjectType, also need to register the equivalent GiraffeqlInputFieldType if it doesn't exist
+  if (type instanceof GiraffeqlObjectType) {
+    if (!inputTypeDefs.has(type.definition.name)) {
+      const fields: any = Object.entries(type.definition.fields).reduce(
+        (total, entry) => {
+          // ONLY scalars processed at the moment
+          if (entry[1].type instanceof GiraffeqlScalarType) {
+            total[entry[0]] = new GiraffeqlInputFieldType({
+              type: entry[1].type,
+              allowNull: entry[1].allowNull,
+              required: entry[1].required,
+            });
+          }
+
+          return total;
+        },
+        {}
+      );
+
+      new GiraffeqlInputType({
+        name: type.definition.name,
+        description: `Object Input matching an Object Type`,
+        fields,
+      });
+    }
+  }
+
   return generateStandardField({
     description,
     arrayOptions: {

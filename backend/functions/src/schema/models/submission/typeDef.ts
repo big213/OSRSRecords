@@ -1,11 +1,15 @@
 import {
   User,
   Event,
-  Era,
   Submission,
   SubmissionCharacterParticipantLink,
+  EventEra,
 } from "../../services";
-import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
+import {
+  GiraffeqlInputFieldType,
+  GiraffeqlObjectType,
+  ObjectTypeDefinition,
+} from "giraffeql";
 import {
   generateIdField,
   generateCreatedAtField,
@@ -37,20 +41,38 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       service: Event,
       allowNull: false,
     }),
-    era: generateJoinableField({
-      service: Era,
+    eventEra: generateJoinableField({
+      service: EventEra,
       allowNull: false,
+      sqlOptions: { field: "event_era" },
     }),
     participants: generateIntegerField({
       allowNull: false,
       defaultValue: 0,
       typeDefOptions: { addable: false, updateable: false },
     }),
+    participantsList: generateArrayField({
+      allowNull: false,
+      type: new GiraffeqlObjectType({
+        name: "participantsList",
+        fields: {
+          discordId: {
+            type: Scalars.string,
+            allowNull: false,
+          },
+          characterId: {
+            type: Scalars.id,
+            allowNull: false,
+          },
+        },
+      }),
+      sqlOptions: { field: "participants_list" },
+    }),
     participantsLinks: generatePaginatorPivotResolverObject({
       pivotService: SubmissionCharacterParticipantLink,
       filterByField: "submission.id",
     }),
-    participantsList: generatePivotResolverObject({
+    participantsLinksList: generatePivotResolverObject({
       pivotService: SubmissionCharacterParticipantLink,
       filterByField: "submission.id",
     }),
@@ -141,13 +163,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "event.id",
         "participants",
         "status",
-        "era.id",
+        "eventEra.id",
       ],
       resolver({ parentValue }) {
         return Submission.calculateRank({
           eventId: parentValue.event.id,
           participants: parentValue.participants,
-          eraId: parentValue.era.id,
+          eventEraId: parentValue.eventEra.id,
           status: submissionStatusKenum.fromUnknown(parentValue.status),
           score: parentValue.score,
         });
@@ -156,20 +178,20 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     previousRecordHappenedOn: {
       type: Scalars.unixTimestamp,
       description:
-        "The date of the previous record given the event.id, participants, and era.id, if any",
+        "The date of the previous record given the event.id, participants, and eventEra.id, if any",
       allowNull: true,
       requiredSqlFields: [
         "isRecord",
         "happenedOn",
         "event.id",
         "participants",
-        "era.id",
+        "eventEra.id",
       ],
       async resolver({ parentValue }) {
         // is !isRecord, return null
         if (!parentValue.isRecord) return null;
 
-        // check when the previous record for the event.id, participants, status === 'approved', era.id is
+        // check when the previous record for the event.id, participants, status === 'approved', eventEra.id is
         const results = await fetchTableRows({
           select: [
             {
@@ -195,9 +217,9 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
                 value: submissionStatusKenum.APPROVED.index,
               },
               {
-                field: "era.id",
+                field: "eventEra.id",
                 operator: "eq",
-                value: parentValue.era.id,
+                value: parentValue.eventEra.id,
               },
               {
                 field: "isRecord",

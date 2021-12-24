@@ -1,4 +1,5 @@
 import { InputTypes, MainTypes, FilterByField } from '~/types/schema'
+import { CrudRawFilterObject, CrudRawSortObject } from './misc'
 
 export type RecordInfo<T extends keyof MainTypes> = {
   // name of the type
@@ -31,17 +32,7 @@ export type RecordInfo<T extends keyof MainTypes> = {
       inputType?: InputType
 
       // special options pertaining to the specific inputType
-      inputOptions?: {
-        // for server-autocomplete and server-combobox
-        hasAvatar?: boolean
-        // for avatar
-        // fallbackIcon?: string
-        // the nested type for this input if it is value-array
-        nestedInputType?: InputType
-        nestedKeyText?: string
-        nestedValueText?: string
-        typename?: string
-      }
+      inputOptions?: InputOptions
 
       args?: {
         getArgs: (that) => any
@@ -80,18 +71,14 @@ export type RecordInfo<T extends keyof MainTypes> = {
         : false
       : false
     // all of the possible usable filters
-    filters: `${T}FilterByObject` extends keyof InputTypes ? RecordFilter[] : []
+    filterOptions: `${T}FilterByObject` extends keyof InputTypes
+      ? FilterObject[]
+      : []
+
+    sortOptions: SortObject[]
 
     // the headers of the table
-    headers: {
-      field: keyof MainTypes[T]['Type']
-      width?: string
-      sortable: boolean
-      align?: string
-      hideUnder?: 'sm' | 'md' | 'lg' | 'xl' // hide this column if viewport is smaller than this
-      hideIfDialog?: boolean // hide this column if shown in a dialog element
-      hideIf?: (that) => boolean
-    }[]
+    headerOptions: HeaderObject[]
     // special options for overriding the action header element
     headerActionOptions?: {
       text?: string
@@ -184,19 +171,16 @@ export type RecordInfo<T extends keyof MainTypes> = {
     // icon for the expandType, otherwise recordInfo.icon will be used
     icon?: string
     // function that will replace the lockedSubFilters() computed property in crud.js if provided
-    lockedFilters?: (that, item) => FilterObject[]
+    lockedFilters?: (that, item) => CrudRawFilterObject[]
     // headers fields that should not be shown
     excludeHeaders?: string[]
     // filter fields that should not be shown (however, they can still be manipulated in a custom component file)
     excludeFilters?: string[]
     // initial filters that should be loaded into the nested component
-    initialFilters?: FilterObject[]
+    initialFilters?: CrudRawFilterObject[]
 
     // initial sort options that should be applied to nested component
-    initialSortOptions?: {
-      sortBy: string[]
-      sortDesc: boolean[]
-    }
+    initialSortOptions?: CrudRawSortObject
   }[]
 
   customActions?: {
@@ -208,27 +192,55 @@ export type RecordInfo<T extends keyof MainTypes> = {
   }[]
 }
 
-type FilterObject = {
-  field: string
-  title?: string
-  operator: string
-  value: any
+type InputOptions = {
+  // for server-autocomplete and server-combobox
+  hasAvatar?: boolean
+  // for avatar
+  // fallbackIcon?: string
+  // the nested type for this input if it is value-array
+  // nestedInputType?: InputType
+  // nestedKeyText?: string
+  // nestedValueText?: string
+  typename?: string
+  // only applies to value-array
+  nestedFields?: {
+    key: string
+    inputType: InputType
+    text?: string
+    inputOptions?: InputOptions
+    getOptions?: (that) => Promise<any[]>
+  }[]
 }
 
-type RecordFilter = {
+type SortObject = {
+  text?: string
   field: string
-  title?: string
+  desc: boolean
+}
+
+export type FilterObject = {
+  text?: string
+  field: string
   operator: keyof FilterByField<any>
   inputType?: InputType
 }
 
-type InputType =
+type HeaderObject = {
+  field: string
+  width?: string
+  sortable?: boolean
+  align?: string
+  hideUnder?: 'sm' | 'md' | 'lg' | 'xl' // hide this column if viewport is smaller than this
+  hideIfDialog?: boolean // hide this column if shown in a dialog element
+  hideIf?: (that) => boolean
+}
+
+export type InputType =
   | 'html'
   | 'single-image'
   | 'multiple-image'
   | 'multiple-media'
   | 'multiple-file'
-  | 'key-value-array'
   | 'value-array'
   | 'avatar'
   | 'datepicker'

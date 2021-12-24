@@ -1,12 +1,7 @@
-import {
-  executeGiraffeql,
-  executeGiraffeqlSubscription,
-} from '~/services/giraffeql'
-import { unsubscribeChannels } from '~/services/pusher'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import SearchDialog from '~/components/dialog/searchDialog.vue'
 import RecordActionMenu from '~/components/menu/recordActionMenu.vue'
-import GenericFilterInput from '~/components/input/genericFilterInput.vue'
+import GenericInput from '~/components/input/genericInput.vue'
 import {
   collapseObject,
   getNestedProperty,
@@ -22,6 +17,8 @@ import {
   getIcon,
   viewportToPixelsMap,
   generateDateLocaleString,
+  lookupFieldInfo,
+  populateInputObject,
 } from '~/services/base'
 
 export default {
@@ -31,7 +28,7 @@ export default {
     EditRecordDialog,
     SearchDialog,
     RecordActionMenu,
-    GenericFilterInput,
+    GenericInput,
   },
 
   props: {
@@ -51,10 +48,7 @@ export default {
       type: Array,
       default: () => [],
     },
-    useSubscription: {
-      type: Boolean,
-      default: false,
-    },
+    // type: CrudPageOptions | null
     pageOptions: {
       type: Object,
       default: null,
@@ -75,10 +69,6 @@ export default {
     hiddenFilters: {
       type: Array,
       default: () => [],
-    },
-    groupBy: {
-      type: Array,
-      required: false,
     },
     isChildComponent: {
       type: Boolean,
@@ -101,12 +91,15 @@ export default {
 
   data() {
     return {
-      filterInputs: {},
+      // type: CrudSortObject | null
+      currentSort: null,
+
+      // type: CrudFilterObject[]
       filterInputsArray: [],
-      showFilterInterface: false,
-      searchInput: '',
       filterChanged: false,
-      filterOptions: {},
+      showFilterInterface: false,
+
+      searchInput: '',
 
       dialogs: {
         editRecord: false,
@@ -114,8 +107,6 @@ export default {
         selectedItem: null,
         editMode: 'view',
       },
-
-      subscriptionChannels: [],
 
       loading: {
         loadData: false,
@@ -125,48 +116,20 @@ export default {
 
       reloadGeneration: 0,
 
+      resultsPerPage: 25,
+
       // has the recordInfo been changed?
-      recordInfoChanged: false,
+      cancelPageOptionsReset: false,
 
       records: [],
-
-      options: {
-        page: 1,
-        itemsPerPage: 25,
-        sortBy: [],
-        sortDesc: [],
-        groupBy: [],
-        groupDesc: [],
-        mustSort: true,
-        initialLoad: true,
-      },
-
-      tableOptionsUpdatedTrigger: null,
+      totalRecords: 0,
+      endCursor: null,
 
       pollIntervalTimer: null,
       isPolling: false,
       inactivityTimer: null,
 
-      processedUpdateSort: false,
-
-      previousPage: null,
-      positivePageDelta: true,
-
-      nextPaginatorInfo: {
-        total: null,
-        startCursor: null,
-        endCursor: null,
-      },
-
-      currentPaginatorInfo: {
-        total: null,
-        startCursor: null,
-        endCursor: null,
-      },
-
-      footerOptions: {
-        'items-per-page-options': [5, 10, 25, 50],
-      },
+      currentPaginatorInfo: null,
 
       // expandable
       expandedItems: [],
@@ -177,8 +140,82 @@ export default {
   },
 
   computed: {
-    filters() {
+    // transforms SortObject[] to CrudSortObject[]
+    // type: CrudSortObject[]
+    sortOptions() {
+      return this.recordInfo.paginationOptions.sortOptions.map((sortObject) => {
+        const fieldInfo = lookupFieldInfo(this.recordInfo, sortObject.field)
+
+        return {
+          text:
+            sortObject.text ??
+            `${fieldInfo.text ?? field} (${sortObject.desc ? 'Desc' : 'Asc'})`,
+          field: sortObject.field,
+          desc: sortObject.desc,
+        }
+      })
+    },
+
+    // type: recordInfo.paginationOptions.headers to CrudHeaderObject[]
+    headerOptions() {
+      return this.recordInfo.paginationOptions.headerOptions
+        .filter((headerInfo) => !this.hiddenHeaders.includes(headerInfo.field))
+        .filter((headerInfo) => {
+          // if there is a hideIf function, check it
+          if (headerInfo.hideIf && headerInfo.hideIf(this)) return false
+
+          // if isDialog, hide column if isDialog === true
+          if (this.isDialog && headerInfo.hideIfDialog) return false
+
+          // allow if no hideUnder
+          if (!headerInfo.hideUnder) return true
+
+          // filter out if current viewport is less than the specified hideUnder
+          return (
+            viewportToPixelsMap[this.$vuetify.breakpoint.name] >=
+            viewportToPixelsMap[headerInfo.hideUnder]
+          )
+        })
+        .map((headerInfo) => {
+          const fieldInfo = lookupFieldInfo(this.recordInfo, headerInfo.field)
+
+          const primaryField = fieldInfo.fields
+            ? fieldInfo.fields[0]
+            : headerInfo.field
+
+          return {
+            text: fieldInfo.text ?? headerInfo.field,
+            align: headerInfo.align ?? 'left',
+            value: primaryField,
+            sortable: false,
+            width: headerInfo.width ?? null,
+            fieldInfo,
+            // equal to pathPrefix if provided
+            // else equal to the field if single-field
+            // else equal to null if multiple-field
+            path:
+              fieldInfo.pathPrefix ??
+              (fieldInfo.fields && fieldInfo.fields.length > 1
+                ? null
+                : primaryField),
+          }
+        })
+        .concat({
+          text: 'Actions',
+          value: null,
+          width: '50px',
+          sortable: false,
+          ...this.recordInfo.paginationOptions.headerActionOptions,
+        })
+    },
+
+    // type: CrudRawFilterObject[]
+    rawFilters() {
       return this.pageOptions?.filters ?? []
+    },
+
+    allFilters() {
+      return this.rawFilters.concat(this.lockedFilters)
     },
 
     search() {
@@ -198,68 +235,13 @@ export default {
     },
     visibleFiltersArray() {
       return this.filterInputsArray.filter(
-        (ele) => !this.hiddenFilters.includes(ele.filterInfo.field)
+        (ele) => !this.hiddenFilters.includes(ele.filterObject.field)
       )
     },
     visibleRawFiltersArray() {
-      return this.filters.filter(
+      return this.rawFilters.filter(
         (ele) => !this.hiddenFilters.includes(ele.field)
       )
-    },
-
-    headers() {
-      return this.recordInfo.paginationOptions.headers
-        .filter((headerInfo) => !this.hiddenHeaders.includes(headerInfo.field))
-        .filter((headerInfo) => {
-          // if there is a hideIf function, check it
-          if (headerInfo.hideIf && headerInfo.hideIf(this)) return false
-
-          // if isDialog, hide column if isDialog === true
-          if (this.isDialog && headerInfo.hideIfDialog) return false
-
-          // allow if no hideUnder
-          if (!headerInfo.hideUnder) return true
-
-          // filter out if current viewport is less than the specified hideUnder
-          return (
-            viewportToPixelsMap[this.$vuetify.breakpoint.name] >=
-            viewportToPixelsMap[headerInfo.hideUnder]
-          )
-        })
-        .map((headerInfo) => {
-          const fieldInfo = this.recordInfo.fields[headerInfo.field]
-
-          // field unknown, abort
-          if (!fieldInfo) throw new Error('Unknown field: ' + headerInfo.field)
-
-          const primaryField = fieldInfo.fields
-            ? fieldInfo.fields[0]
-            : headerInfo.field
-
-          return {
-            text: fieldInfo.text ?? headerInfo.field,
-            align: headerInfo.align ?? 'left',
-            sortable: headerInfo.sortable,
-            value: primaryField,
-            width: headerInfo.width ?? null,
-            fieldInfo,
-            // equal to pathPrefix if provided
-            // else equal to the field if single-field
-            // else equal to null if multiple-field
-            path:
-              fieldInfo.pathPrefix ??
-              (fieldInfo.fields && fieldInfo.fields.length > 1
-                ? null
-                : primaryField),
-          }
-        })
-        .concat({
-          text: 'Actions',
-          sortable: false,
-          value: null,
-          width: '50px',
-          ...this.recordInfo.paginationOptions.headerActionOptions,
-        })
     },
 
     hasNested() {
@@ -301,9 +283,13 @@ export default {
 
     hasFilters() {
       return (
-        this.recordInfo.paginationOptions.filters.length > 0 ||
+        this.recordInfo.paginationOptions.filterOptions.length > 0 ||
         this.recordInfo.paginationOptions.hasSearch
       )
+    },
+
+    isXsViewport() {
+      return this.$vuetify.breakpoint.name === 'xs'
     },
   },
 
@@ -326,9 +312,8 @@ export default {
 
     // this should trigger mainly when switching routes on admin pages
     recordInfo() {
-      this.recordInfoChanged = true
+      this.cancelPageOptionsReset = true
       this.reset({
-        resetSubscription: true,
         initFilters: true,
         resetSort: true,
         resetCursor: true,
@@ -337,8 +322,8 @@ export default {
 
     // this should trigger if the locked filters gets updated
     lockedFilters() {
+      this.cancelPageOptionsReset = true
       this.reset({
-        resetSubscription: true,
         initFilters: true,
         resetSort: true,
         resetCursor: true,
@@ -349,14 +334,13 @@ export default {
     // this also triggers when parent element switches to a different item
     pageOptions() {
       // if this was triggered due to a recordInfo change, do nothing and revert recordInfoChange on next tick
-      if (this.recordInfoChanged) {
+      if (this.cancelPageOptionsReset) {
         this.$nextTick(() => {
-          this.recordInfoChanged = false
+          this.cancelPageOptionsReset = false
         })
         return
       }
 
-      this.syncFilters()
       this.reset({
         resetCursor: true,
         resetSort: true,
@@ -372,9 +356,7 @@ export default {
     if (this.isDialog) this.options.itemsPerPage = 10
 
     this.reset({
-      resetSubscription: true,
       initFilters: true,
-      resetSort: true,
     })
 
     document.addEventListener(
@@ -385,9 +367,6 @@ export default {
   },
 
   destroyed() {
-    // unsubscribe from channels on this page
-    if (this.useSubscription) unsubscribeChannels(this.subscriptionChannels)
-
     this.stopPolling()
     document.removeEventListener(
       'visibilitychange',
@@ -398,6 +377,16 @@ export default {
   methods: {
     generateTimeAgoString,
     getIcon,
+
+    handleClearSearch() {
+      this.searchInput = ''
+      this.updatePageOptions()
+    },
+
+    setCurrentSort(sortObject) {
+      this.currentSort = sortObject
+      this.updatePageOptions()
+    },
 
     resetInactivityTimer(startInactivityTimer = true) {
       clearTimeout(this.inactivityTimer)
@@ -452,10 +441,6 @@ export default {
       }
     },
 
-    setTableOptionsUpdatedTrigger(trigger) {
-      this.tableOptionsUpdatedTrigger = trigger
-    },
-
     handleSearchDialogSubmit(searchInput) {
       this.searchInput = searchInput
       this.updatePageOptions()
@@ -463,24 +448,6 @@ export default {
 
     handleCustomActionClick(actionObject, item) {
       actionObject.handleClick(this, item)
-    },
-
-    handleTableOptionsUpdated() {
-      this.$nextTick(() => {
-        switch (this.tableOptionsUpdatedTrigger) {
-          case 'sort':
-            this.updatePageOptions() // this will trigger reset via the watcher
-            break
-          case 'itemsPerPage':
-            this.reset()
-            break
-          case 'page':
-            this.handleUpdatePage()
-            this.reset()
-            break
-        }
-        this.tableOptionsUpdatedTrigger = null
-      })
     },
 
     // expanded
@@ -503,8 +470,7 @@ export default {
         this.subPageOptions = {
           search: null,
           filters: expandTypeObject.initialFilters ?? [],
-          sortBy: expandTypeObject.initialSortOptions?.sortBy ?? [],
-          sortDesc: expandTypeObject.initialSortOptions?.sortDesc ?? [],
+          sort: expandTypeObject.initialSortOptions ?? null,
         }
       }
     },
@@ -520,8 +486,7 @@ export default {
         this.subPageOptions = {
           search: null,
           filters: expandTypeObject.initialFilters ?? [],
-          sortBy: expandTypeObject.initialSortOptions?.sortBy ?? [],
-          sortDesc: expandTypeObject.initialSortOptions?.sortDesc ?? [],
+          sort: expandTypeObject.initialSortOptions ?? null,
         }
       }
     },
@@ -551,7 +516,7 @@ export default {
           this.recordInfo.paginationOptions.downloadOptions.fields
         const fields =
           customFields ??
-          this.recordInfo.paginationOptions.headers
+          this.recordInfo.paginationOptions.headerOptions
             .concat(
               (this.recordInfo.requiredFields ?? []).map((field) => ({
                 field,
@@ -565,10 +530,7 @@ export default {
           ...collapseObject(
             fields.reduce(
               (total, field) => {
-                const fieldInfo = this.recordInfo.fields[field]
-
-                // field unknown, abort
-                if (!fieldInfo) throw new Error('Unknown field: ' + field)
+                const fieldInfo = lookupFieldInfo(this.recordInfo, field)
 
                 const fieldsToAdd = new Set()
 
@@ -606,50 +568,38 @@ export default {
         }
 
         const args = {
-          [this.positivePageDelta ? 'first' : 'last']:
-            this.options.itemsPerPage,
-          ...(this.options.page > 1 &&
-            this.positivePageDelta && {
-              after: this.currentPaginatorInfo.endCursor,
-            }),
-          ...(!this.positivePageDelta && {
-            before: this.currentPaginatorInfo.startCursor,
-          }),
-          sortBy: this.options.sortBy,
-          sortDesc: this.options.sortDesc,
+          sortBy: this.currentSort ? [this.currentSort.field] : [],
+          sortDesc: this.currentSort ? [this.currentSort.desc] : [],
           filterBy: [
-            this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              // check if there is a parser on the fieldInfo
-              const fieldInfo = this.recordInfo.fields[ele.field]
-
-              // field unknown, abort
-              if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+            this.allFilters.reduce((total, rawFilterObject) => {
+              const fieldInfo = lookupFieldInfo(
+                this.recordInfo,
+                rawFilterObject.field
+              )
 
               const primaryField = fieldInfo.fields
                 ? fieldInfo.fields[0]
-                : ele.field
+                : rawFilterObject.field
 
               if (!total[primaryField]) total[primaryField] = {}
 
               // parse '__null' to null first
               // also parse '__now()' to current date string
               const value =
-                ele.value === '__null'
+                rawFilterObject.value === '__null'
                   ? null
-                  : ele.value === '__now()'
+                  : rawFilterObject.value === '__now()'
                   ? generateDateLocaleString(new Date().getTime() / 1000)
-                  : ele.value
+                  : rawFilterObject.value
 
               // apply parseValue function, if any
-              total[primaryField][ele.operator] = fieldInfo.parseValue
-                ? fieldInfo.parseValue(value)
-                : value
+              total[primaryField][rawFilterObject.operator] =
+                fieldInfo.parseValue ? fieldInfo.parseValue(value) : value
 
               return total
             }, {}),
           ],
           ...(this.search && { search: this.search }),
-          ...(this.groupBy && { groupBy: this.groupBy }),
         }
 
         // fetch data
@@ -677,10 +627,7 @@ export default {
           ? results.map((item) => {
               const returnItem = {}
               customFields.forEach((field) => {
-                const fieldInfo = this.recordInfo.fields[field]
-
-                // field unknown, abort
-                if (!fieldInfo) throw new Error('Unknown field: ' + field)
+                const fieldInfo = lookupFieldInfo(this.recordInfo, field)
 
                 const actualField = fieldInfo.fields
                   ? fieldInfo.fields[0]
@@ -692,7 +639,7 @@ export default {
             })
           : results.map((item) => {
               const returnItem = {}
-              this.headers.forEach((headerObject) => {
+              this.headerOptions.forEach((headerObject) => {
                 if (headerObject.value) {
                   returnItem[headerObject.value] = this.getTableRowData(
                     headerObject,
@@ -724,19 +671,21 @@ export default {
         search: this.searchInput,
         filters: this.filterInputsArray
           .filter(
-            (filterObject) =>
-              filterObject.value !== null && filterObject.value !== undefined
+            (crudFilterObject) =>
+              crudFilterObject.inputObject.value !== null &&
+              crudFilterObject.inputObject.value !== undefined
           )
-          .map((filterObject) => ({
-            field: filterObject.filterInfo.field,
-            operator: filterObject.filterInfo.operator,
+          .map((crudFilterObject) => ({
+            field: crudFilterObject.filterObject.field,
+            operator: crudFilterObject.filterObject.operator,
             // if object, must be from return-object. get the id
-            value: isObject(filterObject.value)
-              ? filterObject.value.id
-              : filterObject.value,
+            value: isObject(crudFilterObject.inputObject.value)
+              ? crudFilterObject.inputObject.value.id
+              : crudFilterObject.inputObject.value,
           })),
-        sortBy: this.options.sortBy,
-        sortDesc: this.options.sortDesc,
+        sort: this.currentSort
+          ? { field: this.currentSort.field, desc: this.currentSort.desc }
+          : null,
       })
       this.filterChanged = false
     },
@@ -766,20 +715,16 @@ export default {
       this.openDialog('editRecord', selectedItem)
     },
 
-    handleUpdatePage() {
-      if (this.previousPage !== this.options.page) {
-        this.positivePageDelta = this.previousPage < this.options.page
-        this.previousPage = this.options.page
-
-        this.currentPaginatorInfo = this.nextPaginatorInfo
-      }
-    },
-
     openDialog(dialogName, item) {
       if (dialogName in this.dialogs) {
         this.dialogs[dialogName] = true
         this.dialogs.selectedItem = item
       }
+    },
+
+    loadMore() {
+      this.reloadGeneration++
+      this.loadData(true, this.reloadGeneration)
     },
 
     async loadData(showLoader = true, currentReloadGeneration) {
@@ -791,7 +736,7 @@ export default {
 
         const query = {
           ...collapseObject(
-            this.recordInfo.paginationOptions.headers
+            this.recordInfo.paginationOptions.headerOptions
               .concat(
                 (this.recordInfo.requiredFields ?? []).map((field) => ({
                   field,
@@ -799,11 +744,10 @@ export default {
               )
               .reduce(
                 (total, headerInfo) => {
-                  const fieldInfo = this.recordInfo.fields[headerInfo.field]
-
-                  // field unknown, abort
-                  if (!fieldInfo)
-                    throw new Error('Unknown field: ' + headerInfo.field)
+                  const fieldInfo = lookupFieldInfo(
+                    this.recordInfo,
+                    headerInfo.field
+                  )
 
                   const fieldsToAdd = new Set()
 
@@ -841,50 +785,40 @@ export default {
         }
 
         const args = {
-          [this.positivePageDelta ? 'first' : 'last']:
-            this.options.itemsPerPage,
-          ...(this.options.page > 1 &&
-            this.positivePageDelta && {
-              after: this.currentPaginatorInfo.endCursor,
-            }),
-          ...(!this.positivePageDelta && {
-            before: this.currentPaginatorInfo.startCursor,
-          }),
-          sortBy: this.options.sortBy,
-          sortDesc: this.options.sortDesc,
+          first: this.resultsPerPage,
+          after: this.endCursor ?? undefined,
+          sortBy: this.currentSort ? [this.currentSort.field] : [],
+          sortDesc: this.currentSort ? [this.currentSort.desc] : [],
           filterBy: [
-            this.filters.concat(this.lockedFilters).reduce((total, ele) => {
-              // check if there is a parser on the fieldInfo
-              const fieldInfo = this.recordInfo.fields[ele.field]
-
-              // field unknown, abort
-              if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+            this.allFilters.reduce((total, rawFilterObject) => {
+              const fieldInfo = lookupFieldInfo(
+                this.recordInfo,
+                rawFilterObject.field
+              )
 
               const primaryField = fieldInfo.fields
                 ? fieldInfo.fields[0]
-                : ele.field
+                : rawFilterObject.field
 
               if (!total[primaryField]) total[primaryField] = {}
 
               // parse '__null' to null first
               // also parse '__now()' to current date string
               const value =
-                ele.value === '__null'
+                rawFilterObject.value === '__null'
                   ? null
-                  : ele.value === '__now()'
+                  : rawFilterObject.value === '__now()'
                   ? generateDateLocaleString(new Date().getTime() / 1000)
-                  : ele.value
+                  : rawFilterObject.value
 
               // apply parseValue function, if any
-              total[primaryField][ele.operator] = fieldInfo.parseValue
-                ? fieldInfo.parseValue(value)
-                : value
+              total[primaryField][rawFilterObject.operator] =
+                fieldInfo.parseValue ? fieldInfo.parseValue(value) : value
 
               return total
             }, {}),
           ],
           ...(this.search && { search: this.search }),
-          ...(this.groupBy && { groupBy: this.groupBy }),
         }
 
         const results = await getPaginatorData(
@@ -909,9 +843,10 @@ export default {
           })
         })
 
-        this.records = results.edges.map((ele) => ele.node)
+        this.records.push(...results.edges.map((ele) => ele.node))
 
-        this.nextPaginatorInfo = results.paginatorInfo
+        this.totalRecords = results.paginatorInfo.total
+        this.endCursor = results.paginatorInfo.endCursor
       } catch (err) {
         handleError(this, err)
       }
@@ -919,104 +854,62 @@ export default {
       if (showLoader) this.loading.loadData = false
     },
 
-    async subscribeEvents() {
-      const channelName = await executeGiraffeqlSubscription(
-        this,
-        {
-          [this.recordInfo.typename + 'ListUpdated']: {
-            id: true,
-            __args: {},
-          },
-        },
-        (data) => {
-          console.log(data)
-          this.reset()
-        }
-      )
+    // syncs the pageOptions
+    syncPageOptions(syncFilters = false) {
+      // sync the search
+      this.searchInput = this.search || ''
 
-      this.subscriptionChannels.push(channelName)
-    },
+      // sync the sort
+      const sort = this.pageOptions?.sort
+      this.currentSort =
+        this.sortOptions.find(
+          (sortObject) =>
+            sortObject.field === sort?.field && sortObject.desc === sort?.desc
+        ) ?? null
 
-    // syncs the filter values with this.filters
-    syncFilters(init = false) {
-      const inputFieldsSet = new Set(this.filterInputsArray)
+      // sync the filters
+      if (syncFilters) {
+        if (this.rawFilters.length > 0) {
+          const inputFieldsSet = new Set(this.filterInputsArray)
+          this.rawFilters.forEach(async (rawFilterObject) => {
+            const matchingFilterObject = this.filterInputsArray.find(
+              (crudFilterObject) =>
+                crudFilterObject.filterObject.field === rawFilterObject.field &&
+                crudFilterObject.filterObject.operator ===
+                  rawFilterObject.operator
+            )
 
-      // parses filter into filterInputArray
-      // loads the value into an existing filterInput, if one exists.
-      this.filters.forEach((ele) => {
-        const matchingInputObject = this.filterInputsArray.find(
-          (input) =>
-            input.filterInfo.field === ele.field &&
-            input.filterInfo.operator === ele.operator
-        )
+            if (matchingFilterObject) {
+              matchingFilterObject.inputObject.value = rawFilterObject.value
 
-        if (matchingInputObject) {
-          // if inputType is server-X, do not apply the value unless init
-          if (
-            matchingInputObject.inputType !== 'server-autocomplete' &&
-            matchingInputObject.inputType !== 'server-combobox'
-          ) {
-            matchingInputObject.value = ele.value
-          }
+              // populate inputObjects if we need to translate any IDs to objects. Do NOT populate the options
+              await populateInputObject(
+                this,
+                matchingFilterObject.inputObject,
+                false
+              )
 
-          if (init) {
-            // if inputType === 'server-X', only populate the options with the specific entry, if any
-            if (
-              matchingInputObject.inputType === 'server-autocomplete' ||
-              matchingInputObject.inputType === 'server-combobox'
-            ) {
-              matchingInputObject.value = ele.value
-              if (matchingInputObject.value) {
-                executeGiraffeql(this, {
-                  [`get${capitalizeString(
-                    matchingInputObject.inputOptions.typename
-                  )}`]: {
-                    id: true,
-                    name: true,
-                    ...(matchingInputObject.fieldInfo.inputOptions
-                      ?.hasAvatar && { avatar: true }),
-                    __args: {
-                      id: ele.value,
-                    },
-                  },
-                })
-                  .then((res) => {
-                    // change value to object
-                    matchingInputObject.value = res
-
-                    matchingInputObject.options = [res]
-                  })
-                  .catch((e) => e)
-              }
+              // remove from set
+              inputFieldsSet.delete(matchingFilterObject)
             }
-          }
+          })
 
-          // remove from set
-          inputFieldsSet.delete(matchingInputObject)
+          // clears any input fields with no filterObject
+          inputFieldsSet.forEach((ele) => (ele.value = null))
         }
-      })
 
-      // clears any input fields with no filterObject
-      inputFieldsSet.forEach((ele) => (ele.value = null))
-
-      // also set searchInput, if any
-      if (this.search) this.searchInput = this.search
-
-      this.filterChanged = false
-    },
-
-    // if subscription, no need to manually reset on change
-    handleListChange() {
-      if (!this.useSubscription) {
-        // also need to emit to parent (if any)
-        this.$emit('record-changed')
-
-        this.reset()
+        this.filterChanged = false
       }
     },
 
-    reset({
-      resetSubscription = false,
+    handleListChange() {
+      // also need to emit to parent (if any)
+      this.$emit('record-changed')
+
+      this.reset()
+    },
+
+    async reset({
       initFilters = false,
       resetFilters = false,
       resetSort = false,
@@ -1027,109 +920,81 @@ export default {
       showLoader = true,
       clearRecords = true,
     } = {}) {
-      this.reloadGeneration++
+      this.records = []
 
-      let actuallyReloadData = reloadData
-
-      if (actuallyReloadData && clearRecords) this.records = []
-
-      if (resetSubscription) {
-        if (this.useSubscription) this.subscribeEvents()
-      }
-
-      if (resetPolling && this.isPolling) {
-        this.stopPolling()
-        this.startPolling()
-      }
+      this.totalRecords = 0
+      this.endCursor = null
 
       if (initFilters) {
-        this.filterInputsArray = this.recordInfo.paginationOptions.filters.map(
-          (ele) => {
-            const fieldInfo = this.recordInfo.fields[ele.field]
+        // initialize filter inputs
+        this.filterInputsArray = await Promise.all(
+          this.recordInfo.paginationOptions.filterOptions.map(
+            async (filterObject) => {
+              const fieldInfo = lookupFieldInfo(
+                this.recordInfo,
+                filterObject.field
+              )
 
-            // field unknown, abort
-            if (!fieldInfo) throw new Error('Unknown field: ' + ele.field)
+              // sync the filters
+              const filters = this.pageOptions?.filters
+              let matchingRawFilterObject
+              // was this filter set in the pageOptions?
+              if (filters) {
+                matchingRawFilterObject = filters.find(
+                  (rawFilterObject) =>
+                    rawFilterObject.field === filterObject.field &&
+                    rawFilterObject.operator === filterObject.operator
+                )
+              }
 
-            const filterObject = {
-              fieldInfo,
-              filterInfo: ele,
-              inputType: ele.inputType ?? fieldInfo.inputType,
-              inputOptions: fieldInfo.inputOptions,
-              options: [],
-              value: null,
-              loading: false,
-              input: null,
-              focused: false,
-              readonly: false,
+              const inputObject = {
+                fieldKey: filterObject.field,
+                primaryField: fieldInfo.fields
+                  ? fieldInfo.fields[0]
+                  : filterObject.field,
+                fieldInfo,
+                recordInfo: this.recordInfo,
+                inputType: filterObject.inputType ?? fieldInfo.inputType,
+                label: fieldInfo.text ?? filterObject.field,
+                hint: fieldInfo.hint,
+                clearable: true,
+                closeable: false,
+                optional: false,
+                inputRules: [],
+                inputOptions: fieldInfo.inputOptions,
+                value: matchingRawFilterObject
+                  ? matchingRawFilterObject.value
+                  : null,
+                inputValue: null,
+                getOptions: fieldInfo.getOptions,
+                options: [],
+                readonly: false,
+                loading: false,
+                focused: false,
+                generation: 0,
+                parentInput: null,
+                nestedInputsArray: [],
+              }
+
+              // populate inputObjects if we need to translate any IDs to objects, and also populate any options
+              await populateInputObject(this, inputObject)
+
+              return {
+                filterObject,
+                inputObject,
+              }
             }
-
-            fieldInfo.getOptions &&
-              fieldInfo
-                .getOptions(this)
-                .then((res) => (filterObject.options = res))
-
-            return filterObject
-          }
+          )
         )
 
-        // clears the searchInput
-        this.searchInput = ''
-
-        // syncs the filterInputsArray with this.filters
-        this.syncFilters(true)
+        this.syncPageOptions(false)
+      } else {
+        this.syncPageOptions(true)
       }
 
-      if (resetExpanded) {
-        this.expandedItems.pop()
-      }
+      this.reloadGeneration++
 
-      if (resetSort) {
-        this.options.initialLoad = true
-        // populate sort/page options
-        this.options.sortBy = Array.isArray(this.pageOptions?.sortBy)
-          ? this.pageOptions.sortBy.slice()
-          : []
-        this.options.sortDesc = Array.isArray(this.pageOptions?.sortDesc)
-          ? this.pageOptions.sortDesc.slice()
-          : []
-      }
-
-      if (resetCursor) {
-        // reset pageOptions
-        this.previousPage = null
-        this.positivePageDelta = true
-
-        // reset paginatorInfos
-        this.nextPaginatorInfo = {
-          total: null,
-          startCursor: null,
-          endCursor: null,
-        }
-
-        this.currentPaginatorInfo = this.nextPaginatorInfo
-
-        if (this.options.page !== 1) {
-          this.options.page = 1
-          actuallyReloadData = false
-        }
-      }
-
-      // sets all of the filter values to null, searchInput to '' and also emits changes to parent
-      if (resetFilters) {
-        this.filterInputsArray.forEach((ele) => {
-          ele.value = null
-        })
-        // clears the searchInput
-        this.searchInput = ''
-        this.updatePageOptions()
-
-        // dont actually reload data because updatePagOptions will trigger reset
-        actuallyReloadData = false
-      }
-
-      if (actuallyReloadData) {
-        this.loadData(showLoader, this.reloadGeneration)
-      }
+      this.loadData(true, this.reloadGeneration)
     },
   },
 }

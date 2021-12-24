@@ -17,12 +17,9 @@
     "core-js": "^3.6.5",
     "firebase": "^8.0.0",
     "js-cookie": "^2.2.1",
-    "moment": "^2.29.1",
     "nanoid": "^3.1.22",
     "nuxt": "^2.15.8",
     "pretty-bytes": "^5.4.1",
-    "pusher-js": "^7.0.0",
-    "randomstring": "^1.1.5",
     "timeago.js": "^4.0.2",
     "vue": "^2.6.14",
     "vue-wysiwyg": "^1.7.2",
@@ -42,7 +39,7 @@
     "eslint-plugin-nuxt": "^1.0.0",
     "eslint-plugin-prettier": "^3.1.4",
     "prettier": "^2.1.2",
-    "typescript": "^4.2.3",
-    "vuetify": "^2.5.8"
+    "typescript": "^4.5.4",
+    "vuetify": "^2.6.1"
   }
 }

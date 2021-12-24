@@ -1,4 +1,4 @@
-import { User, Era } from "../../services";
+import { User, EventEra, Event } from "../../services";
 import { GiraffeqlObjectType, ObjectTypeDefinition } from "giraffeql";
 import {
   generateIdField,
@@ -8,16 +8,21 @@ import {
   generateStringField,
   generateTextField,
   generateTypenameField,
-  generateBooleanField,
+  generateJoinableField,
   generateUnixTimestampField,
+  generateBooleanField,
 } from "../../core/helpers/typeDef";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
-  name: Era.typename,
-  description: "Era type",
+  name: EventEra.typename,
+  description: "EventEra type",
   fields: {
     ...generateIdField(),
-    ...generateTypenameField(Era),
+    ...generateTypenameField(EventEra),
+    event: generateJoinableField({
+      service: Event,
+      allowNull: false,
+    }),
     name: generateStringField({ allowNull: false }),
     avatar: generateStringField({ allowNull: true }),
     description: generateTextField({

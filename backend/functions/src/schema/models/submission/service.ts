@@ -17,12 +17,14 @@ import {
   countTableRows,
   deleteTableRow,
   fetchTableRows,
+  insertTableRow,
   updateTableRow,
 } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
 import {
   DiscordChannel,
   DiscordChannelOutput,
+  Event,
   SubmissionCharacterParticipantLink,
 } from "../../services";
 import {
@@ -41,10 +43,10 @@ export class SubmissionService extends PaginatedService {
     id: {},
     "createdBy.id": {},
     "event.id": {},
-    "era.id": {},
+    "eventEra.id": {},
     participants: {},
     status: {},
-    "submissionCharacterParticipantLink/character.id": {}
+    "submissionCharacterParticipantLink/character.id": {},
   };
 
   sortFieldsMap = {
@@ -75,13 +77,13 @@ export class SubmissionService extends PaginatedService {
   async calculateRank({
     eventId,
     participants,
-    eraId,
+    eventEraId,
     status,
     score,
   }: {
     eventId: string;
     participants: number;
-    eraId: string;
+    eventEraId: string;
     status: submissionStatusKenum | null;
     score: number;
   }) {
@@ -115,9 +117,9 @@ export class SubmissionService extends PaginatedService {
             value: submissionStatusKenum.APPROVED.index,
           },
           {
-            field: "era.id",
+            field: "eventEra.id",
             operator: "eq",
-            value: eraId,
+            value: eventEraId,
           },
         ],
       },
@@ -139,17 +141,71 @@ export class SubmissionService extends PaginatedService {
     const validatedArgs = <any>args;
     await this.handleLookupArgs(args, fieldPath);
 
+    // changed: if no participants, reject
+    if (validatedArgs.participantsList.length < 1) {
+      throw new GiraffeqlBaseError({
+        message: "Must have at least 1 participant",
+        fieldPath,
+      });
+    }
+
+    // changed: check if number of participants is between minParticipants and maxParticipants for the event
+    const eventRecord = await Event.lookupRecord(
+      ["minParticipants", "maxParticipants"],
+      { id: validatedArgs.event },
+      fieldPath
+    );
+
+    if (
+      eventRecord.minParticipants &&
+      validatedArgs.participantsList.length < eventRecord.minParticipants
+    ) {
+      throw new GiraffeqlBaseError({
+        message: `This event requires at least ${eventRecord.minParticipants} participants`,
+        fieldPath,
+      });
+    }
+
+    if (
+      eventRecord.maxParticipants &&
+      validatedArgs.participantsList.length > eventRecord.maxParticipants
+    ) {
+      throw new GiraffeqlBaseError({
+        message: `This event requires at most ${eventRecord.maxParticipants} participants`,
+        fieldPath,
+      });
+    }
+
     const addResults = await createObjectType({
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
+        participants: validatedArgs.participantsList.length, // computed
         score: validatedArgs.timeElapsed,
         createdBy: req.user?.id, // nullable
       },
       req,
       fieldPath,
     });
+
+    // changed: also need to add the submissionCharacterParticipantLinks
+    for (const participant of validatedArgs.participantsList) {
+      await createObjectType({
+        typename: SubmissionCharacterParticipantLink.typename,
+        addFields: {
+          id: await SubmissionCharacterParticipantLink.generateRecordId(
+            fieldPath
+          ),
+          submission: addResults.id,
+          character: participant.characterId,
+          title: null,
+          createdBy: req.user?.id, // nullable
+        },
+        req,
+        fieldPath,
+      });
+    }
 
     // if the record was added as approved, also need to run syncSubmissionIsRecord
     if (
@@ -160,7 +216,7 @@ export class SubmissionService extends PaginatedService {
       const ranking = await this.calculateRank({
         eventId: args.event,
         participants: args.participants,
-        eraId: args.era,
+        eventEraId: args.eventEra,
         status: validatedArgs.status
           ? submissionStatusKenum.fromUnknown(validatedArgs.status)
           : null,
@@ -182,7 +238,7 @@ export class SubmissionService extends PaginatedService {
       await this.handleRankingChange({
         eventId: args.event,
         participants: args.participants,
-        eraId: args.era,
+        eventEraId: args.eventEra,
         ranking,
         fieldPath,
       });
@@ -265,7 +321,7 @@ export class SubmissionService extends PaginatedService {
         "id",
         "event.id",
         "participants",
-        "era.id",
+        "eventEra.id",
         "score",
         "status",
         "discordMessageId",
@@ -305,14 +361,14 @@ export class SubmissionService extends PaginatedService {
     await this.syncSubmissionIsRecord(
       item["event.id"],
       item.participants,
-      item["era.id"]
+      item["eventEra.id"]
     );
 
     if (validatedArgs.fields.status) {
       const ranking = await this.calculateRank({
         eventId: item["event.id"],
         participants: item.participants,
-        eraId: item["era.id"],
+        eventEraId: item["eventEra.id"],
         status: submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
         score: item.score,
       });
@@ -332,7 +388,7 @@ export class SubmissionService extends PaginatedService {
         await this.handleRankingChange({
           eventId: item["event.id"],
           participants: item.participants,
-          eraId: item["era.id"],
+          eventEraId: item["eventEra.id"],
           ranking,
           fieldPath,
         });
@@ -387,14 +443,14 @@ export class SubmissionService extends PaginatedService {
   async handleRankingChange({
     eventId,
     participants,
-    eraId,
+    eventEraId,
     ranking,
     fieldPath,
   }: {
     submissionId?: string;
     eventId: string;
     participants: number;
-    eraId: string;
+    eventEraId: string;
     ranking: number | null;
     fieldPath: string[];
   }) {
@@ -420,9 +476,9 @@ export class SubmissionService extends PaginatedService {
             value: [null, participants],
           },
           {
-            field: "era.id",
+            field: "eventEra.id",
             operator: "in",
-            value: [null, eraId],
+            value: [null, eventEraId],
           },
           {
             field: "ranksToShow",
@@ -461,7 +517,7 @@ export class SubmissionService extends PaginatedService {
         [
           "event.id",
           "event.name",
-          "era.id",
+          "eventEra.id",
           "participants",
           "score",
           "externalLinks",
@@ -507,9 +563,9 @@ export class SubmissionService extends PaginatedService {
               value: [null, submission.participants],
             },
             {
-              field: "era.id",
+              field: "eventEra.id",
               operator: "in",
-              value: [null, submission["era.id"]],
+              value: [null, submission["eventEra.id"]],
             },
             {
               field: "ranksToShow",
@@ -556,7 +612,7 @@ export class SubmissionService extends PaginatedService {
                   "/leaderboard",
                   generateLeaderboardPageOptions({
                     eventId: submission["event.id"],
-                    eraId: submission["era.id"],
+                    eventEraId: submission["eventEra.id"],
                     participants: submission.participants,
                   })
                 ),
@@ -573,7 +629,7 @@ export class SubmissionService extends PaginatedService {
               "/leaderboard",
               generateLeaderboardPageOptions({
                 eventId: submission["event.id"],
-                eraId: submission["era.id"],
+                eventEraId: submission["eventEra.id"],
                 participants: submission.participants,
               })
             ),
@@ -597,7 +653,7 @@ export class SubmissionService extends PaginatedService {
   async syncSubmissionIsRecord(
     eventId: string,
     participants: number,
-    eraId: string
+    eventEraId: string
   ) {
     const [fastestRecord] = await fetchTableRows({
       select: [{ field: "id" }],
@@ -620,9 +676,9 @@ export class SubmissionService extends PaginatedService {
             value: submissionStatusKenum.APPROVED.index,
           },
           {
-            field: "era.id",
+            field: "eventEra.id",
             operator: "eq",
-            value: eraId,
+            value: eventEraId,
           },
         ],
       },
@@ -685,7 +741,7 @@ export class SubmissionService extends PaginatedService {
     const validatedArgs = <any>args;
     // confirm existence of item and get ID
     const item = await this.lookupRecord(
-      ["id", "status", "event.id", "era.id", "participants", "score"],
+      ["id", "status", "event.id", "eventEra.id", "participants", "score"],
       validatedArgs,
       fieldPath
     );
@@ -693,7 +749,7 @@ export class SubmissionService extends PaginatedService {
     const ranking = await this.calculateRank({
       eventId: item["event.id"],
       participants: item.participants,
-      eraId: item["era.id"],
+      eventEraId: item["eventEra.id"],
       status: submissionStatusKenum.fromUnknown(item.status),
       score: item.score,
     });
@@ -738,7 +794,7 @@ export class SubmissionService extends PaginatedService {
       await this.handleRankingChange({
         eventId: item["event.id"],
         participants: item.participants,
-        eraId: item["era.id"],
+        eventEraId: item["eventEra.id"],
         ranking,
         fieldPath,
       });

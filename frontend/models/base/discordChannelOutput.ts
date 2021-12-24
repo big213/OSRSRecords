@@ -1,6 +1,6 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import { getEras, getEventsByGroup } from '~/services/dropdown'
+import { getEventsByGroup } from '~/services/dropdown'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
 
 export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
@@ -46,21 +46,25 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       pathPrefix: 'event',
       component: RecordColumn,
     },
-    era: {
-      text: 'Era',
-      fields: ['era.id'],
-      inputType: 'autocomplete',
+    eventEra: {
+      text: 'Event Era',
+      fields: ['eventEra.id'],
+      inputType: 'select',
       inputOptions: {
         hasAvatar: true,
-        typename: 'era',
+        typename: 'eventEra',
       },
-      getOptions: getEras,
     },
-    'era.id': {},
-    eraRecord: {
-      text: 'Era',
-      fields: ['era.name', 'era.avatar', 'era.id', 'era.__typename'],
-      pathPrefix: 'era',
+    'eventEra.id': {},
+    eventEraRecord: {
+      text: 'Event Era',
+      fields: [
+        'eventEra.name',
+        'eventEra.avatar',
+        'eventEra.id',
+        'eventEra.__typename',
+      ],
+      pathPrefix: 'eventEra',
       component: RecordColumn,
     },
     participants: {
@@ -85,13 +89,19 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [
+    filterOptions: [
       {
         field: 'discordChannel',
         operator: 'eq',
       },
     ],
-    headers: [
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'sort',
         sortable: true,
@@ -139,7 +149,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         'discordChannel.id',
         'event.id',
         'participants',
-        'era.id',
+        'eventEra.id',
         'ranksToShow',
       ],
     },
@@ -150,7 +160,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
-      'era',
+      'eventEra',
       'ranksToShow',
     ],
   },
@@ -160,7 +170,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel.id',
       'event.id',
       'participants',
-      'era.id',
+      'eventEra.id',
       'ranksToShow',
     ],
   },
@@ -170,7 +180,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
-      'era',
+      'eventEra',
       'ranksToShow',
     ],
   },
@@ -180,7 +190,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannelName',
       'eventRecord',
       'participants',
-      'eraRecord',
+      'eventEraRecord',
       'ranksToShow',
     ],
   },

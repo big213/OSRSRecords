@@ -45,11 +45,11 @@ export function generateCrudRecordInterfaceUrl(
 
 export function generateLeaderboardPageOptions({
   eventId,
-  eraId,
+  eventEraId,
   participants,
 }: {
   eventId: string;
-  eraId: string;
+  eventEraId: string;
   participants?: number;
 }) {
   return {
@@ -62,9 +62,9 @@ export function generateLeaderboardPageOptions({
         value: eventId, // COX CM on prod db
       },
       {
-        field: "era",
+        field: "eventEra",
         operator: "eq",
-        value: eraId,
+        value: eventEraId,
       },
       ...(participants
         ? [

@@ -116,6 +116,9 @@ export default {
               const parseFn = this.recordInfo.fields[field].parseImportValue
               if (parseFn)
                 recordData.data[field] = parseFn(recordData.data[field])
+
+              // if the value is an empty string, parse this to null by default
+              if (recordData.data[field] === '') recordData.data[field] = null
             }
           })
 

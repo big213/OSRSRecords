@@ -57,8 +57,14 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'sort',
         sortable: true,
@@ -84,7 +90,9 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
   addOptions: {
     fields: ['sort', 'avatar', 'name', 'contents'],
   },
-  // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
+  importOptions: {
+    fields: ['sort', 'avatar', 'name'],
+  },
   editOptions: {
     fields: ['sort', 'avatar', 'name', 'contents'],
   },

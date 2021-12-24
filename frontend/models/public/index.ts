@@ -1,5 +1,5 @@
 export { PublicSubmission } from './publicSubmission'
 export { PublicEvent } from './publicEvent'
-export { PublicEra } from './publicEra'
+export { PublicEventEra } from './publicEventEra'
 export { PublicEventClass } from './publicEventClass'
 export { PublicCharacter } from './publicCharacter'

@@ -57,8 +57,14 @@ export const Character = <RecordInfo<'character'>>{
   },
   paginationOptions: {
     hasSearch: true,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
         sortable: false,
@@ -118,8 +124,8 @@ export const Character = <RecordInfo<'character'>>{
         ]
       },
       initialSortOptions: {
-        sortBy: ['createdAt'],
-        sortDesc: [true],
+        field: 'createdAt',
+        desc: true,
       },
     },
   ],

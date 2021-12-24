@@ -53,6 +53,7 @@ import editRecordInterfaceMixin from '~/mixins/editRecordInterface'
 import CircularLoader from '~/components/common/circularLoader.vue'
 import { executeGiraffeql } from '~/services/giraffeql'
 import { collapseObject, handleError } from '~/services/base'
+import { getEventEras } from '~/services/dropdown'
 
 export default {
   components: {
@@ -64,7 +65,7 @@ export default {
     actualVisibleInputsArray() {
       return this.inputsArray.filter((inputObject) => {
         // if no event, only show event input
-        if (!this.event) return inputObject.field === 'event.id'
+        if (!this.event) return inputObject.fieldKey === 'event'
 
         return true
       })
@@ -72,7 +73,7 @@ export default {
 
     event() {
       try {
-        return this.getInputValue('event.id')
+        return this.getInputValue('event')
       } catch {
         return null
       }
@@ -100,6 +101,29 @@ export default {
       if (val.match(/^(\d+:)?(\d{1,2}:)?\d{1,2}\.\d{0,2}$/)) {
         return this.setInputValue('timeElapsed', this.parseTimeString(val))
       }
+    },
+
+    event(val) {
+      // if event is changed to something non-null, reload the eventEra options
+      if (!val) {
+        // if null, clear the eventEra options
+        return (this.getInputObject('eventEra').options = [])
+      }
+
+      getEventEras(this, false, [
+        {
+          'event.id': {
+            eq: val.id,
+          },
+        },
+      ]).then((res) => {
+        this.getInputObject('eventEra').options = res
+        // also set the current value to the isCurrent option
+        this.setInputValue(
+          'eventEra',
+          res.find((ele) => ele.isCurrent)
+        )
+      })
     },
   },
 
@@ -153,33 +177,9 @@ export default {
         const inputs = {}
 
         for (const inputObject of this.inputsArray) {
-          inputs[inputObject.field] = await this.processInputObject(inputObject)
-        }
-
-        // changed: for add mode only
-        const participantsMap = new Map()
-        if (this.mode === 'add') {
-          // changed: if no participants, throw err
-          if (inputs.participantsList.length < 1)
-            throw new Error('Must specify at least 1 team member')
-
-          // changed: if any participants are null or falsey, throw err
-          if (inputs.participantsList.some((ele) => !ele.value))
-            throw new Error('No empty participant values allowed')
-
-          // changed: if participants length > event.maxParticipants or < event.minParticipants, throw err
-          if(this.event.minParticipants && inputs.participantsList.length < this.event.minParticipants)
-            throw new Error(`This event has a minimum of ${this.event.minParticipants} team members`)
-
-          if(this.event.maxParticipants && inputs.participantsList.length > this.event.maxParticipants)
-            throw new Error(`This event has a maximum of ${this.event.maxParticipants} team members`)
-
-          // changed: map of participant characters by Map<id,obj>
-          inputs.participantsList.forEach((ele) => {
-            participantsMap.set(ele.value, ele)
-          })
-          // changed: remove parcipants from inputs and process them specially
-          delete inputs.participantsList
+          inputs[inputObject.primaryField] = await this.processInputObject(
+            inputObject
+          )
         }
 
         // add/copy mode
@@ -209,25 +209,6 @@ export default {
           }
         }
         const data = await executeGiraffeql(this, query)
-
-        // changed: after creating the submission, also add the submissionCharacterParticipantLinks. add mode only
-        if (this.mode === 'add') {
-          for (const participant of participantsMap) {
-            await executeGiraffeql(this, {
-              createSubmissionCharacterParticipantLink: {
-                __args: {
-                  submission: {
-                    id: data.id,
-                  },
-                  character: {
-                    id: participant[1].value,
-                  },
-                  title: participant[1].key,
-                },
-              },
-            })
-          }
-        }
 
         this.$notifier.showSnackbar({
           message:

@@ -1,5 +1,3 @@
-import { generateCrudRecordInterfaceRoute } from './base'
-
 export const submissionStatusArray = [
   {
     index: 1,
@@ -46,4 +44,19 @@ export const participantsTextMap = {
   '1': 'Solo',
   '2': 'Duo',
   '3': 'Trio',
+}
+
+export const placeEmojisMap = {
+  '1': {
+    emoji: '🥇',
+    text: '1st Place',
+  },
+  '2': {
+    emoji: '🥈',
+    text: '2nd Place',
+  },
+  '3': {
+    emoji: '🥉',
+    text: '3rd Place',
+  },
 }

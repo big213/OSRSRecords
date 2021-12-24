@@ -1,15 +1,16 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
-import { fetchTableRows, updateTableRow } from "../../core/helpers/sql";
+import { updateTableRow } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 
-export class EraService extends PaginatedService {
-  defaultTypename = "era";
+export class EventEraService extends PaginatedService {
+  defaultTypename = "eventEra";
 
   filterFieldsMap = {
     id: {},
     "createdBy.id": {},
+    "event.id": {},
   };
 
   sortFieldsMap = {
@@ -41,7 +42,7 @@ export class EraService extends PaginatedService {
     const validatedArgs = <any>args;
     await this.handleLookupArgs(args, fieldPath);
 
-    // check if any previous era that is current
+    // check if any previous era that is current with the same event.id
     const previousCurrentCount = await this.getRecordCount(
       {
         fields: [
@@ -50,12 +51,17 @@ export class EraService extends PaginatedService {
             operator: "eq",
             value: true,
           },
+          {
+            field: "event.id",
+            operator: "eq",
+            value: validatedArgs.event,
+          },
         ],
       },
       fieldPath
     );
 
-    // if any previous current era, set all to false
+    // if any previous current eventEras with the same event.id, set all to false
     if (previousCurrentCount > 0) {
       await updateTableRow({
         fields: {
@@ -68,6 +74,11 @@ export class EraService extends PaginatedService {
               field: "isCurrent",
               operator: "eq",
               value: true,
+            },
+            {
+              field: "event",
+              operator: "eq",
+              value: validatedArgs.event,
             },
           ],
         },

@@ -1,8 +1,8 @@
-import { Era } from "../../services";
+import { EventEra } from "../../services";
 import { generateBaseRootResolvers } from "../../core/helpers/rootResolver";
 
 export default {
-  ...generateBaseRootResolvers(Era, [
+  ...generateBaseRootResolvers(EventEra, [
     "get",
     "getMultiple",
     "delete",

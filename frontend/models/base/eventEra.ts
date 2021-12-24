@@ -8,12 +8,14 @@ import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
+import { getEvents } from '~/services/dropdown'
+import RecordColumn from '~/components/table/common/recordColumn.vue'
 
-export const Era = <RecordInfo<'era'>>{
-  typename: 'era',
-  pluralTypename: 'eras',
-  name: 'Era',
-  pluralName: 'Eras',
+export const EventEra = <RecordInfo<'eventEra'>>{
+  typename: 'eventEra',
+  pluralTypename: 'eventEras',
+  name: 'Event Era',
+  pluralName: 'Event Eras',
   icon: 'mdi-calendar-star',
   routeName: 'a-view',
   renderItem: (item) => item.name,
@@ -38,6 +40,25 @@ export const Era = <RecordInfo<'era'>>{
       text: 'Description',
       inputType: 'textarea',
     },
+    event: {
+      text: 'Event Category',
+      fields: ['event.id'],
+      inputType: 'autocomplete',
+      inputOptions: {
+        hasAvatar: true,
+        typename: 'event',
+      },
+      getOptions: getEvents,
+    },
+    'event.id': {},
+    'event.name': {},
+    eventRecord: {
+      text: 'Event Category',
+      fields: ['event.name', 'event.avatar', 'event.id', 'event.__typename'],
+      pathPrefix: 'event',
+      component: RecordColumn,
+    },
+
     beginDate: {
       text: 'Start Date',
       inputType: 'datepicker',
@@ -46,6 +67,15 @@ export const Era = <RecordInfo<'era'>>{
       serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
+      parseImportValue: (val: string) => {
+        if (!val) return null
+
+        // only works on certain browsers
+        const msTimestamp = new Date(val).getTime()
+
+        return msTimestamp / 1000
+      },
+
       component: TruthyOrNoneColumn,
     },
     endDate: {
@@ -56,6 +86,15 @@ export const Era = <RecordInfo<'era'>>{
       serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
+      parseImportValue: (val: string) => {
+        if (!val) return null
+
+        // only works on certain browsers
+        const msTimestamp = new Date(val).getTime()
+
+        return msTimestamp / 1000
+      },
+
       component: TruthyOrNoneColumn,
     },
     isCurrent: {
@@ -78,8 +117,14 @@ export const Era = <RecordInfo<'era'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
         sortable: false,
@@ -99,17 +144,38 @@ export const Era = <RecordInfo<'era'>>{
         sortable: true,
       },
     ],
-    downloadOptions: {},
+    downloadOptions: {
+      fields: [
+        'id',
+        'event.id',
+        'event.name',
+        'avatar',
+        'name',
+        'description',
+        'beginDate',
+        'endDate',
+      ],
+    },
   },
   addOptions: {
-    fields: ['avatar', 'name', 'description', 'beginDate', 'endDate'],
+    fields: ['event', 'avatar', 'name', 'description', 'beginDate', 'endDate'],
   },
-  // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
+  importOptions: {
+    fields: [
+      'event.id',
+      'avatar',
+      'name',
+      'description',
+      'beginDate',
+      'endDate',
+    ],
+  },
   editOptions: {
-    fields: ['avatar', 'name', 'description', 'beginDate', 'endDate'],
+    fields: ['event', 'avatar', 'name', 'description', 'beginDate', 'endDate'],
   },
   viewOptions: {
     fields: [
+      'eventRecord',
       'nameWithAvatar',
       'description',
       'beginDate',

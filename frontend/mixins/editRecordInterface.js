@@ -9,6 +9,9 @@ import {
   setInputValue,
   getInputValue,
   getInputObject,
+  populateInputObject,
+  lookupFieldInfo,
+  addNestedInputObject,
 } from '~/services/base'
 import GenericInput from '~/components/input/genericInput.vue'
 
@@ -189,20 +192,15 @@ export default {
       let value
 
       // if it is a value array, need to assemble the value as an array
-      if (
-        inputObject.inputType === 'value-array' ||
-        inputObject.inputType === 'key-value-array'
-      ) {
+      if (inputObject.inputType === 'value-array') {
         value = []
-        for (const nestedInputObject of inputObject.nestedInputsArray) {
-          value.push(
-            inputObject.inputType === 'value-array'
-              ? await this.processInputObject(nestedInputObject)
-              : {
-                  key: nestedInputObject.key.value,
-                  value: await this.processInputObject(nestedInputObject.value),
-                }
-          )
+        for (const nestedInputArray of inputObject.nestedInputsArray) {
+          const obj = {}
+          for (const nestedInputObject of nestedInputArray) {
+            obj[nestedInputObject.nestedFieldInfo.key] =
+              await this.processInputObject(nestedInputObject.inputObject)
+          }
+          value.push(obj)
         }
       } else {
         // if the fieldInfo.inputType === 'combobox' | 'server-combobox', it came from a combo box. need to handle accordingly
@@ -226,8 +224,8 @@ export default {
             })
 
             // force reload of memoized options, if any
-            inputObject.fieldInfo.getOptions &&
-              inputObject.fieldInfo
+            inputObject.getOptions &&
+              inputObject
                 .getOptions(this, true)
                 .then((res) => (inputObject.options = res))
 
@@ -267,7 +265,9 @@ export default {
         const inputs = {}
 
         for (const inputObject of this.inputsArray) {
-          inputs[inputObject.field] = await this.processInputObject(inputObject)
+          inputs[inputObject.primaryField] = await this.processInputObject(
+            inputObject
+          )
         }
 
         // add/copy mode
@@ -341,9 +341,7 @@ export default {
             ...collapseObject(
               fields.reduce(
                 (total, fieldKey) => {
-                  const fieldInfo = this.recordInfo.fields[fieldKey]
-                  // field unknown, abort
-                  if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
+                  const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
 
                   // if field is hidden, exclude
                   if (fieldInfo.hidden) return total
@@ -410,29 +408,27 @@ export default {
         // build inputs Array
         this.inputsArray = await Promise.all(
           inputFields.map(async (fieldKey) => {
-            const fieldInfo = this.recordInfo.fields[fieldKey]
-
-            // field unknown, abort
-            if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
+            const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
 
             const primaryField = fieldInfo.fields
               ? fieldInfo.fields[0]
               : fieldKey
 
             const inputObject = {
-              field: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldKey,
+              primaryField,
               fieldInfo,
               recordInfo: this.recordInfo,
               inputType: fieldInfo.inputType,
               label: fieldInfo.text ?? fieldKey,
               hint: fieldInfo.hint,
-              isNested: false,
               clearable: true,
+              closeable: false,
               optional: fieldInfo.optional,
               inputRules: fieldInfo.inputRules,
               inputOptions: fieldInfo.inputOptions,
               value: null,
+              getOptions: fieldInfo.getOptions,
               options: [],
               readonly:
                 this.mode === 'view'
@@ -440,7 +436,10 @@ export default {
                   : this.mode === 'copy'
                   ? fields.includes(fieldKey)
                   : false,
+              loading: false,
+              focused: false,
               generation: 0,
+              parentInput: null,
               nestedInputsArray: [],
             }
 
@@ -456,19 +455,16 @@ export default {
             }
 
             // if it is an array, populate the nestedInputsArray
-            if (
-              inputObject.inputType === 'key-value-array' ||
-              inputObject.inputType === 'value-array'
-            ) {
+            if (inputObject.inputType === 'value-array') {
               if (Array.isArray(inputObject.value)) {
                 inputObject.value.forEach((ele) =>
-                  this.addNestedInputObject(inputObject, ele)
+                  addNestedInputObject(inputObject, ele)
                 )
               }
             }
 
-            // populate inputObjects if we need to translate any IDs to objects
-            dropdownPromises.push(...this.populateInputObject(inputObject))
+            // populate inputObjects if we need to translate any IDs to objects, and also populate any options
+            dropdownPromises.push(...populateInputObject(this, inputObject))
 
             return inputObject
           })
@@ -493,17 +489,11 @@ export default {
 
     resetInputs() {
       this.inputsArray.forEach(async (inputObject) => {
-        const fieldInfo = this.recordInfo.fields[inputObject.fieldKey]
-
-        // field unknown, abort
-        if (!fieldInfo)
-          throw new Error('Unknown field: ' + inputObject.fieldKey)
-
         if (inputObject.fieldKey in this.selectedItem) {
           inputObject.value = this.selectedItem[inputObject.fieldKey]
         } else {
-          inputObject.value = fieldInfo.default
-            ? await fieldInfo.default(this)
+          inputObject.value = inputObject.fieldInfo.default
+            ? await inputObject.fieldInfo.default(this)
             : null
         }
 
@@ -511,92 +501,6 @@ export default {
 
         inputObject.generation++
       })
-    },
-
-    // loops through inputObject recursively and populates the options
-    populateInputObject(inputObject) {
-      const promisesArray = []
-      if (
-        inputObject.inputType === 'server-autocomplete' ||
-        inputObject.inputType === 'server-combobox'
-      ) {
-        const originalFieldValue = inputObject.value
-        inputObject.value = null // set this to null initially while the results load, to prevent console error
-
-        if (originalFieldValue) {
-          promisesArray.push(
-            executeGiraffeql(this, {
-              [`get${capitalizeString(inputObject.inputOptions.typename)}`]: {
-                id: true,
-                name: true,
-                ...(inputObject.inputOptions?.hasAvatar && {
-                  avatar: true,
-                }),
-                __args: {
-                  id: originalFieldValue,
-                },
-              },
-            })
-              .then((res) => {
-                // change value to object
-                inputObject.value = res
-                inputObject.options = [res]
-              })
-              .catch((e) => e)
-          )
-        }
-      } else if (inputObject.inputType === 'value-array') {
-        // if it is a value-array, recursively process the nestedValueArray
-        inputObject.nestedInputsArray.forEach((nestedInputObject) => {
-          promisesArray.push(...this.populateInputObject(nestedInputObject))
-        })
-      } else if (inputObject.inputType === 'key-value-array') {
-        // if it is a key-value-array, recursively process the nestedValueArray
-        inputObject.nestedInputsArray
-          .map((ele) => ele.value)
-          .forEach((nestedInputObject) => {
-            promisesArray.push(...this.populateInputObject(nestedInputObject))
-          })
-      } else {
-        if (inputObject.fieldInfo.getOptions) {
-          promisesArray.push(
-            inputObject.fieldInfo
-              .getOptions(this)
-              .then((res) => (inputObject.options = res))
-          )
-        }
-      }
-
-      return promisesArray
-    },
-
-    addNestedInputObject(parentInputObject, inputValue = null) {
-      const isKeyValue = parentInputObject.inputType === 'key-value-array'
-
-      const valueInputObject = {
-        ...parentInputObject,
-        isNested: true,
-        clearable: true,
-        label: parentInputObject.inputOptions?.nestedValueText ?? 'Element',
-        inputType: parentInputObject.inputOptions?.nestedInputType,
-        value: isKeyValue ? (inputValue ? inputValue.value : null) : inputValue,
-        options: [],
-        nestedInputsArray: [],
-      }
-      parentInputObject.nestedInputsArray.push(
-        isKeyValue
-          ? {
-              key: {
-                isNested: false,
-                label: parentInputObject.inputOptions?.nestedKeyText ?? 'Key',
-                inputType: 'text',
-                clearable: true,
-                value: inputValue ? inputValue.key : null,
-              },
-              value: valueInputObject,
-            }
-          : valueInputObject
-      )
     },
 
     async reset() {
@@ -615,33 +519,30 @@ export default {
       if (this.mode === 'add') {
         this.inputsArray = await Promise.all(
           this.recordInfo.addOptions.fields.map(async (fieldKey) => {
-            const fieldInfo = this.recordInfo.fields[fieldKey]
-
-            // field unknown, abort
-            if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
-
-            let readonly = false
+            const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
 
             const inputObject = {
-              field: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldKey,
+              primaryField: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
               fieldInfo,
               recordInfo: this.recordInfo,
               inputType: fieldInfo.inputType,
               label: fieldInfo.text ?? fieldKey,
               hint: fieldInfo.hint,
-              isNested: false,
               clearable: true,
+              closeable: false,
               optional: fieldInfo.optional,
               inputRules: fieldInfo.inputRules,
               inputOptions: fieldInfo.inputOptions,
               value: null,
+              inputValue: null,
+              getOptions: fieldInfo.getOptions,
               options: [],
-              readonly,
+              readonly: false,
               loading: false,
-              input: null,
               focused: false,
               generation: 0,
+              parentInput: null,
               nestedInputsArray: [],
             }
 
@@ -655,36 +556,17 @@ export default {
                 : null
             }
 
-            // if server-autocomplete and readonly, load only the specific entry
-            if (
-              fieldInfo.inputType === 'server-autocomplete' ||
-              fieldInfo.inputType === 'server-combobox'
-            ) {
-              // only if readonly and value is truthy
-              if (inputObject.readonly && inputObject.value) {
-                executeGiraffeql(this, {
-                  [`get${capitalizeString(fieldInfo.inputOptions.typename)}`]: {
-                    id: true,
-                    name: true,
-                    ...(fieldInfo.inputOptions?.hasAvatar && { avatar: true }),
-                    __args: {
-                      id: inputObject.value,
-                    },
-                  },
-                })
-                  .then((res) => {
-                    inputObject.options = [res]
-                    inputObject.value = res
-                  })
-                  .catch((e) => e)
+            // if it is an array, populate the nestedInputsArray
+            if (inputObject.inputType === 'value-array') {
+              if (Array.isArray(inputObject.value)) {
+                inputObject.value.forEach((ele) =>
+                  addNestedInputObject(inputObject, ele)
+                )
               }
             }
 
-            // add the other options, if any
-            fieldInfo.getOptions &&
-              fieldInfo.getOptions(this).then((res) => {
-                inputObject.options.push(...res)
-              })
+            // populate inputObjects if we need to translate any IDs to objects, and also populate any options
+            await populateInputObject(this, inputObject)
 
             return inputObject
           })

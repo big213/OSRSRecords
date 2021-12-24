@@ -7,6 +7,7 @@ export class EventService extends PaginatedService {
   filterFieldsMap = {
     id: {},
     "createdBy.id": {},
+    "eventClass.id": {},
   };
 
   sortFieldsMap = {

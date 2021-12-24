@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="$route.query.pageOptions">
     <SubmissionPagePreset :event-clearable="false"></SubmissionPagePreset>
     <CrudRecordPage
       :record-info="recordInfo"
@@ -13,6 +13,7 @@
 </template>
 
 <script>
+import { generateLeaderboardRoute } from '~/services/common'
 import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
 import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { PublicSubmission } from '~/models/public'
@@ -38,6 +39,26 @@ export default {
         },
       ],
       title: 'Leaderboard',
+    }
+  },
+
+  watch: {
+    '$route.query.pageOptions'(val) {
+      // if no pageOptions, automatically redirect
+      if (!val) {
+        generateLeaderboardRoute(this).then((route) => {
+          this.$router.push(route)
+        })
+      }
+    },
+  },
+
+  mounted() {
+    // if no pageOptions, automatically redirect
+    if (!this.$route.query.pageOptions) {
+      generateLeaderboardRoute(this).then((route) => {
+        this.$router.push(route)
+      })
     }
   },
 }

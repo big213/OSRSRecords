@@ -49,8 +49,14 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'name',
         sortable: false,

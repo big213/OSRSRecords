@@ -24,7 +24,7 @@ import { createObjectType } from "../../core/helpers/resolver";
 
 type outputObject = {
   event: any;
-  era: any;
+  eventEra: any;
   participants: any;
   submissions: ({
     submission: any;
@@ -80,7 +80,7 @@ export class DiscordChannelService extends PaginatedService {
           field: "participants",
         },
         {
-          field: "era.id",
+          field: "eventEra.id",
         },
         {
           field: "ranksToShow",
@@ -115,8 +115,8 @@ export class DiscordChannelService extends PaginatedService {
           avatar:
             output["event.avatarOverride"] ?? output["event.eventClass.avatar"],
         },
-        era: {
-          id: output["era.id"],
+        eventEra: {
+          id: output["eventEra.id"],
         },
         participants: output.participants,
         submissions: [],
@@ -133,11 +133,11 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      if (output["era.id"]) {
+      if (output["eventEra.id"]) {
         additionalFilters.push({
-          field: "era.id",
+          field: "eventEra.id",
           operator: "eq",
-          value: output["era.id"],
+          value: output["eventEra.id"],
         });
       }
 
@@ -242,7 +242,7 @@ export class DiscordChannelService extends PaginatedService {
           "/leaderboard",
           generateLeaderboardPageOptions({
             eventId: outputObject.event.id,
-            eraId: outputObject.era.id,
+            eventEraId: outputObject.eventEra.id,
             participants: outputObject.participants,
           })
         ),

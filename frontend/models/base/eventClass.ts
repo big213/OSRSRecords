@@ -4,6 +4,7 @@ import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
+import { Event } from './event'
 
 export const EventClass = <RecordInfo<'eventClass'>>{
   typename: 'eventClass',
@@ -73,12 +74,31 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     },
   },
   paginationOptions: {
-    hasSearch: false,
-    filters: [],
-    headers: [
+    hasSearch: true,
+    filterOptions: [
+      {
+        field: 'parent',
+        operator: 'eq',
+      },
+    ],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+      {
+        field: 'name',
+        desc: true,
+      },
+      {
+        field: 'name',
+        desc: false,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: false,
+        sortable: true,
       },
       {
         field: 'createdAt',
@@ -92,7 +112,14 @@ export const EventClass = <RecordInfo<'eventClass'>>{
       },
     ],
     downloadOptions: {
-      fields: ['id', 'name', 'avatar', 'backgroundImage', 'parent.id'],
+      fields: [
+        'id',
+        'name',
+        'description',
+        'avatar',
+        'backgroundImage',
+        'parent.id',
+      ],
     },
   },
   addOptions: {
@@ -115,5 +142,18 @@ export const EventClass = <RecordInfo<'eventClass'>>{
   enterOptions: {},
   deleteOptions: {},
   shareOptions: {},
-  expandTypes: [],
+  expandTypes: [
+    {
+      recordInfo: Event,
+      lockedFilters: (_that, item) => {
+        return [
+          {
+            field: 'eventClass',
+            operator: 'eq',
+            value: item.id,
+          },
+        ]
+      },
+    },
+  ],
 }

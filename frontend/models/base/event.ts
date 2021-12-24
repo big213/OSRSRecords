@@ -9,6 +9,7 @@ import {
   generateParseDateTimeStringFn,
 } from '~/services/base'
 import { getEventDifficulties } from '~/services/dropdown'
+import { EventEra } from '.'
 
 export const Event = <RecordInfo<'event'>>{
   typename: 'event',
@@ -60,6 +61,7 @@ export const Event = <RecordInfo<'event'>>{
       },
     },
     'eventClass.id': {},
+    'eventClass.name': {},
     eventClassRecord: {
       text: 'Event Class',
       fields: [
@@ -102,6 +104,7 @@ export const Event = <RecordInfo<'event'>>{
       text: 'Difficulty',
       getOptions: getEventDifficulties,
       inputType: 'select',
+      default: () => 'NORMAL',
     },
     createdBy: {
       text: 'Created By',
@@ -117,12 +120,18 @@ export const Event = <RecordInfo<'event'>>{
     },
   },
   paginationOptions: {
-    hasSearch: false,
-    filters: [],
-    headers: [
+    hasSearch: true,
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: false,
+        sortable: true,
       },
       {
         field: 'difficulty',
@@ -144,6 +153,7 @@ export const Event = <RecordInfo<'event'>>{
       fields: [
         'id',
         'eventClass.id',
+        'eventClass.name',
         'minParticipants',
         'maxParticipants',
         'releaseDate',
@@ -182,7 +192,7 @@ export const Event = <RecordInfo<'event'>>{
     ],
   },
   editOptions: {
-    fields: ['avatarOverride', 'backgroundImageOverride'],
+    fields: ['avatarOverride', 'backgroundImageOverride', 'releaseDate'],
   },
   viewOptions: {
     fields: [
@@ -200,5 +210,22 @@ export const Event = <RecordInfo<'event'>>{
   enterOptions: {},
   deleteOptions: {},
   shareOptions: {},
-  expandTypes: [],
+  expandTypes: [
+    {
+      recordInfo: EventEra,
+      lockedFilters: (_that, item) => {
+        return [
+          {
+            field: 'event',
+            operator: 'eq',
+            value: item.id,
+          },
+        ]
+      },
+      initialSortOptions: {
+        field: 'beginDate',
+        desc: false,
+      },
+    },
+  ],
 }

@@ -63,13 +63,19 @@ export const User = <RecordInfo<'user'>>{
   },
   paginationOptions: {
     hasSearch: true,
-    filters: [
+    filterOptions: [
       {
         field: 'role',
         operator: 'eq',
       },
     ],
-    headers: [
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
         sortable: false,

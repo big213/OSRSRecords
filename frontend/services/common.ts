@@ -1,4 +1,5 @@
 import { generateCrudRecordInterfaceRoute } from './base'
+import { getEventEras } from '~/services/dropdown'
 
 type StringKeyObject = { [x: string]: any }
 
@@ -25,22 +26,33 @@ export function serializeTime(ms: number | null): string | null {
   )
 }
 
-export function generateLeaderboardRoute(that) {
+export async function generateLeaderboardRoute(that) {
   return generateCrudRecordInterfaceRoute(
     '/leaderboard',
-    generateLeaderboardPageOptions(that)
+    await generateLeaderboardPageOptions(that)
   )
 }
 
-export function generateLeaderboardPageOptions(that) {
+export async function generateLeaderboardPageOptions(that) {
+  const eventId = '5w5byyuq'
+
+  const eventEras = await getEventEras(that, false, [
+    {
+      'event.id': {
+        eq: eventId,
+      },
+    },
+  ])
+
+  const currentEventEra = eventEras.find((ele) => ele.isCurrent)
+
   return {
-    sortBy: ['score'],
-    sortDesc: [false],
+    search: '',
     filters: [
       {
         field: 'event',
         operator: 'eq',
-        value: 'c3xnykl6', // COX CM on prod db
+        value: eventId, // COX CM on prod db
       },
       {
         field: 'participants',
@@ -48,10 +60,14 @@ export function generateLeaderboardPageOptions(that) {
         value: 1,
       },
       {
-        field: 'era',
+        field: 'eventEra',
         operator: 'eq',
-        value: that.$store.getters['era/currentEra']?.id,
+        value: currentEventEra?.id ?? null,
       },
     ],
+    sort: {
+      field: 'score',
+      desc: false,
+    },
   }
 }

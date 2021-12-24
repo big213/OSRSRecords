@@ -2,6 +2,7 @@ import { format } from 'timeago.js'
 import { convertArrayToCSV } from 'convert-array-to-csv'
 import { executeGiraffeql } from '~/services/giraffeql'
 import * as models from '~/models/base'
+import { CrudInputObject } from '~/types/misc'
 
 type StringKeyObject = { [x: string]: any }
 
@@ -461,20 +462,20 @@ export async function collectPaginatorData(
 }
 
 export function setInputValue(inputObjectsArray, key, value) {
-  const inputObject = inputObjectsArray.find((ele) => ele.field === key)
+  const inputObject = inputObjectsArray.find((ele) => ele.fieldKey === key)
   if (!inputObject) throw new Error(`Input key not found: '${key}'`)
 
   inputObject.value = value
 }
 
 export function getInputValue(inputObjectsArray, key) {
-  const inputObject = inputObjectsArray.find((ele) => ele.field === key)
+  const inputObject = inputObjectsArray.find((ele) => ele.fieldKey === key)
   if (!inputObject) throw new Error(`Input key not found: '${key}'`)
   return inputObject.value
 }
 
 export function getInputObject(inputObjectsArray, key) {
-  const inputObject = inputObjectsArray.find((ele) => ele.field === key)
+  const inputObject = inputObjectsArray.find((ele) => ele.fieldKey === key)
   if (!inputObject) throw new Error(`Input key not found: '${key}'`)
   return inputObject
 }
@@ -521,4 +522,93 @@ export const viewportToPixelsMap = {
   md: 1264,
   lg: 1904,
   xl: +Infinity,
+}
+
+export function lookupFieldInfo(recordInfo, field: string) {
+  const fieldInfo = recordInfo.fields[field]
+
+  // field unknown, abort
+  if (!fieldInfo)
+    throw new Error(`Unknown field on ${recordInfo.typename}:' ${field}`)
+
+  return fieldInfo
+}
+
+export function populateInputObject(
+  that,
+  inputObject: CrudInputObject,
+  loadOptions = true
+) {
+  const promisesArray: Promise<any>[] = []
+  if (
+    inputObject.inputType === 'server-autocomplete' ||
+    inputObject.inputType === 'server-combobox'
+  ) {
+    const originalFieldValue = inputObject.value
+    inputObject.value = null // set this to null initially while the results load, to prevent console error
+
+    if (originalFieldValue) {
+      promisesArray.push(
+        executeGiraffeql(that, <any>{
+          [`get${capitalizeString(inputObject.inputOptions?.typename)}`]: {
+            id: true,
+            name: true,
+            ...(inputObject.inputOptions?.hasAvatar && {
+              avatar: true,
+            }),
+            __args: {
+              id: originalFieldValue,
+            },
+          },
+        })
+          .then((res) => {
+            // change value to object
+            inputObject.value = res
+            inputObject.options = [res]
+          })
+          .catch((e) => e)
+      )
+    }
+  } else if (inputObject.inputType === 'value-array') {
+    // if it is a value-array, recursively process the nestedValueArray
+    inputObject.nestedInputsArray.forEach((nestedInputObject) => {
+      promisesArray.push(...populateInputObject(that, nestedInputObject))
+    })
+  } else {
+    if (loadOptions && inputObject.getOptions) {
+      promisesArray.push(
+        inputObject.getOptions(that).then((res) => {
+          // set the options
+          inputObject.options = res
+        })
+      )
+    }
+  }
+
+  return promisesArray
+}
+
+export function addNestedInputObject(
+  parentInputObject,
+  inputValue: any = null
+) {
+  parentInputObject.nestedInputsArray.push(
+    parentInputObject.inputOptions.nestedFields.map((nestedFieldInfo) => {
+      return {
+        nestedFieldInfo,
+        inputObject: {
+          fieldInfo: nestedFieldInfo,
+          clearable: true,
+          closeable: false,
+          label: nestedFieldInfo.text ?? nestedFieldInfo.key,
+          inputType: nestedFieldInfo.inputType,
+          inputOptions: nestedFieldInfo.inputOptions,
+          value: inputValue ? inputValue[nestedFieldInfo.key] : null,
+          getOptions: nestedFieldInfo.getOptions,
+          options: [],
+          nestedInputsArray: [],
+        },
+      }
+    })
+  )
 }

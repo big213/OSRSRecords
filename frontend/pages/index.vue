@@ -40,7 +40,7 @@
             <v-icon left> mdi-plus </v-icon>
             Submit Record</v-btn
           >
-          <v-btn color="primary" nuxt :to="generateLeaderboardRoute()">
+          <v-btn color="primary" nuxt to="/leaderboard">
             <v-icon left> mdi-podium </v-icon>
             Leaderboard</v-btn
           >
@@ -56,7 +56,6 @@ import { mapGetters } from 'vuex'
 import ReleaseHistory from '~/components/common/releaseHistory.vue'
 import { handleError } from '~/services/base'
 import { getEvents } from '~/services/dropdown'
-import { generateLeaderboardRoute } from '~/services/common'
 
 export default {
   components: {
@@ -85,9 +84,6 @@ export default {
   },
 
   methods: {
-    generateLeaderboardRoute() {
-      return generateLeaderboardRoute(this)
-    },
     openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
@@ -107,7 +103,7 @@ export default {
         {
           hid: 'description',
           name: 'description',
-          content: 'OSRSRecords.om',
+          content: 'OSRSRecords.com',
         },
       ],
     }

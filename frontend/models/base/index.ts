@@ -1,6 +1,6 @@
 export { User } from './user'
 export { ApiKey } from './apiKey'
-export { Era } from './era'
+export { EventEra } from './eventEra'
 export { EventClass } from './eventClass'
 export { EventGroup } from './eventGroup'
 export { Event } from './event'

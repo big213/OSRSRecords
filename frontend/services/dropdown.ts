@@ -48,11 +48,11 @@ export const getUsers = <any>(
   })
 )
 
-export const getEras = <any>(
+export const getEventEras = <any>(
   memoize(function (that, _forceReload = false, filterBy = []) {
     return collectPaginatorData(
       that,
-      'getEraPaginator',
+      'getEventEraPaginator',
       {
         id: true,
         name: true,
@@ -144,7 +144,7 @@ export const getEvents = <any>(
         filterBy,
         sortBy: ['name'],
       }
-    ).then((res) => res.concat({ header: 'blah' }))
+    )
   })
 )
 

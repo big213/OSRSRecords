@@ -44,8 +44,14 @@ export const File = <RecordInfo<'file'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filters: [],
-    headers: [
+    filterOptions: [],
+    sortOptions: [
+      {
+        field: 'createdAt',
+        desc: true,
+      },
+    ],
+    headerOptions: [
       {
         field: 'nameWithId',
         sortable: false,

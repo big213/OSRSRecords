@@ -7,14 +7,19 @@ export const PublicSubmission = {
   },
   paginationOptions: {
     ...Submission.paginationOptions,
-    headers: [
+    headerOptions: [
+      {
+        field: 'ranking',
+        width: '100px',
+        align: 'right',
+      },
       {
         field: 'eventRecordWithParticipants',
         sortable: false,
         width: '250px',
       },
       {
-        field: 'participantsListFlat',
+        field: 'participantsLinksList',
         sortable: false,
       },
       {
@@ -39,8 +44,8 @@ export const PublicSubmission = {
   viewOptions: {
     fields: [
       'eventRecordWithParticipants',
-      'eraRecord',
-      'participantsListDetail',
+      'eventEraRecord',
+      'participantsLinksListDetail',
       'score',
       'happenedOn',
       'status',

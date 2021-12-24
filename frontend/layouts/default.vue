@@ -44,15 +44,6 @@
       </v-list>
       <v-divider></v-divider>
       <v-list dense color="accent">
-        <v-list-item :key="-1" :to="generateLeaderboardRoute()" router exact>
-          <v-list-item-action>
-            <v-icon>mdi-podium</v-icon>
-          </v-list-item-action>
-          <v-list-item-content>
-            <v-list-item-title v-text="'Leaderboard'" />
-          </v-list-item-content>
-        </v-list-item>
-
         <v-list-item
           v-for="(item, i) in visibleNavItems"
           :key="i"
@@ -285,7 +276,6 @@ import 'firebase/auth'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
 import CrudRecordDialog from '~/components/dialog/crudRecordDialog.vue'
 import * as allModels from '~/models'
-import { generateLeaderboardRoute } from '~/services/common'
 
 export default {
   components: {
@@ -317,9 +307,16 @@ export default {
       backgroundImage: null,
       navItems: [
         {
+          icon: 'mdi-podium',
+          title: 'Leaderboard',
+          to: '/leaderboard',
+          loginRequired: false,
+        },
+        {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
           to: generateCrudRecordInterfaceRoute('/approved-submissions', {
+            filters: [],
             sortBy: ['happenedOn'],
             sortDesc: [true],
           }),
@@ -463,10 +460,6 @@ export default {
   },
 
   methods: {
-    generateLeaderboardRoute() {
-      return generateLeaderboardRoute(this)
-    },
-
     copyToClipboard(content) {
       return copyToClipboard(this, content)
     },
