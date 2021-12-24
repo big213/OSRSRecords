@@ -315,11 +315,7 @@ export default {
         {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
-          to: generateCrudRecordInterfaceRoute('/approved-submissions', {
-            filters: [],
-            sortBy: ['happenedOn'],
-            sortDesc: [true],
-          }),
+          to: '/latest-submissions',
           loginRequired: false,
         },
         {

@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <SubmissionPagePreset :event-clearable="false"></SubmissionPagePreset>
+  <div v-if="$route.query.pageOptions">
+    <SubmissionPagePreset event-clearable></SubmissionPagePreset>
     <CrudRecordPage
       :record-info="recordInfo"
       :locked-filters="lockedFilters"
@@ -13,6 +13,7 @@
 </template>
 
 <script>
+import { generateCrudRecordInterfaceRoute } from '~/services/base'
 import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
 import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { PublicSubmission } from '~/models/public'
@@ -38,6 +39,36 @@ export default {
         },
       ],
       title: 'Public Submissions',
+    }
+  },
+
+  computed: {
+    targetRoute() {
+      return generateCrudRecordInterfaceRoute(this.$route.path, {
+        search: null,
+
+        filters: [],
+        sort: {
+          field: 'happenedOn',
+          desc: true,
+        },
+      })
+    },
+  },
+
+  watch: {
+    '$route.query.pageOptions'(val) {
+      // if no pageOptions, automatically redirect
+      if (!val) {
+        this.$router.push(generateCrudRecordInterfaceRoute(this.targetRoute))
+      }
+    },
+  },
+
+  mounted() {
+    // if no pageOptions, automatically redirect
+    if (!this.$route.query.pageOptions) {
+      this.$router.push(generateCrudRecordInterfaceRoute(this.targetRoute))
     }
   },
 }

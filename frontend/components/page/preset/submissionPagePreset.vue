@@ -30,6 +30,7 @@ import {
   getInputValue,
   populateInputObject,
   isObject,
+  handleError,
 } from '~/services/base'
 import { Submission } from '~/models/base'
 import GenericInput from '~/components/input/genericInput.vue'
@@ -134,6 +135,13 @@ export default {
       ],
     }
   },
+
+  props: {
+    eventClearable: {
+      type: Boolean,
+      default: false,
+    },
+  },
   computed: {
     inputsArray() {
       return this.filterInputsArray.map(
@@ -165,8 +173,12 @@ export default {
 
     // populate the eventEra inputObject (based on the event)
     async populateEventEra() {
+      console.log('called populate event era')
       const eventEraInputObject = this.getInputObject('eventEra')
       const eventValue = this.getInputValue('event')
+
+      // if event is not specified, skip
+      if (!eventValue) return
 
       eventEraInputObject.options = []
       eventEraInputObject.options = await getEventEras(this, false, [
@@ -295,6 +307,7 @@ export default {
 
     // parses pageOptions and syncs them with the inputs
     syncPageOptions(populateOptions = false) {
+      console.log('called syncpageOptions ' + populateOptions)
       const promisesArray = []
       const pageOptions = this.$route.query.pageOptions
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
@@ -315,20 +328,24 @@ export default {
             if (matchingFilterObject) {
               matchingFilterObject.inputObject.value = rawFilterObject.value
 
-              // populate inputObjects if we need to translate any IDs to objects. Do NOT populate the options
-              await populateInputObject(
-                this,
-                matchingFilterObject.inputObject,
-                populateOptions
-              )
-
               // remove from set
               inputFieldsSet.delete(matchingFilterObject)
             }
           })
         )
         // clears any input fields with no filterObject
-        inputFieldsSet.forEach((ele) => (ele.value = null))
+        promisesArray.push(
+          this.filterInputsArray.map((filterObject) => {
+            // filterObject.inputObject.value = null
+
+            // also runs populateInputObject on these (in case we need to populate options)
+            return populateInputObject(
+              this,
+              filterObject.inputObject,
+              populateOptions
+            )
+          })
+        )
       }
 
       return promisesArray
@@ -336,10 +353,18 @@ export default {
 
     async reset() {
       this.loading.presets = true
-      // syncs the page options while populating the inputObject.options
-      await this.syncPageOptions(true)
-      await this.populateEventEra()
-      this.setBackgroundImage()
+      try {
+        if (this.eventClearable) {
+          this.getInputObject('event').clearable = true
+        }
+        // syncs the page options while populating the inputObject.options
+        await this.syncPageOptions(true)
+        await this.populateEventEra()
+        this.setBackgroundImage()
+      } catch (err) {
+        handleError(this, err)
+      }
+
       this.loading.presets = false
     },
   },

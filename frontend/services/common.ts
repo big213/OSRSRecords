@@ -1,5 +1,5 @@
 import { generateCrudRecordInterfaceRoute } from './base'
-import { getEventEras } from '~/services/dropdown'
+import { getEventEras, getEventsByGroup } from '~/services/dropdown'
 
 type StringKeyObject = { [x: string]: any }
 
@@ -34,12 +34,17 @@ export async function generateLeaderboardRoute(that) {
 }
 
 export async function generateLeaderboardPageOptions(that) {
-  const eventId = '5w5byyuq'
+  // get the first eventId
+  const eventsByGroup = await getEventsByGroup(that)
+
+  const firstEvent = eventsByGroup.find((ele) => ele.id)
+
+  if (!firstEvent) throw new Error('No events configured')
 
   const eventEras = await getEventEras(that, false, [
     {
       'event.id': {
-        eq: eventId,
+        eq: firstEvent.id,
       },
     },
   ])
@@ -52,7 +57,7 @@ export async function generateLeaderboardPageOptions(that) {
       {
         field: 'event',
         operator: 'eq',
-        value: eventId, // COX CM on prod db
+        value: firstEvent.id,
       },
       {
         field: 'participants',
