@@ -152,7 +152,7 @@ export const Submission = <RecordInfo<'submission'>>{
       inputOptions: {
         nestedFields: [
           {
-            key: 'link',
+            key: 'main',
             inputType: 'text',
             text: 'Link URL',
           },
@@ -162,12 +162,12 @@ export const Submission = <RecordInfo<'submission'>>{
       parseValue: (val) => {
         if (!Array.isArray(val)) throw new Error('Array expected')
 
-        return val.map((ele) => ele.link)
+        return val.map((ele) => ele.main)
       },
       serialize: (val) => {
         if (!Array.isArray(val)) return []
 
-        return val.map((ele) => ({ link: ele }))
+        return val.map((ele) => ({ main: ele }))
       },
       component: UrlColumn,
     },

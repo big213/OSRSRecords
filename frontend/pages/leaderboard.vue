@@ -46,9 +46,11 @@ export default {
     '$route.query.pageOptions'(val) {
       // if no pageOptions, automatically redirect
       if (!val) {
-        generateLeaderboardRoute(this).then((route) => {
-          this.$router.push(route)
-        })
+        generateLeaderboardRoute(this)
+          .then((route) => {
+            this.$router.push(route)
+          })
+          .catch((e) => e)
       }
     },
   },
@@ -56,9 +58,11 @@ export default {
   mounted() {
     // if no pageOptions, automatically redirect
     if (!this.$route.query.pageOptions) {
-      generateLeaderboardRoute(this).then((route) => {
-        this.$router.push(route)
-      })
+      generateLeaderboardRoute(this)
+        .then((route) => {
+          this.$router.push(route)
+        })
+        .catch((e) => e)
     }
   },
 }

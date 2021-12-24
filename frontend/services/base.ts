@@ -539,6 +539,7 @@ export function populateInputObject(
   inputObject: CrudInputObject,
   loadOptions = true
 ) {
+  console.log(inputObject)
   const promisesArray: Promise<any>[] = []
   if (
     inputObject.inputType === 'server-autocomplete' ||
@@ -571,8 +572,12 @@ export function populateInputObject(
     }
   } else if (inputObject.inputType === 'value-array') {
     // if it is a value-array, recursively process the nestedValueArray
-    inputObject.nestedInputsArray.forEach((nestedInputObject) => {
-      promisesArray.push(...populateInputObject(that, nestedInputObject))
+    inputObject.nestedInputsArray.forEach((nestedInputArray) => {
+      nestedInputArray.forEach((nestedInputObject) => {
+        promisesArray.push(
+          ...populateInputObject(that, nestedInputObject.inputObject)
+        )
+      })
     })
   } else {
     if (loadOptions && inputObject.getOptions) {

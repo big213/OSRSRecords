@@ -13,6 +13,11 @@ export type CrudFilterObject = {
   inputObject: CrudInputObject
 }
 
+export type NestedInputObject = {
+  inputObject: CrudInputObject
+  nestedFieldInfo: any // InputOptions.nestedFields
+}
+
 // used for the genericInput
 export type CrudInputObject = {
   fieldKey: string // the fieldKey
@@ -38,7 +43,7 @@ export type CrudInputObject = {
   focused: boolean // is the input focused?
   generation: number // generation of the input. used for forcing refreshes
   parentInput: CrudInputObject | null // the parent of the input. can be used to determine if it is nested as well
-  nestedInputsArray: CrudInputObject[] // any nested input objects
+  nestedInputsArray: NestedInputObject[][] // any nested input objects
 }
 
 export type CrudHeaderObject = {

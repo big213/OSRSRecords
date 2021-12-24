@@ -32,10 +32,27 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
       text: 'Contents',
       inputType: 'value-array',
       inputOptions: {
-        nestedInputType: 'server-autocomplete',
-        nestedValueText: 'Event',
-        typename: 'event',
-        hasAvatar: true,
+        nestedFields: [
+          {
+            key: 'main',
+            inputType: 'server-autocomplete',
+            text: 'Event',
+            inputOptions: {
+              typename: 'event',
+              hasAvatar: true,
+            },
+          },
+        ],
+      },
+      parseValue: (val) => {
+        if (!Array.isArray(val)) throw new Error('Array expected')
+
+        return val.map((ele) => ele.main)
+      },
+      serialize: (val) => {
+        if (!Array.isArray(val)) return []
+
+        return val.map((ele) => ({ main: ele }))
       },
     },
     sort: {
@@ -63,11 +80,18 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
         field: 'createdAt',
         desc: true,
       },
+      {
+        field: 'sort',
+        desc: false,
+      },
+      {
+        field: 'sort',
+        desc: true,
+      },
     ],
     headerOptions: [
       {
         field: 'sort',
-        sortable: true,
         width: '110px',
       },
       {
