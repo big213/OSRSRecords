@@ -207,12 +207,20 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
+    const inferredStatus = args.status
+      ? submissionStatusKenum.fromUnknown(args.status)
+      : submissionStatusKenum.SUBMITTED;
+
     // if the record was added as approved, also need to run syncSubmissionIsRecord
-    if (
-      args.status &&
-      submissionStatusKenum.fromUnknown(args.status) ===
-        submissionStatusKenum.APPROVED
-    ) {
+    // HOWEVER, will NOT be triggering handleNewApprovedSubmission and handleRankingChange. admin can flick the status if they want to trigger these events
+    if (inferredStatus === submissionStatusKenum.APPROVED) {
+      await this.syncSubmissionIsRecord(
+        args.event,
+        args.participants,
+        args.era
+      );
+
+      /*
       const ranking = await this.calculateRank({
         eventId: args.event,
         participants: args.participants,
@@ -228,13 +236,6 @@ export class SubmissionService extends PaginatedService {
         ranking,
         fieldPath,
       });
-
-      await this.syncSubmissionIsRecord(
-        args.event,
-        args.participants,
-        args.era
-      );
-
       await this.handleRankingChange({
         eventId: args.event,
         participants: args.participants,
@@ -242,6 +243,7 @@ export class SubmissionService extends PaginatedService {
         ranking,
         fieldPath,
       });
+      */
     }
 
     // do post-create fn, if any
@@ -273,25 +275,32 @@ export class SubmissionService extends PaginatedService {
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
   ) {
-    const discordMessage = await sendDiscordMessage(
-      channelMap.subAlerts,
-      generateSubmissionMessage(itemId, submissionStatusKenum.SUBMITTED)
-    );
+    const inferredStatus = args.status
+      ? submissionStatusKenum.fromUnknown(args.status)
+      : submissionStatusKenum.SUBMITTED;
 
-    await updateTableRow({
-      fields: {
-        discordMessageId: discordMessage.id,
-      },
-      table: this.typename,
-      where: {
-        fields: [
-          {
-            field: "id",
-            value: itemId,
-          },
-        ],
-      },
-    });
+    // send the message in the sub-alerts channel only if NOT added as approved.
+    if (inferredStatus !== submissionStatusKenum.APPROVED) {
+      const discordMessage = await sendDiscordMessage(
+        channelMap.subAlerts,
+        generateSubmissionMessage(itemId, inferredStatus)
+      );
+
+      await updateTableRow({
+        fields: {
+          discordMessageId: discordMessage.id,
+        },
+        table: this.typename,
+        where: {
+          fields: [
+            {
+              field: "id",
+              value: itemId,
+            },
+          ],
+        },
+      });
+    }
 
     /*
     return File.updateFileParentKeys(

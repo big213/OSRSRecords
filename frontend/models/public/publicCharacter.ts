@@ -25,7 +25,7 @@ export const PublicCharacter = {
               width: '250px',
             },
             {
-              field: 'participantsListFlat',
+              field: 'participantsLinksList',
             },
             {
               field: 'score',

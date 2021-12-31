@@ -351,6 +351,7 @@
       persistent-hint
       filled
       class="py-0"
+      v-on="$listeners"
       @click:append="handleClear()"
       @click:append-outer="handleClose()"
     ></v-combobox>
@@ -588,10 +589,6 @@
           <v-col cols="12">
             <div class="subtitle-1">
               {{ item.label + (item.optional ? ' (optional)' : '') }}
-              <v-btn v-if="!isReadonly" icon @click="addRow()">
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
-              <v-spacer></v-spacer>
             </div>
           </v-col>
         </v-row>
@@ -623,7 +620,15 @@
             </v-row>
           </Draggable>
         </div>
-        <div v-else>No elements</div>
+        <div v-else class="pb-3">No elements</div>
+        <v-row v-if="!isReadonly" icon @click="addRow()">
+          <v-col cols="12" class="pa-0">
+            <v-btn small block>
+              <v-icon left>mdi-plus</v-icon>
+              Add Entry
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-container>
     </div>
     <!--     <div

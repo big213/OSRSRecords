@@ -91,6 +91,8 @@ export default {
 
   data() {
     return {
+      isGrid: false,
+
       // type: CrudSortObject | null
       currentSort: null,
 
@@ -200,13 +202,17 @@ export default {
                 : primaryField),
           }
         })
-        .concat({
-          text: 'Actions',
-          value: null,
-          width: '50px',
-          sortable: false,
-          ...this.recordInfo.paginationOptions.headerActionOptions,
-        })
+        .concat(
+          this.isGrid
+            ? []
+            : {
+                text: 'Actions',
+                value: null,
+                width: '50px',
+                sortable: false,
+                ...this.recordInfo.paginationOptions.headerActionOptions,
+              }
+        )
     },
 
     // type: CrudRawFilterObject[]
@@ -353,6 +359,10 @@ export default {
       this.isPolling = true
     }
 
+    if (localStorage.getItem('viewMode') && !this.isChildComponent) {
+      this.isGrid = localStorage.getItem('viewMode') === 'grid'
+    }
+
     if (this.isDialog) this.options.itemsPerPage = 10
 
     this.reset({
@@ -377,6 +387,14 @@ export default {
   methods: {
     generateTimeAgoString,
     getIcon,
+
+    toggleGridMode() {
+      this.isGrid = !this.isGrid
+      // only save the state if not child component
+      if (!this.isChildComponent) {
+        localStorage.setItem('viewMode', this.isGrid ? 'grid' : 'list')
+      }
+    },
 
     handleClearSearch() {
       this.searchInput = ''
@@ -476,9 +494,9 @@ export default {
     },
 
     // same as toggleItemExpanded, but for mobile views
-    openExpandDialog(props, expandTypeObject) {
+    openExpandDialog(item, expandTypeObject) {
       this.expandTypeObject = expandTypeObject
-      this.expandedItem = props.item
+      this.expandedItem = item
 
       this.dialogs.expandRecord = true
 

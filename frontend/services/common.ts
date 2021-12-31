@@ -76,3 +76,38 @@ export async function generateLeaderboardPageOptions(that) {
     },
   }
 }
+
+const specialTeamSizeNamesMap = {
+  '1': 'Solo',
+  '2': 'Duo',
+  '3': 'Trio',
+}
+
+export function generateParticipantsOptions(
+  minParticipants: number | null,
+  maxParticipants: number | null
+) {
+  const returnOptions: any[] = []
+
+  if (!minParticipants && !maxParticipants) {
+    throw new Error('Either one of minParticipants or maxParticipants required')
+  }
+
+  // if maxParticipants is null, cap at 20
+  const actualMaxParticipants = maxParticipants ?? 20
+
+  for (
+    let participantsCounter = minParticipants ?? 1;
+    participantsCounter < actualMaxParticipants + 1;
+    participantsCounter++
+  ) {
+    returnOptions.push({
+      id: participantsCounter,
+      name:
+        specialTeamSizeNamesMap[participantsCounter] ??
+        participantsCounter + '-Man',
+    })
+  }
+
+  return returnOptions
+}

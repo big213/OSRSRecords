@@ -32,6 +32,7 @@ import {
   isObject,
   handleError,
 } from '~/services/base'
+import { generateParticipantsOptions } from '~/services/common'
 import { Submission } from '~/models/base'
 import GenericInput from '~/components/input/genericInput.vue'
 
@@ -100,31 +101,7 @@ export default {
             inputValue: null,
             clearable: false,
             inputOptions: undefined,
-            options: [
-              {
-                name: 'Solo',
-                id: 1,
-              },
-              {
-                name: 'Duo',
-                id: 2,
-              },
-
-              {
-                name: 'Trio',
-                id: 3,
-              },
-
-              {
-                name: '4-Man',
-                id: 4,
-              },
-
-              {
-                name: '5-Man',
-                id: 5,
-              },
-            ],
+            options: [],
             loading: false,
             focused: false,
             generation: 0,
@@ -171,12 +148,11 @@ export default {
       return setInputValue(this.inputsArray, key, value)
     },
 
-    // populate the eventEra inputObject (based on the event)
-    async populateEventEra() {
-      console.log('called populate event era')
+    // populate the eventEra and participants inputObject (based on the event)
+    async handleEventChange() {
       const eventEraInputObject = this.getInputObject('eventEra')
+      const participantsInputObject = this.getInputObject('participants')
       const eventValue = this.getInputValue('event')
-
       // if event is not specified, skip
       if (!eventValue) return
 
@@ -184,10 +160,15 @@ export default {
       eventEraInputObject.options = await getEventEras(this, false, [
         {
           'event.id': {
-            eq: isObject(eventValue) ? eventValue.id : eventValue,
+            eq: eventValue.id,
           },
         },
       ])
+
+      participantsInputObject.options = generateParticipantsOptions(
+        eventValue.minParticipants,
+        eventValue.maxParticipants
+      )
 
       // set to current era by default if eventEra is null
       if (!eventEraInputObject.value) {
@@ -195,15 +176,21 @@ export default {
           (ele) => ele.isCurrent
         )
       }
+
+      // set participants to the first option if it is not an object
+      if (!isObject(participantsInputObject.value)) {
+        participantsInputObject.value = participantsInputObject.options[0]
+      }
     },
 
     async applyPreset(field, item) {
       // if setting event, reset options on eventEra and automatically set it to the current one
       const eventEraInputObject = this.getInputObject('eventEra')
+      const participantsInputObject = this.getInputObject('participants')
       if (field === 'event') {
         this.setBackgroundImage()
         eventEraInputObject.value = null
-        await this.populateEventEra()
+        await this.handleEventChange()
       }
 
       // get the original sortBy/sortDesc
@@ -211,7 +198,7 @@ export default {
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
         : null
       // replace event filters with new ones
-      const excludeFilterKeys = [field, 'eventEra']
+      const excludeFilterKeys = [field, 'eventEra', 'participants']
       this.$router.push(
         generateCrudRecordInterfaceRoute(this.$route.path, {
           ...originalPageOptions,
@@ -236,6 +223,13 @@ export default {
                       ? eventEraInputObject.value.id
                       : eventEraInputObject.value,
                   },
+                  {
+                    field: 'participants',
+                    operator: 'eq',
+                    value: isObject(participantsInputObject.value)
+                      ? participantsInputObject.value.id
+                      : participantsInputObject.value,
+                  },
                 ]
               : []
           ),
@@ -243,61 +237,6 @@ export default {
       )
     },
 
-    // syncs preset inputs with filters
-    syncFilters() {
-      const originalPageOptions = this.$route.query.pageOptions
-        ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
-        : null
-      // determine if a preset was applied
-      if (originalPageOptions.filters) {
-        // sync era filters
-        const eventEraFilterObject = originalPageOptions.filters.find(
-          (filterObject) => filterObject.field === 'eventEra'
-        )
-
-        if (eventEraFilterObject) {
-          // special: only setting the original eventEra.id value
-          this.setInputValue('eventEra', eventEraFilterObject.value)
-        } else {
-          this.setInputValue('eventEra', null)
-        }
-
-        // sync event filters
-        const eventFilterObject = originalPageOptions.filters.find(
-          (filterObject) => filterObject.field === 'event'
-        )
-
-        if (eventFilterObject) {
-          // special: doing this to force the event watcher change
-          this.setInputValue('event', null)
-
-          this.setInputValue(
-            'event',
-            this.getInputObject('event').options.find(
-              (event) => event.id === eventFilterObject.value
-            )
-          )
-        } else {
-          this.setInputValue('event', null)
-        }
-
-        // sync participants filters
-        const participantsFilterObject = originalPageOptions.filters.find(
-          (filterObject) => filterObject.field === 'participants'
-        )
-        if (participantsFilterObject) {
-          this.setInputValue(
-            'participants',
-            this.getInputObject('participants').options.find(
-              (participantObject) =>
-                participantObject.id === participantsFilterObject.value
-            )
-          )
-        } else {
-          this.setInputValue('participants', null)
-        }
-      }
-    },
     setBackgroundImage() {
       // emit event update to parent
       this.$root.$emit('setBackgroundImage', {
@@ -307,7 +246,6 @@ export default {
 
     // parses pageOptions and syncs them with the inputs
     syncPageOptions(populateOptions = false) {
-      console.log('called syncpageOptions ' + populateOptions)
       const promisesArray = []
       const pageOptions = this.$route.query.pageOptions
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
@@ -335,16 +273,23 @@ export default {
         )
         // clears any input fields with no filterObject
         promisesArray.push(
-          this.filterInputsArray.map((filterObject) => {
+          ...this.filterInputsArray.reduce((total, filterObject) => {
             // filterObject.inputObject.value = null
 
+            // changed: if field is eventEra, don't run this, as we are already populating in handleEventChange()
+            if (filterObject.inputObject.fieldKey === 'eventEra') {
+              return total
+            }
+
             // also runs populateInputObject on these (in case we need to populate options)
-            return populateInputObject(
-              this,
-              filterObject.inputObject,
-              populateOptions
+            return total.concat(
+              populateInputObject(
+                this,
+                filterObject.inputObject,
+                populateOptions
+              )
             )
-          })
+          }, [])
         )
       }
 
@@ -358,8 +303,8 @@ export default {
           this.getInputObject('event').clearable = true
         }
         // syncs the page options while populating the inputObject.options
-        await this.syncPageOptions(true)
-        await this.populateEventEra()
+        await Promise.all(this.syncPageOptions(true))
+        await this.handleEventChange()
         this.setBackgroundImage()
       } catch (err) {
         handleError(this, err)

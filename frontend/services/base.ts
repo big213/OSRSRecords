@@ -539,38 +539,8 @@ export function populateInputObject(
   inputObject: CrudInputObject,
   loadOptions = true
 ) {
-  console.log(inputObject)
   const promisesArray: Promise<any>[] = []
-  if (
-    inputObject.inputType === 'server-autocomplete' ||
-    inputObject.inputType === 'server-combobox'
-  ) {
-    const originalFieldValue = inputObject.value
-    inputObject.value = null // set this to null initially while the results load, to prevent console error
-
-    if (originalFieldValue) {
-      promisesArray.push(
-        executeGiraffeql(that, <any>{
-          [`get${capitalizeString(inputObject.inputOptions?.typename)}`]: {
-            id: true,
-            name: true,
-            ...(inputObject.inputOptions?.hasAvatar && {
-              avatar: true,
-            }),
-            __args: {
-              id: originalFieldValue,
-            },
-          },
-        })
-          .then((res) => {
-            // change value to object
-            inputObject.value = res
-            inputObject.options = [res]
-          })
-          .catch((e) => e)
-      )
-    }
-  } else if (inputObject.inputType === 'value-array') {
+  if (inputObject.inputType === 'value-array') {
     // if it is a value-array, recursively process the nestedValueArray
     inputObject.nestedInputsArray.forEach((nestedInputArray) => {
       nestedInputArray.forEach((nestedInputObject) => {
@@ -585,8 +555,44 @@ export function populateInputObject(
         inputObject.getOptions(that).then((res) => {
           // set the options
           inputObject.options = res
+
+          // if autocomplete, attempt to translate the inputObject.value based on the options
+          if (inputObject.inputType === 'autocomplete') {
+            inputObject.value = inputObject.options.find(
+              (ele) => ele.id === inputObject.value
+            )
+          }
         })
       )
+    }
+
+    // if no getOptions and has a typename, populate the options/value with the specific entry
+    if (inputObject.inputOptions?.typename && !inputObject.getOptions) {
+      const originalFieldValue = inputObject.value
+      inputObject.value = null // set this to null initially while the results load, to prevent console error
+
+      if (originalFieldValue) {
+        promisesArray.push(
+          executeGiraffeql(that, <any>{
+            [`get${capitalizeString(inputObject.inputOptions?.typename)}`]: {
+              id: true,
+              name: true,
+              ...(inputObject.inputOptions?.hasAvatar && {
+                avatar: true,
+              }),
+              __args: {
+                id: originalFieldValue,
+              },
+            },
+          })
+            .then((res) => {
+              // change value to object
+              inputObject.value = res
+              inputObject.options = [res]
+            })
+            .catch((e) => e)
+        )
+      }
     }
   }
 

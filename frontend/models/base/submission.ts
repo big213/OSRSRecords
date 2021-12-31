@@ -18,7 +18,11 @@ import UrlColumn from '~/components/table/common/urlColumn.vue'
 import RankingColumn from '~/components/table/common/rankingColumn.vue'
 import ParticipantsColumn from '~/components/table/common/participantsColumn.vue'
 import ParticipantsPreviewColumn from '~/components/table/common/participantsPreviewColumn.vue'
-import { getEventsByGroup, getSubmissionStatuses } from '~/services/dropdown'
+import {
+  getEventEras,
+  getEventsByGroup,
+  getSubmissionStatuses,
+} from '~/services/dropdown'
 import { serializeTime } from '~/services/common'
 
 export const Submission = <RecordInfo<'submission'>>{
@@ -66,7 +70,7 @@ export const Submission = <RecordInfo<'submission'>>{
     eventEra: {
       text: 'Event Era',
       fields: ['eventEra.id'],
-      inputType: 'select',
+      inputType: 'server-autocomplete',
       inputOptions: {
         hasAvatar: true,
         typename: 'eventEra',
@@ -238,6 +242,7 @@ export const Submission = <RecordInfo<'submission'>>{
       getOptions: getSubmissionStatuses,
       inputType: 'select',
       component: SubmissionStatusColumn,
+      default: () => 'APPROVED',
     },
     isCurrent: {
       text: 'Is Current',
@@ -382,6 +387,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'externalLinks',
       'privateComments',
       'publicComments',
+      'status',
     ],
 
     component: EditSubmissionInterface,
