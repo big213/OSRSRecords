@@ -9,14 +9,14 @@
       <v-container v-else class="px-0">
         <v-row>
           <v-col
-            v-for="(item, i) in actualVisibleInputsArray"
+            v-for="(inputObject, i) in actualVisibleInputsArray"
             :key="i"
-            cols="12"
+            :cols="inputObject.cols || 12"
             class="py-0"
           >
             <GenericInput
-              v-if="item.field === 'timeElapsed'"
-              :item="item"
+              v-if="inputObject.fieldKey === 'timeElapsed'"
+              :item="inputObject"
               :parent-item="currentItem"
               @handle-submit="handleSubmit()"
               @keypress="isNumber($event)"
@@ -24,7 +24,7 @@
 
             <GenericInput
               v-else
-              :item="item"
+              :item="inputObject"
               :parent-item="currentItem"
               @handle-submit="handleSubmit()"
             ></GenericInput>

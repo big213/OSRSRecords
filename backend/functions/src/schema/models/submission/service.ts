@@ -216,8 +216,8 @@ export class SubmissionService extends PaginatedService {
     if (inferredStatus === submissionStatusKenum.APPROVED) {
       await this.syncSubmissionIsRecord(
         args.event,
-        args.participants,
-        args.era
+        args.participantsList.length,
+        args.eventEra
       );
 
       /*

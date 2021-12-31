@@ -41,6 +41,7 @@ export type CrudInputObject = {
   readonly?: boolean // is the input readonly?
   loading: boolean // is the input loading?
   focused: boolean // is the input focused?
+  cols?: number // how many cols does the input take up? defaults to 12
   generation: number // generation of the input. used for forcing refreshes
   parentInput: CrudInputObject | null // the parent of the input. can be used to determine if it is nested as well
   nestedInputsArray: NestedInputObject[][] // any nested input objects

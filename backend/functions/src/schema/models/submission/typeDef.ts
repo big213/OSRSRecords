@@ -58,7 +58,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         fields: {
           discordId: {
             type: Scalars.string,
-            allowNull: false,
+            allowNull: true,
           },
           characterId: {
             type: Scalars.id,
@@ -98,7 +98,6 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       allowNull: false,
       defaultValue: "SUBMITTED",
       isKenum: true,
-      typeDefOptions: { addable: false },
     }),
     world: generateIntegerField({
       allowNull: true,

@@ -113,6 +113,9 @@ export const Submission = <RecordInfo<'submission'>>{
             key: 'discordId',
             inputType: 'text',
             text: 'Discord ID',
+            inputOptions: {
+              cols: 6,
+            },
           },
           {
             key: 'characterId',
@@ -120,6 +123,7 @@ export const Submission = <RecordInfo<'submission'>>{
             text: 'Character ID',
             inputOptions: {
               typename: 'character',
+              cols: 6,
             },
           },
         ],

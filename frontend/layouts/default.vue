@@ -464,7 +464,7 @@ export default {
     openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
-          recordInfo: 'Submission',
+          recordInfo: 'MySubmission',
           mode: 'add',
           selectedItem: {},
         })

@@ -202,6 +202,7 @@ type InputOptions = {
   // nestedKeyText?: string
   // nestedValueText?: string
   typename?: string
+  cols?: number // defaults to 12
   // only applies to value-array
   nestedFields?: {
     key: string

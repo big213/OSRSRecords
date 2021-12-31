@@ -9,13 +9,13 @@
       <v-container v-else class="px-0">
         <v-row>
           <v-col
-            v-for="(item, i) in visibleInputsArray"
+            v-for="(inputObject, i) in visibleInputsArray"
             :key="i"
-            cols="12"
+            :cols="inputObject.cols || 12"
             class="py-0"
           >
             <GenericInput
-              :item="item"
+              :item="inputObject"
               :parent-item="currentItem"
               @handle-submit="handleSubmit()"
             ></GenericInput>

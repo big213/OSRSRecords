@@ -41,6 +41,7 @@ export const PublicSubmission = {
     ],
     downloadOptions: undefined,
   },
+
   viewOptions: {
     fields: [
       'eventRecordWithParticipants',
@@ -58,7 +59,6 @@ export const PublicSubmission = {
       'publicComments',
     ],
   },
-  addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,
   enterOptions: undefined,

@@ -989,6 +989,7 @@ export default {
                 readonly: false,
                 loading: false,
                 focused: false,
+                cols: fieldInfo.inputOptions?.cols,
                 generation: 0,
                 parentInput: null,
                 nestedInputsArray: [],
