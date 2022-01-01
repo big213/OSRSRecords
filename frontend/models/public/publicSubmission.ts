@@ -59,6 +59,7 @@ export const PublicSubmission = {
       'publicComments',
     ],
   },
+  addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,
   enterOptions: undefined,

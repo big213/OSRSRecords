@@ -3,10 +3,10 @@ import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
 } from '~/services/base'
+import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import { getEvents } from '~/services/dropdown'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
@@ -63,8 +63,6 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       text: 'Start Date',
       inputType: 'datepicker',
       hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // unix timestamp to YYYY-MM-DD HH:MM:SS
-      serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
       parseImportValue: (val: string) => {
@@ -75,15 +73,12 @@ export const EventEra = <RecordInfo<'eventEra'>>{
 
         return msTimestamp / 1000
       },
-
-      component: TruthyOrNoneColumn,
+      component: TimeStringColumn,
     },
     endDate: {
       text: 'End Date',
       inputType: 'datepicker',
       hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // unix timestamp to YYYY-MM-DD HH:MM:SS
-      serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
       parseImportValue: (val: string) => {
@@ -94,8 +89,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
 
         return msTimestamp / 1000
       },
-
-      component: TruthyOrNoneColumn,
+      component: TimeStringColumn,
     },
     isCurrent: {
       text: 'Is Current',

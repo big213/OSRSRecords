@@ -7,7 +7,9 @@ import {
 } from "../../services";
 import {
   GiraffeqlInputFieldType,
+  GiraffeqlInputType,
   GiraffeqlObjectType,
+  GiraffeqlScalarType,
   ObjectTypeDefinition,
 } from "giraffeql";
 import {
@@ -30,6 +32,7 @@ import {
 import { Scalars } from "../..";
 import { fetchTableRows } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
+import { getObjectType } from "../../core/helpers/resolver";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: Submission.typename,
@@ -164,20 +167,39 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "status",
         "eventEra.id",
       ],
-      resolver({ parentValue }) {
+      args: new GiraffeqlInputFieldType({
+        required: false,
+        type: new GiraffeqlInputType({
+          name: "rankingInput",
+          fields: {
+            excludeParticipants: new GiraffeqlInputFieldType({
+              type: Scalars.boolean,
+            }),
+            excludeEventEra: new GiraffeqlInputFieldType({
+              type: Scalars.boolean,
+            }),
+          },
+        }),
+      }),
+      resolver({ parentValue, args }) {
+        const validatedArgs = <any>args;
         return Submission.calculateRank({
           eventId: parentValue.event.id,
-          participants: parentValue.participants,
-          eventEraId: parentValue.eventEra.id,
+          participants: validatedArgs?.excludeParticipants
+            ? null
+            : parentValue.participants,
+          eventEraId: validatedArgs?.excludeEventEra
+            ? null
+            : parentValue.eventEra.id,
           status: submissionStatusKenum.fromUnknown(parentValue.status),
           score: parentValue.score,
         });
       },
     },
-    previousRecordHappenedOn: {
-      type: Scalars.unixTimestamp,
+    previousRecord: {
+      type: Submission.typeDefLookup,
       description:
-        "The date of the previous record given the event.id, participants, and eventEra.id, if any",
+        "The previous record given the event.id, participants, and eventEra.id, if any",
       allowNull: true,
       requiredSqlFields: [
         "isRecord",
@@ -186,72 +208,62 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "participants",
         "eventEra.id",
       ],
-      async resolver({ parentValue }) {
+      async resolver({ req, parentValue, fieldPath, query }) {
         // is !isRecord, return null
         if (!parentValue.isRecord) return null;
 
         // check when the previous record for the event.id, participants, status === 'approved', eventEra.id is
-        const results = await fetchTableRows({
-          select: [
-            {
-              field: "happenedOn",
+        const results = await getObjectType({
+          typename: Submission.typename,
+          req,
+          fieldPath,
+          externalQuery: query,
+          sqlParams: {
+            where: {
+              fields: [
+                {
+                  field: "event.id",
+                  operator: "eq",
+                  value: parentValue.event.id,
+                },
+                {
+                  field: "participants",
+                  operator: "eq",
+                  value: parentValue.participants,
+                },
+                {
+                  field: "status",
+                  operator: "eq",
+                  value: submissionStatusKenum.APPROVED.index,
+                },
+                {
+                  field: "eventEra.id",
+                  operator: "eq",
+                  value: parentValue.eventEra.id,
+                },
+                {
+                  field: "isRecord",
+                  operator: "eq",
+                  value: true,
+                },
+                {
+                  field: "happenedOn",
+                  operator: "lt",
+                  value: parentValue.happenedOn,
+                },
+              ],
             },
-          ],
-          from: Submission.typename,
-          where: {
-            fields: [
-              {
-                field: "event.id",
-                operator: "eq",
-                value: parentValue.event.id,
-              },
-              {
-                field: "participants",
-                operator: "eq",
-                value: parentValue.participants,
-              },
-              {
-                field: "status",
-                operator: "eq",
-                value: submissionStatusKenum.APPROVED.index,
-              },
-              {
-                field: "eventEra.id",
-                operator: "eq",
-                value: parentValue.eventEra.id,
-              },
-              {
-                field: "isRecord",
-                operator: "eq",
-                value: true,
-              },
-              {
-                field: "happenedOn",
-                operator: "lt",
-                value: parentValue.happenedOn,
-              },
-            ],
+            limit: 1,
           },
-          orderBy: [
-            {
-              field: "happenedOn",
-              desc: true,
-            },
-          ],
-          limit: 1,
         });
 
-        // if no previous record, return null
         if (results.length < 1) {
           return null;
         }
 
-        const previousResult = results[0];
-
-        return previousResult.happenedOn;
+        return results[0];
       },
     },
-
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),
     ...generateCreatedByField(User, true),

@@ -698,6 +698,7 @@ import {
   getIcon,
   collectPaginatorData,
   addNestedInputObject,
+  generateDateLocaleString,
 } from '~/services/base'
 import { executeGiraffeql } from '~/services/giraffeql'
 import FileChip from '~/components/chip/fileChip.vue'
@@ -1049,7 +1050,11 @@ export default {
           }
           break
         case 'datepicker':
-          this.syncDatePickerInput(this.item.value)
+          // if the value is a number, transform it into string
+          if (!isNaN(Number(this.item.value))) {
+            this.item.value = generateDateLocaleString(this.item.value)
+          }
+          this.syncDatePickerInput(this.item.inputValue)
           break
       }
     },

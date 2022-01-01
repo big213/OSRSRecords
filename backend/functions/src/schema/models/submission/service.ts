@@ -18,6 +18,7 @@ import {
   deleteTableRow,
   fetchTableRows,
   insertTableRow,
+  SqlWhereObject,
   updateTableRow,
 } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
@@ -82,8 +83,8 @@ export class SubmissionService extends PaginatedService {
     score,
   }: {
     eventId: string;
-    participants: number;
-    eventEraId: string;
+    participants: number | null;
+    eventEraId: string | null;
     status: submissionStatusKenum | null;
     score: number;
   }) {
@@ -92,37 +93,45 @@ export class SubmissionService extends PaginatedService {
       return null;
     }
 
+    const whereObject: SqlWhereObject = {
+      fields: [
+        {
+          field: "score",
+          operator: "lt",
+          value: score,
+        },
+        {
+          field: "event.id",
+          operator: "eq",
+          value: eventId,
+        },
+        {
+          field: "status",
+          operator: "eq",
+          value: submissionStatusKenum.APPROVED.index,
+        },
+      ],
+    };
+
+    if (participants) {
+      whereObject.fields.push({
+        field: "participants",
+        operator: "eq",
+        value: participants,
+      });
+    }
+
+    if (eventEraId) {
+      whereObject.fields.push({
+        field: "eventEra.id",
+        operator: "eq",
+        value: eventEraId,
+      });
+    }
+
     const resultsCount = await countTableRows({
       from: this.typename,
-      where: {
-        fields: [
-          {
-            field: "score",
-            operator: "lt",
-            value: score,
-          },
-          {
-            field: "event.id",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            operator: "eq",
-            value: participants,
-          },
-          {
-            field: "status",
-            operator: "eq",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-          {
-            field: "eventEra.id",
-            operator: "eq",
-            value: eventEraId,
-          },
-        ],
-      },
+      where: whereObject,
     });
 
     return resultsCount + 1;

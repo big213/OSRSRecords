@@ -1,5 +1,6 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
+import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
 import PreviewableFilesColumn from '~/components/table/common/previewableFilesColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
@@ -229,17 +230,15 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Happened On',
       inputType: 'datepicker',
       hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // unix timestamp to YYYY-MM-DD HH:MM:SS
-      serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
-      component: TruthyOrNoneColumn,
+      component: TimeStringColumn,
     },
     previousRecordHappenedOn: {
       text: 'Previous Record Time',
-      // unix timestamp to YYYY-MM-DD HH:MM:SS
-      serialize: generateDateLocaleString,
-      component: TruthyOrNoneColumn,
+      fields: ['previousRecord.happenedOn'],
+      pathPrefix: 'previousRecord.happenedOn',
+      component: TimeStringColumn,
     },
     status: {
       text: 'Status',

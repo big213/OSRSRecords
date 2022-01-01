@@ -455,7 +455,7 @@ import {
 } from '~/services/base'
 
 // changed
-const requiredFilters = ['eventEra', 'event', 'status']
+const requiredFilters = ['event']
 
 export default {
   name: 'CrudRecordInterface',
@@ -598,9 +598,21 @@ export default {
           this.records.length < 1 &&
           this.isRankMode
         ) {
+         const hasParticipantsFilter = this.allFilters.find(
+              (rawFilterObject) => rawFilterObject.field === 'participants');
+
+         const hasEventEraFilter = this.allFilters.find(
+              (rawFilterObject) => rawFilterObject.field === 'eventEra');
+
+
           const rankResults = await executeGiraffeql(this, {
             getSubmission: {
-              ranking: true,
+              ranking: {
+                __args: {
+                  excludeParticipants: !hasParticipantsFilter,
+                  excludeEventEra: !hasEventEraFilter,
+                },
+              },
               __args: {
                 id: results.edges[0].node.id,
               },

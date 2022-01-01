@@ -4,6 +4,7 @@ import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
+import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
 import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
@@ -83,8 +84,6 @@ export const Event = <RecordInfo<'event'>>{
       text: 'Release Date',
       inputType: 'datepicker',
       hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // unix timestamp to YYYY-MM-DD HH:MM:SS
-      serialize: generateDateLocaleString,
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
       parseImportValue: (val: string) => {
@@ -95,6 +94,7 @@ export const Event = <RecordInfo<'event'>>{
 
         return msTimestamp / 1000
       },
+      component: TimeStringColumn,
     },
     description: {
       text: 'Description',

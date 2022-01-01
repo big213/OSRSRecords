@@ -77,7 +77,7 @@ export default {
             inputType: 'select',
             value: null,
             inputValue: null,
-            clearable: false,
+            clearable: true,
             inputOptions: Submission.fields['eventEra'].inputOptions,
             options: [],
             loading: false,
@@ -87,7 +87,6 @@ export default {
             nestedInputsArray: [],
           },
         },
-
         {
           filterObject: {
             field: 'participants',
@@ -99,7 +98,7 @@ export default {
             inputType: 'select',
             value: null,
             inputValue: null,
-            clearable: false,
+            clearable: true,
             inputOptions: undefined,
             options: [],
             loading: false,
@@ -187,6 +186,7 @@ export default {
       // if setting event, reset options on eventEra and automatically set it to the current one
       const eventEraInputObject = this.getInputObject('eventEra')
       const participantsInputObject = this.getInputObject('participants')
+      const eventInputObject = this.getInputObject('event')
       if (field === 'event') {
         this.setBackgroundImage()
         eventEraInputObject.value = null
@@ -198,41 +198,48 @@ export default {
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
         : null
       // replace event filters with new ones
-      const excludeFilterKeys = [field, 'eventEra', 'participants']
+      const excludeFilterKeys = ['event', 'eventEra', 'participants']
+
+      const filters = originalPageOptions?.filters
+        ? originalPageOptions.filters.filter(
+            (filterObject) => !excludeFilterKeys.includes(filterObject.field)
+          )
+        : []
+
+      if (eventInputObject.value) {
+        filters.push({
+          field: 'event',
+          operator: 'eq',
+          value: isObject(eventInputObject.value)
+            ? eventInputObject.value.id
+            : eventInputObject.value,
+        })
+      }
+
+      if (eventEraInputObject.value) {
+        filters.push({
+          field: 'eventEra',
+          operator: 'eq',
+          value: isObject(eventEraInputObject.value)
+            ? eventEraInputObject.value.id
+            : eventEraInputObject.value,
+        })
+      }
+
+      if (participantsInputObject.value) {
+        filters.push({
+          field: 'participants',
+          operator: 'eq',
+          value: isObject(participantsInputObject.value)
+            ? participantsInputObject.value.id
+            : participantsInputObject.value,
+        })
+      }
+
       this.$router.push(
         generateCrudRecordInterfaceRoute(this.$route.path, {
           ...originalPageOptions,
-          filters: (originalPageOptions?.filters
-            ? originalPageOptions.filters.filter(
-                (filterObject) =>
-                  !excludeFilterKeys.includes(filterObject.field)
-              )
-            : []
-          ).concat(
-            item
-              ? [
-                  {
-                    field: field,
-                    operator: 'eq',
-                    value: item.id,
-                  },
-                  {
-                    field: 'eventEra',
-                    operator: 'eq',
-                    value: isObject(eventEraInputObject.value)
-                      ? eventEraInputObject.value.id
-                      : eventEraInputObject.value,
-                  },
-                  {
-                    field: 'participants',
-                    operator: 'eq',
-                    value: isObject(participantsInputObject.value)
-                      ? participantsInputObject.value.id
-                      : participantsInputObject.value,
-                  },
-                ]
-              : []
-          ),
+          filters,
         })
       )
     },

@@ -112,13 +112,14 @@ export default {
 
       loading: {
         loadData: false,
+        loadMore: false,
         syncData: false,
         exportData: false,
       },
 
       reloadGeneration: 0,
 
-      resultsPerPage: 25,
+      resultsPerPage: 10,
 
       // has the recordInfo been changed?
       cancelPageOptionsReset: false,
@@ -142,6 +143,12 @@ export default {
   },
 
   computed: {
+    isDataLoading() {
+      return (
+        this.loading.loadData || this.loading.loadMore || this.loading.syncData
+      )
+    },
+
     // transforms SortObject[] to CrudSortObject[]
     // type: CrudSortObject[]
     sortOptions() {
@@ -742,7 +749,10 @@ export default {
 
     loadMore() {
       this.reloadGeneration++
-      this.loadData(true, this.reloadGeneration)
+      this.loading.loadMore = true
+      this.loadData(false, this.reloadGeneration).then(
+        () => (this.loading.loadMore = false)
+      )
     },
 
     async loadData(showLoader = true, currentReloadGeneration) {
@@ -873,7 +883,7 @@ export default {
     },
 
     // syncs the pageOptions
-    syncPageOptions(syncFilters = false) {
+    async syncPageOptions(syncFilters = false) {
       // sync the search
       this.searchInput = this.search || ''
 
@@ -889,31 +899,34 @@ export default {
       if (syncFilters) {
         if (this.rawFilters.length > 0) {
           const inputFieldsSet = new Set(this.filterInputsArray)
-          this.rawFilters.forEach(async (rawFilterObject) => {
-            const matchingFilterObject = this.filterInputsArray.find(
-              (crudFilterObject) =>
-                crudFilterObject.filterObject.field === rawFilterObject.field &&
-                crudFilterObject.filterObject.operator ===
-                  rawFilterObject.operator
-            )
-
-            if (matchingFilterObject) {
-              matchingFilterObject.inputObject.value = rawFilterObject.value
-
-              // populate inputObjects if we need to translate any IDs to objects. Do NOT populate the options
-              await populateInputObject(
-                this,
-                matchingFilterObject.inputObject,
-                false
+          await Promise.all(
+            this.rawFilters.map(async (rawFilterObject) => {
+              const matchingFilterObject = this.filterInputsArray.find(
+                (crudFilterObject) =>
+                  crudFilterObject.filterObject.field ===
+                    rawFilterObject.field &&
+                  crudFilterObject.filterObject.operator ===
+                    rawFilterObject.operator
               )
 
-              // remove from set
-              inputFieldsSet.delete(matchingFilterObject)
-            }
-          })
+              if (matchingFilterObject) {
+                matchingFilterObject.inputObject.value = rawFilterObject.value
 
-          // clears any input fields with no filterObject
-          inputFieldsSet.forEach((ele) => (ele.value = null))
+                // populate inputObjects if we need to translate any IDs to objects. Do NOT populate the options
+                await populateInputObject(
+                  this,
+                  matchingFilterObject.inputObject,
+                  false
+                )
+
+                // remove from set
+                inputFieldsSet.delete(matchingFilterObject)
+              }
+            })
+          )
+
+          // clears any input fields with no matching filterObject
+          inputFieldsSet.forEach((ele) => (ele.inputObject.value = null))
         }
 
         this.filterChanged = false

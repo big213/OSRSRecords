@@ -37,18 +37,9 @@
         </v-simple-table>
       </v-container>
     </v-card-text>
-
     <v-card-actions v-if="!isLoading">
       <v-spacer></v-spacer>
       <slot name="footer-action"></slot>
-      <v-btn
-        v-if="mode !== 'view'"
-        ref="submit"
-        color="primary"
-        :loading="loading.editRecord"
-        @click="handleSubmit()"
-        >Submit</v-btn
-      >
     </v-card-actions>
   </v-card>
 </template>
