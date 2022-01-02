@@ -156,17 +156,15 @@ export default {
       if (!eventValue) return
 
       eventEraInputObject.options = []
+      // also add an "any" option
       eventEraInputObject.options = await getEventEras(this, false, [
         {
           'event.id': {
             eq: eventValue.id,
           },
         },
-      ])
-
-      // also add an "any" option
-      eventEraInputObject.options.push(
-        ...[
+      ]).then((res) =>
+        res.concat([
           {
             divider: true,
           },
@@ -174,7 +172,7 @@ export default {
             id: '__undefined',
             name: 'Any',
           },
-        ]
+        ])
       )
 
       participantsInputObject.options = generateParticipantsOptions(
