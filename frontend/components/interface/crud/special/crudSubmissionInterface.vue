@@ -657,6 +657,8 @@ export default {
         if (this.isRankMode && this.records.length > 0) {
           const firstResultRanking = this.records[0].ranking
 
+          let placeDiff = 0
+
           this.records.forEach((record, index) => {
             this.$set(
               record,
@@ -664,9 +666,18 @@ export default {
               firstResultRanking === null
                 ? null
                 : this.currentSort.desc
-                ? firstResultRanking - index
-                : firstResultRanking + index
+                ? firstResultRanking - placeDiff
+                : firstResultRanking + placeDiff
             )
+
+            // check the next record and see if it exists and the score is not the same
+            if (
+              this.records[index + 1] &&
+              record.score !== this.records[index + 1].score
+            ) {
+              // if it is, increment placeDiff. else, do not
+              placeDiff++
+            }
           })
         }
 

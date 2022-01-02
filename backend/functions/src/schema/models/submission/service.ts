@@ -3,6 +3,7 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import {
   createObjectType,
   deleteObjectType,
+  getObjectType,
   updateObjectType,
 } from "../../core/helpers/resolver";
 import { PaginatedService } from "../../core/services";
@@ -18,6 +19,9 @@ import {
   deleteTableRow,
   fetchTableRows,
   insertTableRow,
+  SqlOrderByObject,
+  SqlSelectQuery,
+  SqlSelectQueryObject,
   SqlWhereObject,
   updateTableRow,
 } from "../../core/helpers/sql";
@@ -34,8 +38,9 @@ import {
   generateLeaderboardPageOptions,
   serializeTime,
 } from "../../helpers/common";
-import { objectOnlyHasFields } from "../../core/helpers/shared";
+import { escapeRegExp, objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
+import { generateError } from "../../core/helpers/error";
 
 export class SubmissionService extends PaginatedService {
   defaultTypename = "submission";
@@ -130,11 +135,23 @@ export class SubmissionService extends PaginatedService {
     }
 
     const resultsCount = await countTableRows({
+      field: "score",
+      distinct: true,
       from: this.typename,
       where: whereObject,
     });
 
     return resultsCount + 1;
+  }
+
+  sqlParamsModifier(sqlParams: Omit<SqlSelectQuery, "from" | "select">) {
+    // need to add sorting by dateHappened asc to all queries
+    if (sqlParams.orderBy) {
+      sqlParams.orderBy.push({
+        field: "happenedOn",
+        desc: false,
+      });
+    }
   }
 
   @permissionsCheck("create")

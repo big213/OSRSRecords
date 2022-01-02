@@ -4,6 +4,7 @@ import {
   countTableRows,
   fetchTableRows,
   SqlOrderByObject,
+  SqlSelectQuery,
   SqlSelectQueryObject,
   SqlWhereFieldOperator,
   SqlWhereObject,
@@ -589,9 +590,32 @@ export class NormalService extends BaseService {
       });
     }
 
-    // add id as the last sort key if it is not already the sortByField
-    if (sortByField !== "id")
-      orderBy.push({ field: "id", desc: isBeforeQuery ? true : false });
+    const sqlParams: Omit<SqlSelectQuery, "from" | "select"> = {
+      where: whereObject,
+      orderBy,
+      limit,
+      specialParams: await this.getSpecialParams({
+        req,
+        fieldPath,
+        args,
+        query,
+        data,
+        isAdmin,
+      }),
+      distinct: true,
+      groupBy: Array.isArray(validatedArgs.groupBy)
+        ? validatedArgs.groupBy.reduce((total, item, index) => {
+            if (item in this.groupByFieldsMap) {
+              total.push({
+                field: this.groupByFieldsMap[item].field ?? item,
+              });
+            }
+            return total;
+          }, [])
+        : null,
+    };
+
+    this.sqlParamsModifier && this.sqlParamsModifier(sqlParams);
 
     const results = await Resolver.getObjectType({
       typename: this.typename,
@@ -599,30 +623,7 @@ export class NormalService extends BaseService {
       fieldPath,
       externalQuery: selectQuery,
       rawSelect,
-      sqlParams: {
-        where: whereObject,
-        orderBy,
-        limit,
-        specialParams: await this.getSpecialParams({
-          req,
-          fieldPath,
-          args,
-          query,
-          data,
-          isAdmin,
-        }),
-        distinct: true,
-        groupBy: Array.isArray(validatedArgs.groupBy)
-          ? validatedArgs.groupBy.reduce((total, item, index) => {
-              if (item in this.groupByFieldsMap) {
-                total.push({
-                  field: this.groupByFieldsMap[item].field ?? item,
-                });
-              }
-              return total;
-            }, [])
-          : null,
-      },
+      sqlParams,
       data,
     });
 
@@ -672,6 +673,8 @@ export class NormalService extends BaseService {
   getSpecialParams(inputs: ServiceFunctionInputs): any {
     return undefined;
   }
+
+  sqlParamsModifier(sqlParams: Omit<SqlSelectQuery, "from" | "select">) {}
 
   // looks up a record using its keys
   async lookupRecord(

@@ -74,6 +74,7 @@ export type SqlSelectQuery = {
 };
 
 export type SqlCountQuery = {
+  field?: string; // defaults to "id"
   from: string;
   where: SqlWhereObject;
   limit?: number;
@@ -746,7 +747,7 @@ export async function countTableRows(
 
     // apply distinct
     knexObject[sqlQuery.distinct ? "countDistinct" : "count"](
-      knex.raw(`"${tableAlias}".id`)
+      knex.raw(`"${tableAlias}"."${sqlQuery.field ?? "id"}"`)
     );
 
     const results = await knexObject;
