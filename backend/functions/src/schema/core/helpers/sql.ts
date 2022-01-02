@@ -702,9 +702,10 @@ export async function fetchTableRows(
     // apply distinct
     if (sqlQuery.distinct) {
       knexObject.distinctOn(
-        sqlQuery.orderBy
+        (sqlQuery.orderBy
           ? sqlQuery.orderBy.map((ele) => fieldInfoMap.get(ele.field)!.alias)
           : []
+        ).concat("id")
       );
     }
 

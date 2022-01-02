@@ -571,7 +571,7 @@ export function populateInputObject(
       const originalFieldValue = inputObject.value
       inputObject.value = null // set this to null initially while the results load, to prevent console error
 
-      if (originalFieldValue) {
+      if (originalFieldValue && originalFieldValue !== '__undefined') {
         promisesArray.push(
           executeGiraffeql(that, <any>{
             [`get${capitalizeString(inputObject.inputOptions?.typename)}`]: {
