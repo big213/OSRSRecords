@@ -5,7 +5,7 @@
       :title="placeEmojisMap[currentValue].text"
       >{{ placeEmojisMap[currentValue].emoji }}</span
     >
-    <span v-else>{{ currentValue }}</span>
+    <span>{{ currentValue }}</span>
   </div>
 </template>
 

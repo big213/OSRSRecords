@@ -608,6 +608,9 @@ export default {
 
               if (!total[primaryField]) total[primaryField] = {}
 
+              // if value is '__undefined', exclude it entirely
+              if (rawFilterObject.value === '__undefined') return total
+
               // parse '__null' to null first
               // also parse '__now()' to current date string
               const value =
@@ -829,6 +832,9 @@ export default {
                 : rawFilterObject.field
 
               if (!total[primaryField]) total[primaryField] = {}
+
+              // if value is '__undefined', exclude it entirely
+              if (rawFilterObject.value === '__undefined') return total
 
               // parse '__null' to null first
               // also parse '__now()' to current date string

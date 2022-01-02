@@ -26,7 +26,29 @@ export default {
 
   data() {
     return {
-      recordInfo: PublicSubmission,
+      recordInfo: {
+        ...PublicSubmission,
+        fields: {
+          ...PublicSubmission.fields,
+          ranking: {
+            ...PublicSubmission.fields.ranking,
+            text: 'Ranking',
+          },
+        },
+        paginationOptions: {
+          ...PublicSubmission.paginationOptions,
+          sortOptions: [
+            {
+              field: 'score',
+              desc: false,
+            },
+            {
+              field: 'score',
+              desc: true,
+            },
+          ],
+        },
+      },
       hiddenFilters: ['status'],
       head: {
         title: 'Leaderboard',

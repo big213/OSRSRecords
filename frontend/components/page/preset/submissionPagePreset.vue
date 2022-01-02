@@ -77,7 +77,7 @@ export default {
             inputType: 'select',
             value: null,
             inputValue: null,
-            clearable: true,
+            clearable: false,
             inputOptions: Submission.fields['eventEra'].inputOptions,
             options: [],
             loading: false,
@@ -98,7 +98,7 @@ export default {
             inputType: 'select',
             value: null,
             inputValue: null,
-            clearable: true,
+            clearable: false,
             inputOptions: undefined,
             options: [],
             loading: false,
@@ -164,9 +164,35 @@ export default {
         },
       ])
 
+      // also add an "any" option
+      eventEraInputObject.options.push(
+        ...[
+          {
+            divider: true,
+          },
+          {
+            id: '__undefined',
+            name: 'Any',
+          },
+        ]
+      )
+
       participantsInputObject.options = generateParticipantsOptions(
         eventValue.minParticipants,
         eventValue.maxParticipants
+      )
+
+      // also add an "any" option
+      participantsInputObject.options.push(
+        ...[
+          {
+            divider: true,
+          },
+          {
+            id: '__undefined',
+            name: 'Any',
+          },
+        ]
       )
 
       // set to current era by default if eventEra is null

@@ -153,7 +153,11 @@
       </v-toolbar>
     </v-container>
     <v-card class="text-center">
-      (Showing {{ records.length }} of {{ totalRecords }} Records)
+      <span v-if="!isDataLoading">
+        (Showing {{ records.length }} of {{ totalRecords }}
+        {{ recordInfo.pluralName }})
+      </span>
+      <span v-else>&nbsp;</span>
     </v-card>
     <v-divider />
 
@@ -239,10 +243,15 @@
                   v-if="records.length < totalRecords"
                   text
                   block
+                  :loading="loading.loadMore"
                   @click="loadMore()"
                   >View More</v-btn
                 >
-                (Showing {{ records.length }} of {{ totalRecords }} Records)
+                <span v-if="!isDataLoading">
+                  (Showing {{ records.length }} of {{ totalRecords }}
+                  {{ recordInfo.pluralName }})
+                </span>
+                <span v-else>&nbsp;</span>
               </div>
             </v-col>
           </v-row>
@@ -372,10 +381,15 @@
             v-if="records.length < totalRecords"
             text
             block
+            :loading="loading.loadMore"
             @click="loadMore()"
             >View More</v-btn
           >
-          (Showing {{ records.length }} of {{ totalRecords }} Records)
+          <span v-if="!isDataLoading">
+            (Showing {{ records.length }} of {{ totalRecords }}
+            {{ recordInfo.pluralName }})
+          </span>
+          <span v-else>&nbsp;</span>
         </div>
       </template>
 
@@ -563,6 +577,9 @@ export default {
 
                 if (!total[primaryField]) total[primaryField] = {}
 
+                // if value is '__undefined', exclude it entirely
+                if (rawFilterObject.value === '__undefined') return total
+
                 // parse '__null' to null first
                 // also parse '__now()' to current date string
                 const value =
@@ -598,12 +615,13 @@ export default {
           this.records.length < 1 &&
           this.isRankMode
         ) {
-         const hasParticipantsFilter = this.allFilters.find(
-              (rawFilterObject) => rawFilterObject.field === 'participants');
+          const hasParticipantsFilter = this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'participants'
+          )
 
-         const hasEventEraFilter = this.allFilters.find(
-              (rawFilterObject) => rawFilterObject.field === 'eventEra');
-
+          const hasEventEraFilter = this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'eventEra'
+          )
 
           const rankResults = await executeGiraffeql(this, {
             getSubmission: {

@@ -9,21 +9,12 @@ import ResultColumn from '~/components/table/common/resultColumn.vue'
 import SubmissionTypeColumn from '~/components/table/common/submissionTypeColumn.vue'
 import EditSubmissionInterface from '~/components/interface/crud/special/editSubmissionInterface.vue'
 import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
-import {
-  generateDateLocaleString,
-  generateParseDateTimeStringFn,
-  isObject,
-} from '~/services/base'
-import TruthyOrNoneColumn from '~/components/table/common/truthyOrNoneColumn.vue'
+import { generateParseDateTimeStringFn } from '~/services/base'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import RankingColumn from '~/components/table/common/rankingColumn.vue'
 import ParticipantsColumn from '~/components/table/common/participantsColumn.vue'
 import ParticipantsPreviewColumn from '~/components/table/common/participantsPreviewColumn.vue'
-import {
-  getEventEras,
-  getEventsByGroup,
-  getSubmissionStatuses,
-} from '~/services/dropdown'
+import { getEventsByGroup, getSubmissionStatuses } from '~/services/dropdown'
 import { serializeTime } from '~/services/common'
 
 export const Submission = <RecordInfo<'submission'>>{
@@ -332,6 +323,10 @@ export const Submission = <RecordInfo<'submission'>>{
     sortOptions: [
       {
         field: 'createdAt',
+        desc: true,
+      },
+      {
+        field: 'happenedOn',
         desc: true,
       },
       {
