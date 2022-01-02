@@ -605,7 +605,6 @@ export function addNestedInputObject(
 ) {
   parentInputObject.nestedInputsArray.push(
     parentInputObject.inputOptions.nestedFields.map((nestedFieldInfo) => {
-      console.log(nestedFieldInfo)
       return {
         nestedFieldInfo,
         inputObject: {

@@ -8,6 +8,12 @@
       ></CircularLoader>
       <v-container v-else class="px-0">
         <v-row>
+          <v-col v-if="isAdmin" cols="12" class="py-0">
+            <v-text-field
+              v-model="teamMembersInput"
+              label="Team Members (Admin)"
+            ></v-text-field>
+          </v-col>
           <v-col
             v-for="(inputObject, i) in actualVisibleInputsArray"
             :key="i"
@@ -21,7 +27,6 @@
               @handle-submit="handleSubmit()"
               @keypress="isNumber($event)"
             ></GenericInput>
-
             <GenericInput
               v-else
               :item="inputObject"
@@ -52,7 +57,11 @@
 import editRecordInterfaceMixin from '~/mixins/editRecordInterface'
 import CircularLoader from '~/components/common/circularLoader.vue'
 import { executeGiraffeql } from '~/services/giraffeql'
-import { collapseObject, handleError } from '~/services/base'
+import {
+  collapseObject,
+  handleError,
+  addNestedInputObject,
+} from '~/services/base'
 import { getEventEras } from '~/services/dropdown'
 
 export default {
@@ -61,7 +70,17 @@ export default {
   },
   mixins: [editRecordInterfaceMixin],
 
+  data() {
+    return {
+      teamMembersInput: null,
+    }
+  },
+
   computed: {
+    isAdmin() {
+      return this.$store.getters['auth/user']?.role === 'ADMIN'
+    },
+
     actualVisibleInputsArray() {
       return this.inputsArray.filter((inputObject) => {
         // if no event, only show event input
@@ -89,6 +108,25 @@ export default {
   },
 
   watch: {
+    teamMembersInput(val) {
+      if (!val) return
+
+      // parse team members string and populate the participantsList based on those
+      const characterNamesArray = val.split(',').map((str) => str.trim())
+
+      const participantsListInputObject =
+        this.getInputObject('participantsList')
+      // clear any existing nested inputs
+      participantsListInputObject.nestedInputsArray = []
+
+      characterNamesArray.forEach((charName) => {
+        addNestedInputObject(participantsListInputObject, {
+          discordId: null,
+          characterId: charName,
+        })
+      })
+    },
+
     timeElapsed(val) {
       if (!val) return
       // if pasted value matches the correct format, don't do anything
