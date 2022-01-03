@@ -107,6 +107,14 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         field: 'createdAt',
         desc: true,
       },
+      {
+        field: 'sort',
+        desc: false,
+      },
+      {
+        field: 'sort',
+        desc: true,
+      },
     ],
     headerOptions: [
       {
