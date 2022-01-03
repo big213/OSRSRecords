@@ -26,30 +26,58 @@ export function serializeTime(ms: number | null): string | null {
   )
 }
 
-export async function generateLeaderboardRoute(that) {
+type LeaderboardInputs = {
+  eventId: string | undefined
+  eventEraId: string | undefined
+  participants: number | undefined
+}
+
+export async function generateLeaderboardRoute(
+  that,
+  leaderboardInputs: LeaderboardInputs
+) {
   return generateCrudRecordInterfaceRoute(
     '/leaderboard',
-    await generateLeaderboardPageOptions(that)
+    await generateLeaderboardPageOptions(that, leaderboardInputs)
   )
 }
 
-export async function generateLeaderboardPageOptions(that) {
-  // get the first eventId
-  const eventsByGroup = await getEventsByGroup(that)
+export async function generateLeaderboardPageOptions(
+  that,
+  { eventId, eventEraId, participants }: LeaderboardInputs
+) {
+  let actualEventId = eventId
+  let actualEventEraId = eventEraId
+  let actualParticipants = participants
 
-  const firstEvent = eventsByGroup.find((ele) => ele.id)
+  // use the eventId or fall back to the first eventId
+  if (!actualEventId) {
+    const eventsByGroup = await getEventsByGroup(that)
 
-  if (!firstEvent) throw new Error('No events configured')
+    const firstEvent = eventsByGroup.find((ele) => ele.id)
 
-  const eventEras = await getEventEras(that, false, [
-    {
-      'event.id': {
-        eq: firstEvent.id,
+    if (!firstEvent) throw new Error('No events configured')
+
+    actualEventId = firstEvent.id
+  }
+
+  // use the eventEraId or fall back to the first eventId
+  if (!actualEventEraId) {
+    const eventEras = await getEventEras(that, false, [
+      {
+        'event.id': {
+          eq: actualEventId,
+        },
       },
-    },
-  ])
+    ])
 
-  const currentEventEra = eventEras.find((ele) => ele.isCurrent)
+    actualEventEraId = eventEras.find((ele) => ele.isCurrent)?.id
+  }
+
+  // use the participants or fall back to 1
+  if (!actualParticipants) {
+    actualParticipants = 1
+  }
 
   return {
     search: '',
@@ -57,17 +85,17 @@ export async function generateLeaderboardPageOptions(that) {
       {
         field: 'event',
         operator: 'eq',
-        value: firstEvent.id,
+        value: actualEventId,
       },
       {
         field: 'participants',
         operator: 'eq',
-        value: 1,
+        value: actualParticipants,
       },
       {
         field: 'eventEra',
         operator: 'eq',
-        value: currentEventEra?.id ?? null,
+        value: actualEventEraId,
       },
     ],
     sort: {

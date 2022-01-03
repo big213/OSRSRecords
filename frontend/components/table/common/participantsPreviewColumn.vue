@@ -1,5 +1,6 @@
 <template>
   <div v-if="currentValue">
+    <span class="pr-1">({{ currentValue.length }})</span>
     <span
       v-for="(participantLink, index) in currentValue"
       class="pr-2"

@@ -3,7 +3,6 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import {
   createObjectType,
   deleteObjectType,
-  getObjectType,
   updateObjectType,
 } from "../../core/helpers/resolver";
 import { PaginatedService } from "../../core/services";
@@ -18,10 +17,7 @@ import {
   countTableRows,
   deleteTableRow,
   fetchTableRows,
-  insertTableRow,
-  SqlOrderByObject,
   SqlSelectQuery,
-  SqlSelectQueryObject,
   SqlWhereObject,
   updateTableRow,
 } from "../../core/helpers/sql";
@@ -34,13 +30,11 @@ import {
 } from "../../services";
 import {
   formatUnixTimestamp,
-  generateCrudRecordInterfaceUrl,
-  generateLeaderboardPageOptions,
+  generateLeaderboardRoute,
   serializeTime,
 } from "../../helpers/common";
-import { escapeRegExp, objectOnlyHasFields } from "../../core/helpers/shared";
+import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
-import { generateError } from "../../core/helpers/error";
 
 export class SubmissionService extends PaginatedService {
   defaultTypename = "submission";
@@ -643,14 +637,11 @@ export class SubmissionService extends PaginatedService {
                 type: 2,
                 label: "View Full Leaderboard",
                 style: 5,
-                url: generateCrudRecordInterfaceUrl(
-                  "/leaderboard",
-                  generateLeaderboardPageOptions({
-                    eventId: submission["event.id"],
-                    eventEraId: submission["eventEra.id"],
-                    participants: submission.participants,
-                  })
-                ),
+                url: generateLeaderboardRoute({
+                  eventId: submission["event.id"], // required
+                  eventEraId: submission["eventEra.id"], // required
+                  participants: submission.participants, // required
+                }),
               },
             ],
           },

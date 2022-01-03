@@ -8,11 +8,7 @@ import {
   sendDiscordMessage,
   updateDiscordMessage,
 } from "../../helpers/discord";
-import {
-  generateCrudRecordInterfaceUrl,
-  generateLeaderboardPageOptions,
-  serializeTime,
-} from "../../helpers/common";
+import { generateLeaderboardRoute, serializeTime } from "../../helpers/common";
 
 import {
   DiscordChannelOutput,
@@ -24,7 +20,7 @@ import { createObjectType } from "../../core/helpers/resolver";
 
 type outputObject = {
   event: any;
-  eventEra: any;
+  eventEraId: any | null;
   participants: any;
   submissions: ({
     submission: any;
@@ -83,6 +79,9 @@ export class DiscordChannelService extends PaginatedService {
           field: "eventEra.id",
         },
         {
+          field: "useCurrentEventEra",
+        },
+        {
           field: "ranksToShow",
         },
       ],
@@ -115,9 +114,7 @@ export class DiscordChannelService extends PaginatedService {
           avatar:
             output["event.avatarOverride"] ?? output["event.eventClass.avatar"],
         },
-        eventEra: {
-          id: output["eventEra.id"],
-        },
+        eventEraId: output.useCurrentEventEra ? null : output["eventEra.id"],
         participants: output.participants,
         submissions: [],
       };
@@ -133,7 +130,13 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      if (output["eventEra.id"]) {
+      if (output.useCurrentEventEra) {
+        additionalFilters.push({
+          field: "eventEra.isCurrent",
+          operator: "eq",
+          value: true,
+        });
+      } else if (output["eventEra.id"]) {
         additionalFilters.push({
           field: "eventEra.id",
           operator: "eq",
@@ -238,14 +241,11 @@ export class DiscordChannelService extends PaginatedService {
         title: `${outputObject.event.name} - ${generateParticipantsText(
           outputObject.participants
         )}`,
-        url: generateCrudRecordInterfaceUrl(
-          "/leaderboard",
-          generateLeaderboardPageOptions({
-            eventId: outputObject.event.id,
-            eventEraId: outputObject.eventEra.id,
-            participants: outputObject.participants,
-          })
-        ),
+        url: generateLeaderboardRoute({
+          eventId: outputObject.event.id, // required
+          eventEraId: outputObject.eventEraId, // optional
+          participants: outputObject.participants, // required
+        }),
         thumbnail: outputObject.event.avatar
           ? {
               url: outputObject.event.avatar,

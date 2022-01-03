@@ -68,7 +68,11 @@ export default {
     '$route.query.pageOptions'(val) {
       // if no pageOptions, automatically redirect
       if (!val) {
-        generateLeaderboardRoute(this)
+        generateLeaderboardRoute(this, {
+          eventId: this.$route.query.eventId,
+          eventEraId: this.$route.query.eventEraId,
+          participants: this.$route.query.participants,
+        })
           .then((route) => {
             this.$router.push(route)
           })
@@ -80,7 +84,11 @@ export default {
   mounted() {
     // if no pageOptions, automatically redirect
     if (!this.$route.query.pageOptions) {
-      generateLeaderboardRoute(this)
+      generateLeaderboardRoute(this, {
+        eventId: this.$route.query.eventId,
+        eventEraId: this.$route.query.eventEraId,
+        participants: this.$route.query.participants,
+      })
         .then((route) => {
           this.$router.push(route)
         })

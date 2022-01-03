@@ -29,52 +29,17 @@ export function formatUnixTimestamp(unixTimestampSeconds: number) {
   return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
 }
 
-export function generateCrudRecordInterfaceUrl(
-  route: string,
-  pageOptions?: any
-) {
-  return (
-    env.site.base_url +
-    (route +
-      (pageOptions
-        ? "?pageOptions=" +
-          encodeURIComponent(btoa(JSON.stringify(pageOptions)))
-        : ""))
-  );
-}
-
-export function generateLeaderboardPageOptions({
-  eventId,
-  eventEraId,
-  participants,
-}: {
-  eventId: string;
-  eventEraId: string;
-  participants?: number;
+export function generateLeaderboardRoute(leaderboardInputs: {
+  eventId: string | null;
+  eventEraId: string | null;
+  participants: number | null;
 }) {
-  return {
-    sortBy: ["score"],
-    sortDesc: [false],
-    filters: [
-      {
-        field: "event",
-        operator: "eq",
-        value: eventId, // COX CM on prod db
-      },
-      {
-        field: "eventEra",
-        operator: "eq",
-        value: eventEraId,
-      },
-      ...(participants
-        ? [
-            {
-              field: "participants",
-              operator: "eq",
-              value: participants,
-            },
-          ]
-        : []),
-    ],
-  };
+  const paramsStr: string = Object.entries(leaderboardInputs)
+    .filter(([_key, value]) => value)
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join("&");
+
+  return (
+    `${env.site.base_url}/leaderboard` + (paramsStr ? "?" + paramsStr : "")
+  );
 }

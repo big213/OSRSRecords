@@ -120,7 +120,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("discord_channel").notNullable();
       table.string("event").notNullable();
       table.integer("participants").nullable();
-      table.string("event_era ").nullable();
+      table.string("event_era").nullable();
       table.integer("ranks_to_show").notNullable().defaultTo(1);
       table.integer("sort").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());

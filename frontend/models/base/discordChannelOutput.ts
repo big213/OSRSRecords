@@ -2,6 +2,7 @@ import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import { getEventsByGroup } from '~/services/dropdown'
 import RecordColumn from '~/components/table/common/recordColumn.vue'
+import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 
 export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
   typename: 'discordChannelOutput',
@@ -67,6 +68,12 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       pathPrefix: 'eventEra',
       component: RecordColumn,
     },
+    useCurrentEventEra: {
+      text: 'Use Current Era',
+      inputType: 'switch',
+      default: () => true,
+      component: BooleanColumn,
+    },
     participants: {
       text: 'Team Size',
     },
@@ -122,7 +129,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         width: '150px',
       },
       {
-        field: 'eraRecord',
+        field: 'eventEraRecord',
         sortable: false,
         width: '150px',
       },
@@ -160,6 +167,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
+      'useCurrentEventEra',
       'eventEra',
       'ranksToShow',
     ],
@@ -170,6 +178,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel.id',
       'event.id',
       'participants',
+      'useCurrentEventEra',
       'eventEra.id',
       'ranksToShow',
     ],
@@ -180,6 +189,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
+      'useCurrentEventEra',
       'eventEra',
       'ranksToShow',
     ],
@@ -190,6 +200,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannelName',
       'eventRecord',
       'participants',
+      'useCurrentEventEra',
       'eventEraRecord',
       'ranksToShow',
     ],

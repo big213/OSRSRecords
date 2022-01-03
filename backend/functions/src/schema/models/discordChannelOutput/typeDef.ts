@@ -14,6 +14,7 @@ import {
   generateTypenameField,
   generateJoinableField,
   generateIntegerField,
+  generateBooleanField,
 } from "../../core/helpers/typeDef";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
@@ -39,7 +40,11 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     eventEra: generateJoinableField({
       service: EventEra,
       allowNull: true,
-      sqlOptions: { field: "event_era " },
+      sqlOptions: { field: "event_era" },
+    }),
+    useCurrentEventEra: generateBooleanField({
+      allowNull: false,
+      sqlOptions: { field: "use_current_event_era" },
     }),
     ranksToShow: generateIntegerField({
       allowNull: false,
