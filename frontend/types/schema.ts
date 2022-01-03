@@ -117,7 +117,7 @@ export type FilterByField<T> = {
   userGroupByKey: undefined
   apiKeySortByKey: 'id' | 'createdAt'
   apiKeyGroupByKey: undefined
-  eventClassSortByKey: 'id' | 'createdAt' | 'updatedAt'
+  eventClassSortByKey: 'id' | 'createdAt' | 'updatedAt' | 'name'
   eventClassGroupByKey: undefined
   eventGroupSortByKey: 'id' | 'createdAt' | 'updatedAt' | 'name' | 'sort'
   eventGroupGroupByKey: undefined
@@ -156,6 +156,10 @@ export type FilterByField<T> = {
     sortDesc?: Scalars['boolean'][]
     filterBy?: InputTypes['submissionCharacterParticipantLinkFilterByObject'][]
     groupBy?: Scalars['submissionCharacterParticipantLinkGroupByKey'][]
+  }
+  rankingInput: {
+    excludeParticipants?: Scalars['boolean']
+    excludeEventEra?: Scalars['boolean']
   }
   /**Input object for syncCurrentUser*/ syncCurrentUser: {
     email: Scalars['string']
@@ -241,9 +245,11 @@ export type FilterByField<T> = {
   eventClass: { id?: Scalars['id'] }
   'eventClassFilterByField/id': FilterByField<Scalars['id']>
   'eventClassFilterByField/createdBy.id': FilterByField<Scalars['id']>
+  'eventClassFilterByField/parent.id': FilterByField<Scalars['id']>
   eventClassFilterByObject: {
     id?: InputTypes['eventClassFilterByField/id']
     'createdBy.id'?: InputTypes['eventClassFilterByField/createdBy.id']
+    'parent.id'?: InputTypes['eventClassFilterByField/parent.id']
   }
   eventClassPaginator: {
     first?: Scalars['number']
@@ -311,9 +317,11 @@ export type FilterByField<T> = {
   event: { id?: Scalars['id'] }
   'eventFilterByField/id': FilterByField<Scalars['id']>
   'eventFilterByField/createdBy.id': FilterByField<Scalars['id']>
+  'eventFilterByField/eventClass.id': FilterByField<Scalars['id']>
   eventFilterByObject: {
     id?: InputTypes['eventFilterByField/id']
     'createdBy.id'?: InputTypes['eventFilterByField/createdBy.id']
+    'eventClass.id'?: InputTypes['eventFilterByField/eventClass.id']
   }
   eventPaginator: {
     first?: Scalars['number']
@@ -383,11 +391,17 @@ export type FilterByField<T> = {
     search?: Scalars['string']
   }
   eventEra: { id?: Scalars['id'] }
+  /**Object Input matching an Object Type*/ participantsList: {
+    discordId?: Scalars['string'] | null
+    characterId?: Scalars['id']
+  }
   createSubmission: {
     event: InputTypes['event']
     eventEra: InputTypes['eventEra']
+    participantsList?: InputTypes['participantsList'][]
     timeElapsed: Scalars['number']
     happenedOn: Scalars['unixTimestamp']
+    status?: Scalars['submissionStatus']
     world?: Scalars['number'] | null
     files?: Scalars['id'][]
     externalLinks?: Scalars['url'][]
@@ -399,6 +413,7 @@ export type FilterByField<T> = {
   updateSubmissionFields: {
     event?: InputTypes['event']
     eventEra?: InputTypes['eventEra']
+    participantsList?: InputTypes['participantsList'][]
     timeElapsed?: Scalars['number']
     happenedOn?: Scalars['unixTimestamp']
     status?: Scalars['submissionStatus']
@@ -544,6 +559,7 @@ export type FilterByField<T> = {
     event: InputTypes['event']
     participants?: Scalars['number'] | null
     eventEra?: InputTypes['eventEra'] | null
+    useCurrentEventEra: Scalars['boolean']
     ranksToShow?: Scalars['number']
     sort: Scalars['number']
   }
@@ -552,6 +568,7 @@ export type FilterByField<T> = {
     event?: InputTypes['event']
     participants?: Scalars['number'] | null
     eventEra?: InputTypes['eventEra'] | null
+    useCurrentEventEra?: Scalars['boolean']
     ranksToShow?: Scalars['number']
     sort?: Scalars['number']
   }
@@ -561,9 +578,11 @@ export type FilterByField<T> = {
   }
   'eventEraFilterByField/id': FilterByField<Scalars['id']>
   'eventEraFilterByField/createdBy.id': FilterByField<Scalars['id']>
+  'eventEraFilterByField/event.id': FilterByField<Scalars['id']>
   eventEraFilterByObject: {
     id?: InputTypes['eventEraFilterByField/id']
     'createdBy.id'?: InputTypes['eventEraFilterByField/createdBy.id']
+    'event.id'?: InputTypes['eventEraFilterByField/event.id']
   }
   eventEraPaginator: {
     first?: Scalars['number']
@@ -583,7 +602,7 @@ export type FilterByField<T> = {
     description?: Scalars['string'] | null
     beginDate: Scalars['unixTimestamp']
     endDate?: Scalars['unixTimestamp'] | null
-    isCurrent: Scalars['boolean']
+    isCurrent?: Scalars['boolean']
   }
   updateEventEraFields: {
     event?: InputTypes['event']
@@ -697,6 +716,10 @@ export type FilterByField<T> = {
   eventClass: { Typename: 'eventClass'; Type: GetType<EventClass> }
   eventGroup: { Typename: 'eventGroup'; Type: GetType<EventGroup> }
   event: { Typename: 'event'; Type: GetType<Event> }
+  participantsList: {
+    Typename: 'participantsList'
+    Type: GetType<ParticipantsList>
+  }
   submission: { Typename: 'submission'; Type: GetType<Submission> }
   character: { Typename: 'character'; Type: GetType<Character> }
   file: { Typename: 'file'; Type: GetType<File> }
@@ -964,6 +987,10 @@ export type SubmissionCharacterParticipantLinkEdge =
   }
   createdBy: { Type: User; Args: undefined }
 }
+export type ParticipantsList = {
+  discordId: { Type: Scalars['string'] | null; Args: undefined }
+  characterId: { Type: Scalars['id']; Args: undefined }
+}
 /**Submission type*/ export type Submission = {
   /**The unique ID of the field*/ id: { Type: Scalars['id']; Args: undefined }
   /**The typename of the record*/ __typename: {
@@ -973,11 +1000,12 @@ export type SubmissionCharacterParticipantLinkEdge =
   event: { Type: Event; Args: undefined }
   eventEra: { Type: EventEra; Args: undefined }
   participants: { Type: Scalars['number']; Args: undefined }
+  participantsList: { Type: ParticipantsList[]; Args: undefined }
   participantsLinks: {
     Type: SubmissionCharacterParticipantLinkPaginator
     Args: InputTypes['submissionCharacterParticipantLinkPaginator']
   }
-  participantsList: {
+  participantsLinksList: {
     Type: SubmissionCharacterParticipantLink[]
     Args: undefined
   }
@@ -995,10 +1023,10 @@ export type SubmissionCharacterParticipantLinkEdge =
   isRecord: { Type: Scalars['boolean']; Args: undefined }
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars['number'] | null
-    Args: undefined
+    Args: [InputTypes['rankingInput']]
   }
-  /**The date of the previous record given the event.id, participants, and eventEra.id, if any*/ previousRecordHappenedOn: {
-    Type: Scalars['unixTimestamp'] | null
+  /**The previous record given the event.id, participants, and eventEra.id, if any*/ previousRecord: {
+    Type: Submission | null
     Args: undefined
   }
   /**When the record was created*/ createdAt: {
@@ -1085,6 +1113,7 @@ export type SubmissionCharacterParticipantLinkEdge =
   event: { Type: Event; Args: undefined }
   participants: { Type: Scalars['number'] | null; Args: undefined }
   eventEra: { Type: EventEra | null; Args: undefined }
+  useCurrentEventEra: { Type: Scalars['boolean']; Args: undefined }
   ranksToShow: { Type: Scalars['number']; Args: undefined }
   sort: { Type: Scalars['number']; Args: undefined }
   /**When the record was created*/ createdAt: {
@@ -1236,6 +1265,10 @@ export type SubmissionCharacterParticipantLinkEdge =
   updateDiscordChannel: {
     Type: DiscordChannel
     Args: InputTypes['updateDiscordChannel']
+  }
+  refreshDiscordChannel: {
+    Type: DiscordChannel
+    Args: InputTypes['discordChannel']
   }
   getDiscordChannelOutput: {
     Type: DiscordChannelOutput

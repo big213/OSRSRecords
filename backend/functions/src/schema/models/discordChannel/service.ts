@@ -48,6 +48,35 @@ export class DiscordChannelService extends PaginatedService {
 
   accessControl: AccessControlMap = {};
 
+  @permissionsCheck("update")
+  async refreshDiscordChannelMessage({
+    req,
+    fieldPath,
+    args,
+    query,
+    data = {},
+    isAdmin = false,
+  }: ServiceFunctionInputs) {
+    // confirm discordChannel exists, get id
+    const discordChannel = await this.lookupRecord(
+      ["id"],
+      {
+        id: args.id,
+      },
+      fieldPath
+    );
+
+    // refresh the output on that channel
+    await this.renderOutput(discordChannel.id, fieldPath);
+
+    return this.getRecord({
+      req,
+      fieldPath,
+      args,
+      query,
+    });
+  }
+
   // renders the message for a specific discord channel and returns the JSON
   async renderOutput(discordChannelId: string, fieldPath: string[]) {
     const discordChannel = await this.lookupRecord(

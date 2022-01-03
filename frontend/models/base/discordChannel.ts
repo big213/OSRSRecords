@@ -1,6 +1,7 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import { DiscordChannelOutput } from './discordChannelOutput'
+import { refreshDiscordOutput } from '../actions'
 
 export const DiscordChannel = <RecordInfo<'discordChannel'>>{
   typename: 'discordChannel',
@@ -92,6 +93,14 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
         field: 'sort',
         desc: false,
       },
+    },
+  ],
+  customActions: [
+    {
+      text: 'Refresh Output',
+      icon: 'mdi-refresh',
+      handleClick: refreshDiscordOutput,
+      isAsync: true,
     },
   ],
 }
