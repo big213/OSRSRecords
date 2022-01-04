@@ -602,7 +602,7 @@ export class NormalService extends BaseService {
         data,
         isAdmin,
       }),
-      distinct: true,
+      distinctOn: orderBy.map((ele) => ele.field).concat("id"),
       groupBy: Array.isArray(validatedArgs.groupBy)
         ? validatedArgs.groupBy.reduce((total, item, index) => {
             if (item in this.groupByFieldsMap) {

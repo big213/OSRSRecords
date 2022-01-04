@@ -68,8 +68,10 @@ export type SqlSelectQuery = {
   where: SqlWhereObject;
   groupBy?: string[];
   orderBy?: SqlOrderByObject[];
+  offset?: number;
   limit?: number;
-  distinct?: boolean;
+  // distinct?: boolean;
+  distinctOn?: string[];
   specialParams?: any;
 };
 
@@ -699,13 +701,15 @@ export async function fetchTableRows(
       knexObject.limit(sqlQuery.limit);
     }
 
+    // apply offset
+    if (sqlQuery.offset) {
+      knexObject.offset(sqlQuery.offset);
+    }
+
     // apply distinct
-    if (sqlQuery.distinct) {
+    if (sqlQuery.distinctOn) {
       knexObject.distinctOn(
-        (sqlQuery.orderBy
-          ? sqlQuery.orderBy.map((ele) => fieldInfoMap.get(ele.field)!.alias)
-          : []
-        ).concat("id")
+        sqlQuery.distinctOn.map((field) => fieldInfoMap.get(field)!.alias)
       );
     }
 

@@ -55,7 +55,11 @@ export const decimalColors = {
   BRONZE: 13808780,
 };
 
-export const placeEmojis = ["🥇", "🥈", "🥉"];
+export const placeEmojisMap = {
+  "1": "🥇",
+  "2": "🥈",
+  "3": "🥉",
+};
 
 export const submissionStatusArray = [
   {

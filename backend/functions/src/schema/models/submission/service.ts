@@ -145,6 +145,9 @@ export class SubmissionService extends PaginatedService {
         field: "happenedOn",
         desc: false,
       });
+
+      // need to also adjust the distinctOn
+      sqlParams.distinctOn!.push("happenedOn");
     }
   }
 

@@ -4,7 +4,7 @@ import { PaginatedService } from "../../core/services";
 import { submissionStatusKenum } from "../../enums";
 import {
   generateParticipantsText,
-  placeEmojis,
+  placeEmojisMap,
   sendDiscordMessage,
   updateDiscordMessage,
 } from "../../helpers/discord";
@@ -173,25 +173,15 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      const submissions = await fetchTableRows({
+      // get the nth fastest score, where n = ranksToShow
+      const nthScoreResults = await fetchTableRows({
         select: [
-          {
-            field: "id",
-          },
-          {
-            field: "event.name",
-          },
-          {
-            field: "participants",
-          },
           {
             field: "score",
           },
-          {
-            field: "externalLinks",
-          },
         ],
         from: Submission.typename,
+        distinctOn: ["score"],
         where: {
           fields: [
             {
@@ -213,15 +203,71 @@ export class DiscordChannelService extends PaginatedService {
             desc: false,
           },
         ],
-        limit: output.ranksToShow,
+        limit: 1,
+        offset: output.ranksToShow - 1,
       });
 
-      heading.submissions.push(
-        ...submissions.map((submission) => ({
-          submission,
-          characters: [],
-        }))
-      );
+      const nthScore = nthScoreResults[0]?.score;
+
+      if (nthScore) {
+        const submissions = await fetchTableRows({
+          select: [
+            {
+              field: "id",
+            },
+            {
+              field: "event.name",
+            },
+            {
+              field: "participants",
+            },
+            {
+              field: "score",
+            },
+            {
+              field: "externalLinks",
+            },
+          ],
+          from: Submission.typename,
+          where: {
+            fields: [
+              {
+                field: "score",
+                operator: "lte",
+                value: nthScore,
+              },
+              {
+                field: "event.id",
+                operator: "eq",
+                value: output["event.id"],
+              },
+              {
+                field: "status",
+                operator: "eq",
+                value: submissionStatusKenum.APPROVED.index,
+              },
+              ...additionalFilters,
+            ],
+          },
+          orderBy: [
+            {
+              field: "score",
+              desc: false,
+            },
+            {
+              field: "happenedOn",
+              desc: false,
+            },
+          ],
+        });
+
+        heading.submissions.push(
+          ...submissions.map((submission) => ({
+            submission,
+            characters: [],
+          }))
+        );
+      }
 
       // if submissions is not the correct length, fill in with nulls until it is
       while (heading.submissions.length < output.ranksToShow) {
@@ -266,6 +312,8 @@ export class DiscordChannelService extends PaginatedService {
     const embeds: any[] = [];
 
     outputArray.forEach((outputObject) => {
+      let placeDiff = 0;
+
       embeds.push({
         title: `${outputObject.event.name} - ${generateParticipantsText(
           outputObject.participants
@@ -282,16 +330,29 @@ export class DiscordChannelService extends PaginatedService {
           : undefined,
         description: outputObject.submissions
           .map((submissionObject, index) => {
+            const place = placeDiff + 1;
             if (submissionObject) {
+              // check the next record and see if it exists and the score is not the same
+              if (
+                outputObject.submissions[index + 1] &&
+                submissionObject.submission.score !==
+                  outputObject.submissions[index + 1]!.submission.score
+              ) {
+                // if it is, increment placeDiff. else, do not
+                placeDiff++;
+              }
+
               return `${
-                placeEmojis[index] ?? "(" + (index + 1) + ")"
+                placeEmojisMap[place] ?? "(" + place + ")"
               } ${serializeTime(
                 submissionObject.submission.score
               )} - ${submissionObject.characters.join(", ")} - [Proof](${
                 submissionObject.submission.externalLinks[0]
               })`;
             } else {
-              return `${placeEmojis[index] ?? "(" + (index + 1) + ")"} N/A`;
+              // always increment placeDiff
+              placeDiff++;
+              return `${placeEmojisMap[place] ?? "(" + place + ")"} N/A`;
             }
           })
           .join("\n"),
