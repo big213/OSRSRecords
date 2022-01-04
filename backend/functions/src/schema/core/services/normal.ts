@@ -602,7 +602,7 @@ export class NormalService extends BaseService {
         data,
         isAdmin,
       }),
-      distinctOn: orderBy.map((ele) => ele.field).concat("id"),
+      distinctOn: undefined,
       groupBy: Array.isArray(validatedArgs.groupBy)
         ? validatedArgs.groupBy.reduce((total, item, index) => {
             if (item in this.groupByFieldsMap) {
@@ -616,6 +616,9 @@ export class NormalService extends BaseService {
     };
 
     this.sqlParamsModifier && this.sqlParamsModifier(sqlParams);
+
+    // populate the distinctOn, in case the sqlParamsModifier modified the orderBy
+    sqlParams.distinctOn = orderBy.map((ele) => ele.field).concat("id");
 
     const results = await Resolver.getObjectType({
       typename: this.typename,
