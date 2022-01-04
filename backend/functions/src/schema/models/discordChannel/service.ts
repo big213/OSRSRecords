@@ -22,10 +22,11 @@ type outputObject = {
   event: any;
   eventEraId: any | null;
   participants: any;
-  submissions: ({
+  ranksToShow: number;
+  submissions: {
     submission: any;
     characters: any[];
-  } | null)[];
+  }[];
 };
 
 export class DiscordChannelService extends PaginatedService {
@@ -145,6 +146,7 @@ export class DiscordChannelService extends PaginatedService {
         },
         eventEraId: output.useCurrentEventEra ? null : output["eventEra.id"],
         participants: output.participants,
+        ranksToShow: output.ranksToShow,
         submissions: [],
       };
       outputArray.push(heading);
@@ -269,11 +271,6 @@ export class DiscordChannelService extends PaginatedService {
         );
       }
 
-      // if submissions is not the correct length, fill in with nulls until it is
-      while (heading.submissions.length < output.ranksToShow) {
-        heading.submissions.push(null);
-      }
-
       // for each submission, also populate the characters field if non-null
       for (const submissionObject of heading.submissions) {
         if (!submissionObject) continue;
@@ -313,6 +310,37 @@ export class DiscordChannelService extends PaginatedService {
 
     outputArray.forEach((outputObject) => {
       let placeDiff = 0;
+      let currentPlace = 0;
+      const descriptionArray = outputObject.submissions.map(
+        (submissionObject, index) => {
+          currentPlace = placeDiff + 1;
+          // check the next record and see if it exists and the score is not the same
+          if (
+            outputObject.submissions[index + 1] &&
+            submissionObject.submission.score !==
+              outputObject.submissions[index + 1]!.submission.score
+          ) {
+            // if it is, increment placeDiff. else, do not
+            placeDiff++;
+          }
+
+          return `${
+            placeEmojisMap[currentPlace] ?? "(" + currentPlace + ")"
+          } ${serializeTime(
+            submissionObject.submission.score
+          )} - ${submissionObject.characters.join(", ")} - [Proof](${
+            submissionObject.submission.externalLinks[0]
+          })`;
+        }
+      );
+
+      // if descriptionArray's last place is < outputObject.ranksToShow, fill in the remaining places
+      while (currentPlace < outputObject.ranksToShow) {
+        currentPlace++;
+        descriptionArray.push(
+          `${placeEmojisMap[currentPlace] ?? "(" + currentPlace + ")"} N/A`
+        );
+      }
 
       embeds.push({
         title: `${outputObject.event.name} - ${generateParticipantsText(
@@ -328,34 +356,7 @@ export class DiscordChannelService extends PaginatedService {
               url: outputObject.event.avatar,
             }
           : undefined,
-        description: outputObject.submissions
-          .map((submissionObject, index) => {
-            const place = placeDiff + 1;
-            if (submissionObject) {
-              // check the next record and see if it exists and the score is not the same
-              if (
-                outputObject.submissions[index + 1] &&
-                submissionObject.submission.score !==
-                  outputObject.submissions[index + 1]!.submission.score
-              ) {
-                // if it is, increment placeDiff. else, do not
-                placeDiff++;
-              }
-
-              return `${
-                placeEmojisMap[place] ?? "(" + place + ")"
-              } ${serializeTime(
-                submissionObject.submission.score
-              )} - ${submissionObject.characters.join(", ")} - [Proof](${
-                submissionObject.submission.externalLinks[0]
-              })`;
-            } else {
-              // always increment placeDiff
-              placeDiff++;
-              return `${placeEmojisMap[place] ?? "(" + place + ")"} N/A`;
-            }
-          })
-          .join("\n"),
+        description: descriptionArray.join("\n"),
       });
     });
 
