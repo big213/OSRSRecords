@@ -49,6 +49,7 @@ import File from "./models/file/rootResolver";
 import DiscordChannel from "./models/discordChannel/rootResolver";
 import DiscordChannelOutput from "./models/discordChannelOutput/rootResolver";
 import EventEra from "./models/eventEra/rootResolver";
+import Imgur from "./models/imgur/rootResolver";
 /** END RootResolver Import */
 
 import SubmissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/rootResolver";
@@ -66,6 +67,7 @@ allServices.File.setRootResolvers(File);
 allServices.DiscordChannel.setRootResolvers(DiscordChannel);
 allServices.DiscordChannelOutput.setRootResolvers(DiscordChannelOutput);
 allServices.EventEra.setRootResolvers(EventEra);
+allServices.Imgur.setRootResolvers(Imgur);
 /** END RootResolver Set */
 
 allServices.SubmissionCharacterParticipantLink.setRootResolvers(

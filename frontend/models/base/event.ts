@@ -192,7 +192,12 @@ export const Event = <RecordInfo<'event'>>{
     ],
   },
   editOptions: {
-    fields: ['avatarOverride', 'backgroundImageOverride', 'releaseDate'],
+    fields: [
+      'avatarOverride',
+      'name',
+      'backgroundImageOverride',
+      'releaseDate',
+    ],
   },
   viewOptions: {
     fields: [

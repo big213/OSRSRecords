@@ -7,7 +7,7 @@ import RecordColumn from '~/components/table/common/recordColumn.vue'
 import SubmissionStatusColumn from '~/components/table/common/submissionStatusColumn.vue'
 import ResultColumn from '~/components/table/common/resultColumn.vue'
 import SubmissionTypeColumn from '~/components/table/common/submissionTypeColumn.vue'
-import EditSubmissionInterface from '~/components/interface/crud/special/editSubmissionInterface.vue'
+import AdminEditSubmissionInterface from '~/components/interface/crud/special/adminEditSubmissionInterface.vue'
 import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
 import { generateParseDateTimeStringFn } from '~/services/base'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
@@ -388,7 +388,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'status',
     ],
 
-    component: EditSubmissionInterface,
+    component: AdminEditSubmissionInterface,
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
@@ -403,7 +403,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'privateComments',
       'publicComments',
     ],
-    component: EditSubmissionInterface,
+    component: AdminEditSubmissionInterface,
   },
   viewOptions: {
     fields: [

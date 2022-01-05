@@ -1,5 +1,6 @@
 import { generateCrudRecordInterfaceRoute } from './base'
 import { getEventEras, getEventsByGroup } from '~/services/dropdown'
+import { participantsTextMap } from './constants'
 
 type StringKeyObject = { [x: string]: any }
 
@@ -105,12 +106,6 @@ export async function generateLeaderboardPageOptions(
   }
 }
 
-const specialTeamSizeNamesMap = {
-  '1': 'Solo',
-  '2': 'Duo',
-  '3': 'Trio',
-}
-
 export function generateParticipantsOptions(
   minParticipants: number | null,
   maxParticipants: number | null
@@ -132,7 +127,7 @@ export function generateParticipantsOptions(
     returnOptions.push({
       id: participantsCounter,
       name:
-        specialTeamSizeNamesMap[participantsCounter] ??
+        participantsTextMap[participantsCounter] ??
         participantsCounter + '-Man',
     })
   }

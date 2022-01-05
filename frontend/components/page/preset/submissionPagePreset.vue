@@ -202,7 +202,11 @@ export default {
 
       // set participants to the first option if it is not an object
       if (!isObject(participantsInputObject.value)) {
-        participantsInputObject.value = participantsInputObject.options[0]
+        // attempt to set to the option with the same id value. else do the first one
+        participantsInputObject.value =
+          participantsInputObject.options.find(
+            (option) => option.id === participantsInputObject.value
+          ) ?? participantsInputObject.options[0]
       }
     },
 

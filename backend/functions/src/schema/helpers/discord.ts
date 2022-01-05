@@ -155,6 +155,7 @@ export function generateSubmissionMessage(
 }
 
 const participantsTextMap = {
+  "0": "Unknown",
   "1": "Solo",
   "2": "Duo",
   "3": "Trio",

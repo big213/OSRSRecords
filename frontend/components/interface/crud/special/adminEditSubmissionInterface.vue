@@ -8,6 +8,13 @@
       ></CircularLoader>
       <v-container v-else class="px-0">
         <v-row>
+          <v-col v-if="isAdmin" cols="12" class="py-0">
+            <v-text-field
+              v-model="teamMembersInput"
+              label="Time + Team Members (Express Input)"
+              @change="handleTeamMembersInputChange"
+            ></v-text-field>
+          </v-col>
           <v-col
             v-for="(inputObject, i) in actualVisibleInputsArray"
             :key="i"
@@ -64,7 +71,17 @@ export default {
   },
   mixins: [editRecordInterfaceMixin],
 
+  data() {
+    return {
+      teamMembersInput: null,
+    }
+  },
+
   computed: {
+    isAdmin() {
+      return this.$store.getters['auth/user']?.role === 'ADMIN'
+    },
+
     actualVisibleInputsArray() {
       return this.inputsArray.filter((inputObject) => {
         // if no event, only show event input
@@ -131,6 +148,37 @@ export default {
   },
 
   methods: {
+    handleTeamMembersInputChange(val) {
+      if (!val) return
+
+      // parse for a timeElapsed
+      const timesArray = val.split(/\s*-\s*/)
+
+      // set the timeElapsed to the first part of the string if there's 2 or more parts
+      if (timesArray.length > 1) {
+        this.setInputValue('timeElapsed', timesArray[0])
+      }
+
+      const charactersStr = timesArray[1] ?? val
+
+      // parse team members string and populate the participantsList based on those
+      const characterNamesArray = charactersStr
+        .split(',')
+        .map((str) => str.trim())
+
+      const participantsListInputObject =
+        this.getInputObject('participantsList')
+      // clear any existing nested inputs
+      participantsListInputObject.nestedInputsArray = []
+
+      characterNamesArray.forEach((charName) => {
+        addNestedInputObject(participantsListInputObject, {
+          discordId: null,
+          characterId: charName,
+        })
+      })
+    },
+
     isNumber(evt) {
       const charCode = evt.which ? evt.which : evt.keyCode
       if (charCode > 31 && (charCode < 48 || charCode > 57)) {
@@ -247,19 +295,12 @@ export default {
           variant: 'success',
         })
 
-        this.handleSubmitSuccess(data)
-
-        // changed: if new submission was just added, open a preview dialog for it
-        this.$root.$emit('openEditRecordDialog', {
-          recordInfo: 'Public' + this.capitalizedType,
-          mode: 'view',
-          selectedItem: {
-            id: data.id,
-          },
-        })
+        // this.handleSubmitSuccess(data)
+        // changed:
+        this.$emit('handleSubmit', data)
 
         // reset inputs
-        this.resetInputs()
+        // this.resetInputs()
       } catch (err) {
         handleError(this, err)
       }

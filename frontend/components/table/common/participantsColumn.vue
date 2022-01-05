@@ -1,5 +1,6 @@
 <template>
   <div v-if="currentValue">
+    <div class="pb-2">({{ currentValue.length }})</div>
     <div
       v-for="(participantLink, index) in currentValue"
       :key="index"

@@ -41,6 +41,7 @@ export const submissionStatusMap = submissionStatusArray.reduce(
 )
 
 export const participantsTextMap = {
+  '0': 'Unknown',
   '1': 'Solo',
   '2': 'Duo',
   '3': 'Trio',
