@@ -8,7 +8,7 @@
       ></CircularLoader>
       <v-container v-else class="px-0">
         <v-row>
-          <v-col v-if="isAdmin" cols="12" class="py-0">
+          <v-col cols="12" class="py-0">
             <v-text-field
               v-model="teamMembersInput"
               label="Time + Team Members (Express Input)"
@@ -78,10 +78,6 @@ export default {
   },
 
   computed: {
-    isAdmin() {
-      return this.$store.getters['auth/user']?.role === 'ADMIN'
-    },
-
     actualVisibleInputsArray() {
       return this.inputsArray.filter((inputObject) => {
         // if no event, only show event input
