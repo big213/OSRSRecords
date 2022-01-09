@@ -590,6 +590,7 @@
             <div class="subtitle-1">
               {{ item.label + (item.optional ? ' (optional)' : '') }}
             </div>
+            <div v-if="item.hint">{{ item.hint }}</div>
           </v-col>
         </v-row>
         <div v-if="item.nestedInputsArray.length > 0">

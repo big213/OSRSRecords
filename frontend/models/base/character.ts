@@ -3,6 +3,7 @@ import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import { Submission } from './submission'
+import { generateJoinableField } from '~/services/recordInfo'
 
 export const Character = <RecordInfo<'character'>>{
   typename: 'character',
@@ -33,19 +34,12 @@ export const Character = <RecordInfo<'character'>>{
       text: 'Description',
       inputType: 'textarea',
     },
-    ownedBy: {
+    ownedBy: generateJoinableField({
+      fieldname: 'ownedBy',
+      typename: 'user',
       text: 'Owned By',
-      fields: ['ownedBy.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'user',
-      },
-    },
-    createdBy: {
-      text: 'Created By',
-      fields: ['createdBy.id'],
-    },
+      hasAvatar: true,
+    }),
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,

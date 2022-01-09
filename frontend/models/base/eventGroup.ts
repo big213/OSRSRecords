@@ -59,10 +59,6 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
       text: 'Sort Order',
       default: (_that) => 10,
     },
-    createdBy: {
-      text: 'Created By',
-      fields: ['createdBy.id'],
-    },
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,

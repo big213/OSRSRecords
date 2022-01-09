@@ -3,8 +3,8 @@ import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
 import PreviewableFilesColumn from '~/components/table/common/previewableFilesColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
 import SubmissionStatusColumn from '~/components/table/common/submissionStatusColumn.vue'
+import SubmissionStatusReadonlyColumn from '~/components/table/common/submissionStatusReadonlyColumn.vue'
 import ResultColumn from '~/components/table/common/resultColumn.vue'
 import SubmissionTypeColumn from '~/components/table/common/submissionTypeColumn.vue'
 import AdminEditSubmissionInterface from '~/components/interface/crud/special/adminEditSubmissionInterface.vue'
@@ -16,6 +16,10 @@ import ParticipantsColumn from '~/components/table/common/participantsColumn.vue
 import ParticipantsPreviewColumn from '~/components/table/common/participantsPreviewColumn.vue'
 import { getEventsByGroup, getSubmissionStatuses } from '~/services/dropdown'
 import { serializeTime } from '~/services/common'
+import {
+  generateJoinableField,
+  generatePreviewableRecordField,
+} from '~/services/recordInfo'
 
 export const Submission = <RecordInfo<'submission'>>{
   typename: 'submission',
@@ -30,21 +34,19 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'ID',
     },
     event: {
-      text: 'Event Category',
-      fields: ['event.id'],
-      inputType: 'autocomplete',
-      inputOptions: {
-        hasAvatar: true,
+      ...generateJoinableField({
+        fieldname: 'event',
         typename: 'event',
-      },
+        text: 'Event Category',
+        hasAvatar: true,
+        inputType: 'autocomplete',
+      }),
       getOptions: getEventsByGroup,
     },
-    eventRecord: {
+    eventRecord: generatePreviewableRecordField({
+      fieldname: 'event',
       text: 'Event Category',
-      fields: ['event.name', 'event.avatar', 'event.id', 'event.__typename'],
-      pathPrefix: 'event',
-      component: RecordColumn,
-    },
+    }),
     eventRecordWithParticipants: {
       text: 'Event Category',
       fields: [
@@ -59,15 +61,12 @@ export const Submission = <RecordInfo<'submission'>>{
         // primaryField: 'event.name',
       },
     },
-    eventEra: {
-      text: 'Event Era',
-      fields: ['eventEra.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventEra',
-      },
-    },
+    eventEra: generateJoinableField({
+      fieldname: 'eventEra',
+      typename: 'eventEra',
+      text: 'Event Category',
+      hasAvatar: true,
+    }),
     'submissionCharacterParticipantLink/character': {
       text: 'Character Name',
       fields: ['submissionCharacterParticipantLink/character.id'],
@@ -77,17 +76,10 @@ export const Submission = <RecordInfo<'submission'>>{
         typename: 'character',
       },
     },
-    eventEraRecord: {
+    eventEraRecord: generatePreviewableRecordField({
+      fieldname: 'eventEra',
       text: 'Event Era',
-      fields: [
-        'eventEra.name',
-        'eventEra.avatar',
-        'eventEra.id',
-        'eventEra.__typename',
-      ],
-      pathPrefix: 'eventEra',
-      component: RecordColumn,
-    },
+    }),
     participants: {
       text: 'Participants Count',
     },
@@ -98,23 +90,26 @@ export const Submission = <RecordInfo<'submission'>>{
         'participantsList.discordId',
         'participantsList.characterId',
       ],
+      hint: 'The person submitting the record should put their RSN/Discord ID as the first entry',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
           {
-            key: 'discordId',
-            inputType: 'text',
-            text: 'Discord ID',
+            key: 'characterId',
+            inputType: 'server-combobox',
+            text: 'RSN',
             inputOptions: {
+              typename: 'character',
               cols: 6,
             },
           },
           {
-            key: 'characterId',
-            inputType: 'server-combobox',
-            text: 'Character ID',
+            key: 'discordId',
+            inputType: 'text',
+            text: 'Discord ID',
+            optional: true,
+            hint: 'Example: username#1234',
             inputOptions: {
-              typename: 'character',
               cols: 6,
             },
           },
@@ -238,6 +233,11 @@ export const Submission = <RecordInfo<'submission'>>{
       component: SubmissionStatusColumn,
       default: () => 'APPROVED',
     },
+    statusReadonly: {
+      text: 'Status',
+      fields: ['status'],
+      component: SubmissionStatusReadonlyColumn,
+    },
     isCurrent: {
       text: 'Is Current',
       inputType: 'switch',
@@ -246,6 +246,7 @@ export const Submission = <RecordInfo<'submission'>>{
     world: {
       text: 'World',
       optional: true,
+      hint: 'The game world this submission took place on, if known',
     },
     files: {
       text: 'Files',
@@ -257,6 +258,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     privateComments: {
       text: 'Private Comments',
+      hint: 'Comments only for submission reviewers to see',
       inputType: 'textarea',
     },
     publicComments: {
@@ -270,14 +272,6 @@ export const Submission = <RecordInfo<'submission'>>{
     submittedBy: {
       text: 'Submitted By',
       hint: 'RSN',
-    },
-    discordId: {
-      text: 'Discord ID',
-      optional: true,
-    },
-    createdBy: {
-      text: 'Created By',
-      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',
@@ -341,33 +335,27 @@ export const Submission = <RecordInfo<'submission'>>{
     headerOptions: [
       {
         field: 'eventRecordWithParticipants',
-        sortable: false,
       },
       {
         field: 'eventEraRecord',
         width: '150px',
-        sortable: false,
       },
       {
         field: 'status',
         width: '150px',
-        sortable: false,
       },
       {
         field: 'score',
         width: '100px',
-        sortable: true,
         align: 'right',
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {},

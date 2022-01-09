@@ -15,6 +15,7 @@ const authHeaders = {
 export const channelMap = {
   subAlerts: env.discord.sub_alerts_channel_id,
   updateLogs: env.discord.update_logs_channel_id,
+  guildId: env.discord.guild_id,
 };
 
 export async function sendDiscordMessage(
@@ -42,6 +43,26 @@ export async function updateDiscordMessage(
   );
 
   return data;
+}
+
+export async function getGuildMemberId(guildId: string, username: string) {
+  const { data } = await discordApi.get(
+    `/guilds/${guildId}/members/search?query=${username}`,
+    authHeaders
+  );
+  return data[0]?.user.id;
+}
+
+export async function createDMChannel(discordUserId: string) {
+  const { data } = await discordApi.post(
+    `/users/@me/channels`,
+    {
+      recipient_id: discordUserId,
+    },
+    authHeaders
+  );
+
+  return data.id;
 }
 
 export const decimalColors = {
@@ -80,12 +101,14 @@ export const submissionStatusArray = [
     emoji: "🟩",
     colorId: decimalColors.GREEN,
   },
+  /*
   {
     text: "Information Requested",
     value: "INFORMATION_REQUESTED",
     emoji: "🟪",
     colorId: decimalColors.PURPLE,
   },
+  */
   {
     text: "Rejected",
     value: "REJECTED",
@@ -93,6 +116,14 @@ export const submissionStatusArray = [
     colorId: decimalColors.RED,
   },
 ];
+
+export const submissionStatusMap = submissionStatusArray.reduce(
+  (total, entry) => {
+    total[entry.value] = entry;
+    return total;
+  },
+  {}
+);
 
 export function generateSubmissionStatusDropdownComponent(
   submissionId: string,
@@ -121,7 +152,10 @@ export function generateSubmissionStatusDropdownComponent(
   };
 }
 
-export function generateViewSubmissionButtonComponent(submissionId: string) {
+export function generateViewSubmissionButtonComponent(
+  submissionId: string,
+  isPublic = false
+) {
   return {
     type: 1,
     components: [
@@ -129,7 +163,9 @@ export function generateViewSubmissionButtonComponent(submissionId: string) {
         type: 2,
         label: "View Submission",
         style: 5,
-        url: `${env.site.base_url}/a/view?id=${submissionId}&expand=0&type=submission`,
+        url: `${env.site.base_url}/${
+          isPublic ? "i" : "a"
+        }/view?id=${submissionId}&expand=0&type=submission`,
       },
     ],
   };
@@ -137,20 +173,38 @@ export function generateViewSubmissionButtonComponent(submissionId: string) {
 
 export function generateSubmissionMessage(
   submissionId: string,
-  selectedOption?: submissionStatusKenum
+  selectedOption: submissionStatusKenum
 ) {
+  const submissionStatusObject = submissionStatusMap[selectedOption.name];
   return {
     content: null,
     embeds: [
       {
         title: `Submission ID ${submissionId}`,
-        color: 15105570,
+        color: submissionStatusObject.colorId,
       },
     ],
     components: [
-      generateViewSubmissionButtonComponent(submissionId),
+      generateViewSubmissionButtonComponent(submissionId, false),
       generateSubmissionStatusDropdownComponent(submissionId, selectedOption),
     ],
+  };
+}
+
+export function generateSubmissionDM(
+  submissionId: string,
+  selectedOption: submissionStatusKenum
+) {
+  const submissionStatusObject = submissionStatusMap[selectedOption.name];
+  return {
+    content: null,
+    embeds: [
+      {
+        title: `Submission ID ${submissionId}\nStatus: ${submissionStatusObject.text}`,
+        color: submissionStatusObject.colorId,
+      },
+    ],
+    components: [generateViewSubmissionButtonComponent(submissionId, true)],
   };
 }
 

@@ -1,5 +1,9 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
-import { fetchTableRows, SqlWhereFieldObject } from "../../core/helpers/sql";
+import {
+  fetchTableRows,
+  SqlWhereFieldObject,
+  updateTableRow,
+} from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 import { submissionStatusKenum } from "../../enums";
 import {
@@ -87,6 +91,33 @@ export class DiscordChannelService extends PaginatedService {
       },
       fieldPath
     );
+
+    // if no primaryMessageId, create one in the channel and update the discordChannel
+    if (!discordChannel.primaryMessageId) {
+      const discordMessage = await sendDiscordMessage(
+        discordChannel.channelId,
+        {
+          content: "Placeholder message",
+        }
+      );
+
+      await updateTableRow({
+        fields: {
+          primaryMessageId: discordMessage.id,
+        },
+        table: this.typename,
+        where: {
+          fields: [
+            {
+              field: "id",
+              value: discordChannelId,
+            },
+          ],
+        },
+      });
+
+      discordChannel.primaryMessageId = discordMessage.id;
+    }
 
     const discordChannelOutputs = await fetchTableRows({
       select: [
@@ -361,63 +392,5 @@ export class DiscordChannelService extends PaginatedService {
     });
 
     return embeds;
-  }
-
-  @permissionsCheck("create")
-  async createRecord({
-    req,
-    fieldPath,
-    args,
-    query,
-    data = {},
-    isAdmin = false,
-  }: ServiceFunctionInputs) {
-    // args should be validated already
-    const validatedArgs = <any>args;
-    await this.handleLookupArgs(args, fieldPath);
-
-    // changed: if no primaryMessageId supplied, create one in the channel and use that messageId
-    if (!args.primaryMessageId) {
-      const discordMessage = await sendDiscordMessage(args.channelId, {
-        content: "Placeholder message",
-      });
-
-      args.primaryMessageId = discordMessage.id;
-    }
-
-    const addResults = await createObjectType({
-      typename: this.typename,
-      addFields: {
-        id: await this.generateRecordId(fieldPath),
-        ...validatedArgs,
-        createdBy: req.user!.id,
-      },
-      req,
-      fieldPath,
-    });
-
-    // do post-create fn, if any
-    await this.afterCreateProcess(
-      {
-        req,
-        fieldPath,
-        args,
-        query,
-        data,
-        isAdmin,
-      },
-      addResults.id
-    );
-
-    return this.isEmptyQuery(query)
-      ? {}
-      : await this.getRecord({
-          req,
-          args: { id: addResults.id },
-          query,
-          fieldPath,
-          isAdmin,
-          data,
-        });
   }
 }

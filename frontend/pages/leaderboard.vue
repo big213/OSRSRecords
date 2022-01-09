@@ -10,6 +10,9 @@
       icon="mdi-podium"
     ></CrudRecordPage>
   </div>
+  <v-container v-else fluid fill-height justify-center>
+    <v-progress-circular indeterminate></v-progress-circular>
+  </v-container>
 </template>
 
 <script>
@@ -61,6 +64,9 @@ export default {
         },
       ],
       title: 'Leaderboard',
+      loading: {
+        redirect: false,
+      },
     }
   },
 

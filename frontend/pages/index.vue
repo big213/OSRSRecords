@@ -26,6 +26,10 @@
             >. If you would prefer to email, our email is
             <a>hello@osrsrecords.com</a>.
           </p>
+          <p>
+            RuneScape is a registered trademark of Jagex Ltd. This site is in no
+            way affiliated with Jagex Ltd.
+          </p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -46,7 +50,7 @@
           >
         </v-card-actions>
       </v-card>
-      <ReleaseHistory v-if="user" class="mt-3" />
+      <ReleaseHistory class="mt-3" />
     </v-container>
   </v-layout>
 </template>

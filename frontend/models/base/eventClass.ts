@@ -3,8 +3,11 @@ import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
 import { Event } from './event'
+import {
+  generateJoinableField,
+  generatePreviewableRecordField,
+} from '~/services/recordInfo'
 
 export const EventClass = <RecordInfo<'eventClass'>>{
   typename: 'eventClass',
@@ -26,27 +29,17 @@ export const EventClass = <RecordInfo<'eventClass'>>{
       inputType: 'avatar',
       component: AvatarColumn,
     },
-    parent: {
-      text: 'Parent Event Class',
-      fields: ['parent.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventClass',
-      },
-    },
+    parent: generateJoinableField({
+      fieldname: 'parent',
+      typename: 'eventClass',
+      text: 'Event Class',
+      hasAvatar: true,
+    }),
     'parent.id': {},
-    parentRecord: {
+    parentRecord: generatePreviewableRecordField({
+      fieldname: 'parent',
       text: 'Parent Event Class',
-      fields: [
-        'parent.name',
-        'parent.id',
-        'parent.__typename',
-        'parent.avatar',
-      ],
-      pathPrefix: 'parent',
-      component: RecordColumn,
-    },
+    }),
     backgroundImage: {
       text: 'Background Image',
       inputType: 'single-image',

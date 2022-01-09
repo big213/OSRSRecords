@@ -9,7 +9,6 @@ export default {
     VER: process.env.VER,
     apiUrl: process.env.API_URL,
     imageServingUrl: process.env.IMAGE_SERVING_URL,
-    pusherAuthUrl: process.env.PUSHER_AUTH_URL,
     restApiUrl: process.env.REST_API_URL,
     buildDate: new Date().toDateString(),
   },

@@ -1,5 +1,4 @@
 import type { RecordInfo } from '~/types'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
@@ -11,6 +10,10 @@ import {
 } from '~/services/base'
 import { getEventDifficulties } from '~/services/dropdown'
 import { EventEra } from '.'
+import {
+  generateJoinableField,
+  generatePreviewableRecordField,
+} from '~/services/recordInfo'
 
 export const Event = <RecordInfo<'event'>>{
   typename: 'event',
@@ -52,28 +55,18 @@ export const Event = <RecordInfo<'event'>>{
       fields: ['name', 'avatar'],
       component: NameAvatarColumn,
     },
-    eventClass: {
+    eventClass: generateJoinableField({
+      fieldname: 'eventClass',
+      typename: 'eventClass',
       text: 'Event Class',
-      fields: ['eventClass.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventClass',
-      },
-    },
+      hasAvatar: true,
+    }),
     'eventClass.id': {},
     'eventClass.name': {},
-    eventClassRecord: {
+    eventClassRecord: generatePreviewableRecordField({
+      fieldname: 'eventClass',
       text: 'Event Class',
-      fields: [
-        'eventClass.name',
-        'eventClass.id',
-        'eventClass.__typename',
-        'eventClass.avatar',
-      ],
-      pathPrefix: 'eventClass',
-      component: RecordColumn,
-    },
+    }),
     minParticipants: {
       text: 'Min Participants',
     },
@@ -105,10 +98,6 @@ export const Event = <RecordInfo<'event'>>{
       getOptions: getEventDifficulties,
       inputType: 'select',
       default: () => 'NORMAL',
-    },
-    createdBy: {
-      text: 'Created By',
-      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',

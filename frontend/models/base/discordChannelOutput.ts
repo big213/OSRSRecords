@@ -1,8 +1,11 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import { getEventsByGroup } from '~/services/dropdown'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
+import {
+  generateJoinableField,
+  generatePreviewableRecordField,
+} from '~/services/recordInfo'
 
 export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
   typename: 'discordChannelOutput',
@@ -16,63 +19,52 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
     id: {
       text: 'ID',
     },
-    discordChannel: {
+    discordChannel: generateJoinableField({
+      fieldname: 'discordChannel',
+      typename: 'discordChannel',
       text: 'Discord Channel',
-      fields: ['discordChannel.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        hasAvatar: false,
-        typename: 'discordChannel',
-      },
-    },
+      hasAvatar: false,
+    }),
     'discordChannel.id': {},
     discordChannelName: {
       text: 'Discord Channel Name',
       fields: ['discordChannel.name'],
     },
     event: {
-      text: 'Event Category',
-      fields: ['event.id'],
-      inputType: 'autocomplete',
-      inputOptions: {
-        hasAvatar: true,
+      ...generateJoinableField({
+        fieldname: 'event',
         typename: 'event',
-      },
+        text: 'Event Category',
+        hasAvatar: true,
+        inputType: 'autocomplete',
+      }),
       getOptions: getEventsByGroup,
     },
     'event.id': {},
-    eventRecord: {
+    eventRecord: generatePreviewableRecordField({
+      fieldname: 'event',
       text: 'Event',
-      fields: ['event.name', 'event.avatar', 'event.id', 'event.__typename'],
-      pathPrefix: 'event',
-      component: RecordColumn,
-    },
-    eventEra: {
+    }),
+    eventEra: generateJoinableField({
+      fieldname: 'eventEra',
+      typename: 'eventEra',
       text: 'Event Era',
-      fields: ['eventEra.id'],
+      hasAvatar: true,
       inputType: 'select',
-      inputOptions: {
-        hasAvatar: true,
-        typename: 'eventEra',
-      },
-    },
+    }),
     'eventEra.id': {},
-    eventEraRecord: {
+    eventEraRecord: generatePreviewableRecordField({
+      fieldname: 'eventEra',
       text: 'Event Era',
-      fields: [
-        'eventEra.name',
-        'eventEra.avatar',
-        'eventEra.id',
-        'eventEra.__typename',
-      ],
-      pathPrefix: 'eventEra',
-      component: RecordColumn,
-    },
+    }),
     useCurrentEventEra: {
       text: 'Use Current Era',
       inputType: 'switch',
       default: () => true,
       component: BooleanColumn,
+      parseImportValue: (val: string) => {
+        return val === 'TRUE'
+      },
     },
     participants: {
       text: 'Team Size',
@@ -119,42 +111,34 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
     headerOptions: [
       {
         field: 'sort',
-        sortable: true,
         width: '150px',
       },
       {
         field: 'discordChannelName',
-        sortable: false,
       },
       {
         field: 'eventRecord',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'participants',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'eventEraRecord',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'ranksToShow',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {
@@ -164,6 +148,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         'discordChannel.id',
         'event.id',
         'participants',
+        'useCurrentEventEra',
         'eventEra.id',
         'ranksToShow',
       ],

@@ -12,6 +12,9 @@ import {
   generateSubmissionMessage,
   updateDiscordMessage,
   generateParticipantsText,
+  getGuildMemberId,
+  createDMChannel,
+  generateSubmissionDM,
 } from "../../helpers/discord";
 import {
   countTableRows,
@@ -306,6 +309,25 @@ export class SubmissionService extends PaginatedService {
         generateSubmissionMessage(itemId, inferredStatus)
       );
 
+      // also, if the record was added as NOT approved, also need to DM the discordId on the first team member entry, if any
+      const firstParticipantDiscordId = args.participantsList[0].discordId;
+
+      if (firstParticipantDiscordId) {
+        const foundDiscordUserId = await getGuildMemberId(
+          channelMap.guildId,
+          firstParticipantDiscordId
+        );
+
+        if (foundDiscordUserId) {
+          const dmChannelId = await createDMChannel(foundDiscordUserId);
+
+          await sendDiscordMessage(
+            dmChannelId,
+            generateSubmissionDM(itemId, inferredStatus)
+          );
+        }
+      }
+
       await updateTableRow({
         fields: {
           discordMessageId: discordMessage.id,
@@ -350,6 +372,7 @@ export class SubmissionService extends PaginatedService {
         "id",
         "event.id",
         "participants",
+        "participantsList",
         "eventEra.id",
         "score",
         "status",
@@ -440,6 +463,28 @@ export class SubmissionService extends PaginatedService {
             submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
           )
         );
+      }
+
+      // also need to DM the discordId on the first team member entry about the status change, if any
+      const firstParticipantDiscordId = item.participantsList[0].discordId;
+
+      if (firstParticipantDiscordId) {
+        const foundDiscordUserId = await getGuildMemberId(
+          channelMap.guildId,
+          firstParticipantDiscordId
+        );
+
+        if (foundDiscordUserId) {
+          const dmChannelId = await createDMChannel(foundDiscordUserId);
+
+          await sendDiscordMessage(
+            dmChannelId,
+            generateSubmissionDM(
+              item.id,
+              submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
+            )
+          );
+        }
       }
     }
 

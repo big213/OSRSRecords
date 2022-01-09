@@ -1,6 +1,7 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import CopyableColumn from '~/components/table/common/copyableColumn.vue'
+import { generateJoinableField } from '~/services/recordInfo'
 
 export const ApiKey = <RecordInfo<'apiKey'>>{
   typename: 'apiKey',
@@ -29,15 +30,12 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
       parseValue: (val: string) =>
         val ? val.split(',').filter((ele) => ele) : [],
     },
-    user: {
+    user: generateJoinableField({
       text: 'User',
-      fields: ['user.id'],
-      inputType: 'server-autocomplete',
-      inputOptions: {
-        typename: 'user',
-      },
-      parseQueryValue: (val) => Number(val),
-    },
+      fieldname: 'user',
+      typename: 'user',
+      hasAvatar: true,
+    }),
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,
@@ -55,26 +53,26 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
         field: 'createdAt',
         desc: true,
       },
+      {
+        field: 'updatedAt',
+        desc: true,
+      },
     ],
     headerOptions: [
       {
         field: 'name',
-        sortable: false,
       },
       {
         field: 'code',
-        sortable: false,
         width: '250px',
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {},

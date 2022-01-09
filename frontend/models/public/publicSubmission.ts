@@ -2,6 +2,7 @@ import { Submission } from '../base'
 
 export const PublicSubmission = {
   ...Submission,
+  routeName: 'i-view',
   fields: {
     ...Submission.fields,
   },
@@ -15,28 +16,23 @@ export const PublicSubmission = {
       },
       {
         field: 'eventRecordWithParticipants',
-        sortable: false,
         width: '250px',
       },
       {
         field: 'participantsLinksList',
-        sortable: false,
       },
       {
         field: 'score',
         width: '200px',
-        sortable: true,
         align: 'right',
       },
       {
         field: 'mainExternalLink',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'happenedOn',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: undefined,
@@ -49,7 +45,7 @@ export const PublicSubmission = {
       'participantsLinksListDetail',
       'score',
       'happenedOn',
-      'status',
+      'statusReadonly',
       'world',
       'ranking',
       'previousRecordHappenedOn',

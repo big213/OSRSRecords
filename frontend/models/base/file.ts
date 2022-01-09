@@ -50,32 +50,31 @@ export const File = <RecordInfo<'file'>>{
         field: 'createdAt',
         desc: true,
       },
+      {
+        field: 'updatedAt',
+        desc: true,
+      },
     ],
     headerOptions: [
       {
         field: 'nameWithId',
-        sortable: false,
       },
       {
         field: 'contentType',
         width: '200px',
-        sortable: true,
       },
       {
         field: 'size',
         width: '150px',
         align: 'right',
-        sortable: true,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {},

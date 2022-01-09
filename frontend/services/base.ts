@@ -609,8 +609,10 @@ export function addNestedInputObject(
         nestedFieldInfo,
         inputObject: {
           fieldInfo: nestedFieldInfo,
+          hint: nestedFieldInfo.hint,
           clearable: true,
           closeable: false,
+          optional: nestedFieldInfo.optional,
           label: nestedFieldInfo.text ?? nestedFieldInfo.key,
           inputType: nestedFieldInfo.inputType,
           inputOptions: nestedFieldInfo.inputOptions,

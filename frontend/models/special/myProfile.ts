@@ -5,16 +5,14 @@ export const MyProfile = {
   routeName: 'i-view',
   paginationOptions: {
     ...(!!User.paginationOptions && User.paginationOptions),
-    filters: [],
-    headers: [
+    filterOptions: [],
+    headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: false,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: undefined,

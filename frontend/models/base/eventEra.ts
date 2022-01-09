@@ -9,7 +9,10 @@ import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import { getEvents } from '~/services/dropdown'
-import RecordColumn from '~/components/table/common/recordColumn.vue'
+import {
+  generateJoinableField,
+  generatePreviewableRecordField,
+} from '~/services/recordInfo'
 
 export const EventEra = <RecordInfo<'eventEra'>>{
   typename: 'eventEra',
@@ -41,24 +44,21 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       inputType: 'textarea',
     },
     event: {
-      text: 'Event Category',
-      fields: ['event.id'],
-      inputType: 'autocomplete',
-      inputOptions: {
-        hasAvatar: true,
+      ...generateJoinableField({
+        fieldname: 'event',
         typename: 'event',
-      },
+        text: 'Event Category',
+        hasAvatar: true,
+        inputType: 'autocomplete',
+      }),
       getOptions: getEvents,
     },
     'event.id': {},
     'event.name': {},
-    eventRecord: {
+    eventEraRecord: generatePreviewableRecordField({
+      fieldname: 'event',
       text: 'Event Category',
-      fields: ['event.name', 'event.avatar', 'event.id', 'event.__typename'],
-      pathPrefix: 'event',
-      component: RecordColumn,
-    },
-
+    }),
     beginDate: {
       text: 'Start Date',
       inputType: 'datepicker',
@@ -95,10 +95,6 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       text: 'Is Current',
       inputType: 'switch',
       component: BooleanColumn,
-    },
-    createdBy: {
-      text: 'Created By',
-      fields: ['createdBy.id'],
     },
     createdAt: {
       text: 'Created At',
