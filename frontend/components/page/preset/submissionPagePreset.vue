@@ -9,7 +9,7 @@
         v-for="(crudFilterObject, index) in filterInputsArray"
         :key="index"
         cols="12"
-        lg="3"
+        :lg="crudFilterObject.inputObject.cols || 3"
         class="pb-0 inputs-bg"
       >
         <GenericInput
@@ -63,6 +63,7 @@ export default {
             focused: false,
             generation: 0,
             parentInput: null,
+            cols: 4,
             nestedInputsArray: [],
           },
         },
@@ -84,6 +85,7 @@ export default {
             focused: false,
             generation: 0,
             parentInput: null,
+            cols: 3,
             nestedInputsArray: [],
           },
         },
@@ -105,6 +107,7 @@ export default {
             focused: false,
             generation: 0,
             parentInput: null,
+            cols: 2,
             nestedInputsArray: [],
           },
         },
@@ -155,6 +158,7 @@ export default {
       // if event is not specified, skip
       if (!eventValue) return
 
+      eventEraInputObject.loading = true
       eventEraInputObject.options = []
       // also add an "any" option
       eventEraInputObject.options = await getEventEras(this, false, [
@@ -174,6 +178,8 @@ export default {
           },
         ])
       )
+
+      eventEraInputObject.loading = false
 
       participantsInputObject.options = generateParticipantsOptions(
         eventValue.minParticipants,

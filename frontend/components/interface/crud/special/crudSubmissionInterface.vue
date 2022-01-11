@@ -496,125 +496,52 @@ export default {
   },
 
   methods: {
-    async loadData(showLoader = true, currentReloadGeneration) {
+    // added
+    populateRankings() {
+      // changed: go through all of the entries and populate the ranking field based on the first entry's ranking
+      if (this.isRankMode && this.records.length > 0) {
+        const firstResultRanking = this.records[0].ranking
+
+        let placeDiff = 0
+
+        this.records.forEach((record, index) => {
+          this.$set(
+            record,
+            'ranking',
+            firstResultRanking === null
+              ? null
+              : this.currentSort.desc
+              ? firstResultRanking - placeDiff
+              : firstResultRanking + placeDiff
+          )
+
+          // check the next record and see if it exists and the score is not the same
+          if (
+            this.records[index + 1] &&
+            record.score !== this.records[index + 1].score
+          ) {
+            // if it is, increment placeDiff. else, do not
+            placeDiff++
+          }
+        })
+      }
+    },
+
+    // changed: also need to fetch ranking of the first row, then populate the rankings
+    async loadInitialData(showLoader = true, currentReloadGeneration) {
+      this.endCursor = null
       this.loading.syncData = true
       if (showLoader) this.loading.loadData = true
       try {
-        // create a map field -> serializeFn for fast serialization
-        const serializeMap = new Map()
-
-        const query = {
-          ...collapseObject(
-            this.recordInfo.paginationOptions.headerOptions
-              .concat(
-                (this.recordInfo.requiredFields ?? []).map((field) => ({
-                  field,
-                }))
-              )
-              .reduce(
-                (total, headerInfo) => {
-                  // changed: if field is ranking, exclude if in rank mode
-                  if (this.isRankMode && headerInfo.field === 'ranking')
-                    return total
-
-                  const fieldInfo = lookupFieldInfo(
-                    this.recordInfo,
-                    headerInfo.field
-                  )
-
-                  const fieldsToAdd = new Set()
-
-                  // add all fields
-                  if (fieldInfo.fields) {
-                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
-                  } else {
-                    fieldsToAdd.add(headerInfo.field)
-                  }
-
-                  // process fields
-                  fieldsToAdd.forEach((field) => {
-                    total[field] = true
-
-                    // add a serializer if there is one for the field
-                    const currentFieldInfo = this.recordInfo.fields[field]
-                    if (currentFieldInfo) {
-                      if (currentFieldInfo.serialize) {
-                        serializeMap.set(field, currentFieldInfo.serialize)
-                      }
-
-                      // if field has args, process them
-                      if (currentFieldInfo.args) {
-                        total[currentFieldInfo.args.path + '.__args'] =
-                          currentFieldInfo.args.getArgs(this)
-                      }
-                    }
-                  })
-
-                  return total
-                },
-                { id: true, __typename: true } // always add id, typename
-              )
-          ),
-        }
-
-        const args = {
-          first: this.resultsPerPage,
-          after: this.endCursor ?? undefined,
-          sortBy: this.currentSort ? [this.currentSort.field] : [],
-          sortDesc: this.currentSort ? [this.currentSort.desc] : [],
-          filterBy: [
-            this.rawFilters
-              .concat(this.lockedFilters)
-              .reduce((total, rawFilterObject) => {
-                const fieldInfo = lookupFieldInfo(
-                  this.recordInfo,
-                  rawFilterObject.field
-                )
-
-                const primaryField = fieldInfo.fields
-                  ? fieldInfo.fields[0]
-                  : rawFilterObject.field
-
-                if (!total[primaryField]) total[primaryField] = {}
-
-                // if value is '__undefined', exclude it entirely
-                if (rawFilterObject.value === '__undefined') return total
-
-                // parse '__null' to null first
-                // also parse '__now()' to current date string
-                const value =
-                  rawFilterObject.value === '__null'
-                    ? null
-                    : rawFilterObject.value === '__now()'
-                    ? generateDateLocaleString(new Date().getTime() / 1000)
-                    : rawFilterObject.value
-
-                // apply parseValue function, if any
-                total[primaryField][rawFilterObject.operator] =
-                  fieldInfo.parseValue ? fieldInfo.parseValue(value) : value
-
-                return total
-              }, {}),
-          ],
-          ...(this.search && { search: this.search }),
-        }
-
-        const results = await getPaginatorData(
-          this,
-          'get' + this.capitalizedType + 'Paginator',
-          query,
-          args
-        )
-
         // if reloadGeneration is behind the latest one, end execution early, as the loadData request has been superseded
         if (currentReloadGeneration < this.reloadGeneration) return
 
-        // changed: if any rows returned, no rows currently in the table, AND in isRankMode, fetch and set the ranking of the first row
-        if (
-          results.edges.length > 0 &&
-          this.records.length < 1 &&
-          this.isRankMode
-        ) {
+        const results = await this.fetchData()
+
+        this.records = results.edges.map((ele) => ele.node)
+
+        // changed: if any rows AND in isRankMode, fetch and set the ranking of the first row
+        if (this.records.length > 0 && this.isRankMode) {
           const hasParticipantsFilter = this.allFilters.find(
             (rawFilterObject) => rawFilterObject.field === 'participants'
           )
@@ -632,53 +559,13 @@ export default {
                 },
               },
               __args: {
-                id: results.edges[0].node.id,
+                id: this.records[0].id,
               },
             },
           })
-          this.$set(results.edges[0].node, 'ranking', rankResults.ranking)
-        }
+          this.$set(this.records[0], 'ranking', rankResults.ranking)
 
-        // remove any undefined serializeMap elements
-        serializeMap.forEach((val, key) => {
-          if (val === undefined) serializeMap.delete(key)
-        })
-
-        // apply serialization to results
-        results.edges.forEach((ele) => {
-          serializeMap.forEach((serialzeFn, field) => {
-            serializeNestedProperty(ele.node, field, serialzeFn)
-          })
-        })
-
-        this.records.push(...results.edges.map((ele) => ele.node))
-
-        // changed: go through all of the entries and populate the ranking field based on the first entry's ranking
-        if (this.isRankMode && this.records.length > 0) {
-          const firstResultRanking = this.records[0].ranking
-
-          let placeDiff = 0
-
-          this.records.forEach((record, index) => {
-            this.$set(
-              record,
-              'ranking',
-              firstResultRanking === null
-                ? null
-                : this.currentSort.desc
-                ? firstResultRanking - placeDiff
-                : firstResultRanking + placeDiff
-            )
-
-            // check the next record and see if it exists and the score is not the same
-            if (
-              this.records[index + 1] &&
-              record.score !== this.records[index + 1].score
-            ) {
-              // if it is, increment placeDiff. else, do not
-              placeDiff++
-            }
-          })
+          this.populateRankings()
         }
 
         this.totalRecords = results.paginatorInfo.total
@@ -688,6 +575,148 @@ export default {
       }
       this.loading.syncData = false
       if (showLoader) this.loading.loadData = false
+    },
+
+    async loadMore() {
+      this.reloadGeneration++
+      this.loading.loadMore = true
+      try {
+        const results = await this.fetchData()
+
+        this.records.push(...results.edges.map((ele) => ele.node))
+
+        // changed: if any rows AND in isRankMode, populate the ranking field based on the first row
+        if (this.records.length > 0 && this.isRankMode) {
+          this.populateRankings()
+        }
+
+        this.totalRecords = results.paginatorInfo.total
+        this.endCursor = results.paginatorInfo.endCursor
+      } catch (err) {
+        handleError(this, err)
+      }
+      this.loading.loadMore = false
+    },
+
+    async fetchData() {
+      // create a map field -> serializeFn for fast serialization
+      const serializeMap = new Map()
+
+      const query = {
+        ...collapseObject(
+          this.recordInfo.paginationOptions.headerOptions
+            .concat(
+              (this.recordInfo.requiredFields ?? []).map((field) => ({
+                field,
+              }))
+            )
+            .reduce(
+              (total, headerInfo) => {
+                // changed: if field is ranking, exclude if in rank mode
+                if (this.isRankMode && headerInfo.field === 'ranking')
+                  return total
+
+                const fieldInfo = lookupFieldInfo(
+                  this.recordInfo,
+                  headerInfo.field
+                )
+
+                const fieldsToAdd = new Set()
+
+                // add all fields
+                if (fieldInfo.fields) {
+                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                } else {
+                  fieldsToAdd.add(headerInfo.field)
+                }
+
+                // process fields
+                fieldsToAdd.forEach((field) => {
+                  total[field] = true
+
+                  // add a serializer if there is one for the field
+                  const currentFieldInfo = this.recordInfo.fields[field]
+                  if (currentFieldInfo) {
+                    if (currentFieldInfo.serialize) {
+                      serializeMap.set(field, currentFieldInfo.serialize)
+                    }
+
+                    // if field has args, process them
+                    if (currentFieldInfo.args) {
+                      total[currentFieldInfo.args.path + '.__args'] =
+                        currentFieldInfo.args.getArgs(this)
+                    }
+                  }
+                })
+
+                return total
+              },
+              { id: true, __typename: true } // always add id, typename
+            )
+        ),
+      }
+
+      const args = {
+        first: this.resultsPerPage,
+        after: this.endCursor ?? undefined,
+        sortBy: this.currentSort ? [this.currentSort.field] : [],
+        sortDesc: this.currentSort ? [this.currentSort.desc] : [],
+        filterBy: [
+          this.allFilters.reduce((total, rawFilterObject) => {
+            const fieldInfo = lookupFieldInfo(
+              this.recordInfo,
+              rawFilterObject.field
+            )
+
+            const primaryField = fieldInfo.fields
+              ? fieldInfo.fields[0]
+              : rawFilterObject.field
+
+            if (!total[primaryField]) total[primaryField] = {}
+
+            // if value is '__undefined', exclude it entirely
+            if (rawFilterObject.value === '__undefined') return total
+
+            // parse '__null' to null first
+            // also parse '__now()' to current date string
+            const value =
+              rawFilterObject.value === '__null'
+                ? null
+                : rawFilterObject.value === '__now()'
+                ? generateDateLocaleString(new Date().getTime() / 1000)
+                : rawFilterObject.value
+
+            // apply parseValue function, if any
+            total[primaryField][rawFilterObject.operator] = fieldInfo.parseValue
+              ? fieldInfo.parseValue(value)
+              : value
+
+            return total
+          }, {}),
+        ],
+        ...(this.search && { search: this.search }),
+      }
+
+      const results = await getPaginatorData(
+        this,
+        'get' + this.capitalizedType + 'Paginator',
+        query,
+        args
+      )
+
+      // remove any undefined serializeMap elements
+      serializeMap.forEach((val, key) => {
+        if (val === undefined) serializeMap.delete(key)
+      })
+
+      // apply serialization to results
+      results.edges.forEach((ele) => {
+        serializeMap.forEach((serialzeFn, field) => {
+          serializeNestedProperty(ele.node, field, serialzeFn)
+        })
+      })
+
+      return results
     },
   },
 }

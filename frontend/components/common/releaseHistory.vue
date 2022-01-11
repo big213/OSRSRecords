@@ -7,7 +7,7 @@
         indeterminate
       ></v-progress-linear>
       <div v-for="(item, i) in releases" v-else :key="i" class="mb-4">
-        <span class="headline"
+        <span class="headline" :title="item.createdAt"
           >{{ item.name }} ({{ generateTimeAgoString(item.createdAt) }})</span
         >
         <div v-html="item.descriptionHTML"></div>

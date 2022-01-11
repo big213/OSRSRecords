@@ -116,7 +116,7 @@ export default {
     visibleInputsArray() {
       return this.hiddenFields.length
         ? this.inputsArray.filter(
-            (inputObject) => !this.hiddenFields.includes(inputObject.field)
+            (inputObject) => !this.hiddenFields.includes(inputObject.fieldKey)
           )
         : this.inputsArray
     },

@@ -37,6 +37,7 @@
           "
           multiple
           :hint="item.hint"
+          :loading="item.loading"
           persistent-hint
           :clearable="false"
           @change="handleMultipleFileInputChange(item)"
@@ -96,6 +97,7 @@
           multiple
           accept="image/*"
           :hint="item.hint"
+          :loading="item.loading"
           persistent-hint
           :clearable="false"
           @change="handleMultipleFileInputChange(item)"
@@ -158,6 +160,7 @@
           "
           multiple
           :hint="item.hint"
+          :loading="item.loading"
           persistent-hint
           :clearable="false"
           @change="handleMultipleFileInputChange(item)"
@@ -200,8 +203,8 @@
           :clearable="false"
           accept="image/*"
           :label="item.label + (item.optional ? ' (optional)' : '')"
-          :loading="item.loading"
           :hint="item.hint"
+          :loading="item.loading"
           persistent-hint
           @click:append="handleSingleFileInputClear(item)"
           @change="handleSingleFileInputChange(item)"
@@ -246,8 +249,8 @@
         accept="image/*"
         :label="item.label + (item.optional ? ' (optional)' : '')"
         :hint="item.hint"
-        persistent-hint
         :loading="item.loading"
+        persistent-hint
         @click:append="handleSingleFileInputClear(item)"
         @change="handleSingleFileInputChange(item)"
         @click:append-outer="handleClose()"
@@ -284,6 +287,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       @click:append="handleClear()"
       @click:append-outer="handleClose()"
@@ -296,7 +300,9 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
+      v-on="$listeners"
       @click:append="handleClear()"
       @click:append-outer="handleClose()"
     ></v-switch>
@@ -317,6 +323,7 @@
           :append-icon="appendIcon"
           :append-outer-icon="item.closeable ? 'mdi-close' : null"
           :hint="item.hint"
+          :loading="item.loading"
           persistent-hint
           filled
           autocomplete="off"
@@ -348,6 +355,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       filled
       class="py-0"
@@ -359,7 +367,6 @@
       v-else-if="item.inputType === 'server-combobox'"
       ref="combobox"
       v-model="item.value"
-      :loading="item.loading"
       :search-input.sync="item.inputValue"
       :items="item.options"
       item-text="name"
@@ -369,6 +376,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       filled
       hide-no-data
@@ -425,6 +433,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       filled
       return-object
@@ -469,7 +478,6 @@
     <v-autocomplete
       v-else-if="item.inputType === 'server-autocomplete'"
       v-model="item.value"
-      :loading="item.loading"
       :search-input.sync="item.inputValue"
       :items="item.options"
       item-text="name"
@@ -479,6 +487,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       filled
       hide-no-data
@@ -538,6 +547,7 @@
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       :hint="item.hint"
+      :loading="item.loading"
       persistent-hint
       return-object
       item-text="name"
@@ -593,36 +603,45 @@
             <div v-if="item.hint">{{ item.hint }}</div>
           </v-col>
         </v-row>
-        <div v-if="item.nestedInputsArray.length > 0">
-          <Draggable v-model="item.nestedInputsArray" :disabled="item.readonly">
-            <v-row
-              v-for="(nestedInputArray, i) in item.nestedInputsArray"
-              :key="i"
-              class="highlighted-bg"
-            >
-              <v-col cols="12" class="pa-0" key="-1">
-                <v-system-bar lights-out>
-                  <v-icon @click="void 0">mdi-arrow-all</v-icon>
-                  Entry #{{ i + 1 }}
-                  <v-spacer></v-spacer>
-                  <v-icon @click="removeRow(i)" color="error">mdi-close</v-icon>
-                </v-system-bar>
-              </v-col>
-              <v-col
-                v-for="(nestedInputObject, j) in nestedInputArray"
-                :cols="nestedInputObject.inputObject.cols || 12"
-                class="py-0"
-                :key="j"
+        <v-row>
+          <v-col cols="12">
+            <div v-if="item.nestedInputsArray.length > 0">
+              <Draggable
+                v-model="item.nestedInputsArray"
+                :disabled="item.readonly"
               >
-                <GenericInput
-                  :item="nestedInputObject.inputObject"
-                ></GenericInput>
-              </v-col>
-            </v-row>
-          </Draggable>
-        </div>
-        <div v-else class="pb-3">No elements</div>
-        <v-row v-if="!isReadonly" icon @click="addRow()">
+                <v-row
+                  v-for="(nestedInputArray, i) in item.nestedInputsArray"
+                  :key="i"
+                  class="highlighted-bg"
+                >
+                  <v-col cols="12" class="pa-0 pb-1" key="-1">
+                    <v-system-bar lights-out>
+                      <v-icon @click="void 0">mdi-arrow-all</v-icon>
+                      Entry #{{ i + 1 }}
+                      <v-spacer></v-spacer>
+                      <v-icon @click="removeRow(i)" color="error"
+                        >mdi-close</v-icon
+                      >
+                    </v-system-bar>
+                  </v-col>
+                  <v-col
+                    v-for="(nestedInputObject, j) in nestedInputArray"
+                    :cols="nestedInputObject.inputObject.cols || 12"
+                    class="py-0"
+                    :key="j"
+                  >
+                    <GenericInput
+                      :item="nestedInputObject.inputObject"
+                    ></GenericInput>
+                  </v-col>
+                </v-row>
+              </Draggable>
+            </div>
+            <div v-else class="pb-3">No entries</div>
+          </v-col>
+        </v-row>
+        <v-row v-if="!isReadonly" @click="addRow()">
           <v-col cols="12" class="pa-0">
             <v-btn small block>
               <v-icon left>mdi-plus</v-icon>
@@ -632,41 +651,6 @@
         </v-row>
       </v-container>
     </div>
-    <!--     <div
-      v-else-if="item.inputType === 'value-array'"
-      class="accent rounded-sm mb-4"
-    >
-      <v-container>
-        <v-row>
-          <v-col cols="12">
-            <div class="subtitle-1">
-              {{ item.label + (item.optional ? ' (optional)' : '') }}
-              <v-btn v-if="!isReadonly" icon @click="addRow()">
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
-              <v-spacer></v-spacer>
-            </div>
-          </v-col>
-        </v-row>
-        <div v-if="item.nestedInputsArray.length > 0">
-          <Draggable v-model="item.nestedInputsArray" :disabled="item.readonly">
-            <v-row
-              v-for="(nestedInputObject, i) in item.nestedInputsArray"
-              :key="i"
-            >
-              <v-col cols="12" class="py-0">
-                <GenericInput
-                  :item="nestedInputObject"
-                  @handle-close="removeRow(i)"
-                ></GenericInput>
-              </v-col>
-            </v-row>
-          </Draggable>
-        </div>
-        <div v-else>No elements</div>
-      </v-container>
-    </div> -->
-
     <v-text-field
       v-else
       v-model="item.value"
@@ -674,6 +658,7 @@
       :readonly="isReadonly"
       :rules="item.inputRules"
       :hint="item.hint"
+      :loading="item.loading"
       :append-icon="appendIcon"
       :append-outer-icon="item.closeable ? 'mdi-close' : null"
       persistent-hint

@@ -142,7 +142,8 @@ export const Submission = <RecordInfo<'submission'>>{
       component: ParticipantsColumn,
     },
     externalLinks: {
-      text: 'External Links',
+      text: 'Evidence Links',
+      hint: 'Image or video links backing up the submission.',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
@@ -150,6 +151,7 @@ export const Submission = <RecordInfo<'submission'>>{
             key: 'main',
             inputType: 'text',
             text: 'Link URL',
+            hint: 'Imgur/Streamable links preferred',
           },
         ],
       },

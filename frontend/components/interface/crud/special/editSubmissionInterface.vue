@@ -51,11 +51,7 @@
 import editRecordInterfaceMixin from '~/mixins/editRecordInterface'
 import CircularLoader from '~/components/common/circularLoader.vue'
 import { executeGiraffeql } from '~/services/giraffeql'
-import {
-  collapseObject,
-  handleError,
-  addNestedInputObject,
-} from '~/services/base'
+import { collapseObject, handleError } from '~/services/base'
 import { getEventEras } from '~/services/dropdown'
 
 export default {
@@ -108,11 +104,13 @@ export default {
 
     event(val) {
       // if event is changed to something non-null, reload the eventEra options
+      const eventEraInputObject = this.getInputObject('eventEra')
       if (!val) {
         // if null, clear the eventEra options
-        return (this.getInputObject('eventEra').options = [])
+        return (eventEraInputObject.options = [])
       }
 
+      eventEraInputObject.loading = true
       getEventEras(this, false, [
         {
           'event.id': {
@@ -126,6 +124,7 @@ export default {
           'eventEra',
           res.find((ele) => ele.isCurrent)
         )
+        eventEraInputObject.loading = false
       })
     },
   },
