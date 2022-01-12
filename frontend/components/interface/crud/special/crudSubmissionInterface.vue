@@ -153,11 +153,12 @@
       </v-toolbar>
     </v-container>
     <v-card class="text-center">
-      <span v-if="!isDataLoading">
+      <span v-if="isDataLoading">...</span>
+      <span v-else-if="!totalRecords">---</span>
+      <span v-else>
         (Showing {{ records.length }} of {{ totalRecords }}
         {{ recordInfo.pluralName }})
       </span>
-      <span v-else>&nbsp;</span>
     </v-card>
     <v-divider />
 
@@ -247,11 +248,12 @@
                   @click="loadMore()"
                   >View More</v-btn
                 >
-                <span v-if="!isDataLoading">
+                <span v-if="isDataLoading">...</span>
+                <span v-else-if="!totalRecords">---</span>
+                <span v-else>
                   (Showing {{ records.length }} of {{ totalRecords }}
                   {{ recordInfo.pluralName }})
                 </span>
-                <span v-else>&nbsp;</span>
               </div>
             </v-col>
           </v-row>
@@ -385,11 +387,12 @@
             @click="loadMore()"
             >View More</v-btn
           >
-          <span v-if="!isDataLoading">
+          <span v-if="isDataLoading">...</span>
+          <span v-else-if="!totalRecords">---</span>
+          <span v-else>
             (Showing {{ records.length }} of {{ totalRecords }}
             {{ recordInfo.pluralName }})
           </span>
-          <span v-else>&nbsp;</span>
         </div>
       </template>
 
@@ -542,12 +545,16 @@ export default {
 
         // changed: if any rows AND in isRankMode, fetch and set the ranking of the first row
         if (this.records.length > 0 && this.isRankMode) {
-          const hasParticipantsFilter = this.allFilters.find(
+          const hasParticipantsFilter = !!this.allFilters.find(
             (rawFilterObject) => rawFilterObject.field === 'participants'
           )
 
-          const hasEventEraFilter = this.allFilters.find(
+          const hasEventEraFilter = !!this.allFilters.find(
             (rawFilterObject) => rawFilterObject.field === 'eventEra'
+          )
+
+          const isRelevantEventEraFilter = this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'eventEra.isRelevant'
           )
 
           const rankResults = await executeGiraffeql(this, {
@@ -556,6 +563,7 @@ export default {
                 __args: {
                   excludeParticipants: !hasParticipantsFilter,
                   excludeEventEra: !hasEventEraFilter,
+                  isRelevantEventEra: isRelevantEventEraFilter?.value ?? null,
                 },
               },
               __args: {
@@ -648,6 +656,12 @@ export default {
                     }
                   }
                 })
+
+                // if main fieldInfo has args, process them
+                if (fieldInfo.args) {
+                  total[fieldInfo.args.path + '.__args'] =
+                    fieldInfo.args.getArgs(this)
+                }
 
                 return total
               },

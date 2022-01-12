@@ -25,6 +25,7 @@
               v-if="inputObject.fieldKey === 'timeElapsed'"
               :item="inputObject"
               :parent-item="currentItem"
+              :all-items="inputsArray"
               @handle-submit="handleSubmit()"
               @keypress="isNumber($event)"
             ></GenericInput>
@@ -32,6 +33,7 @@
               v-else
               :item="inputObject"
               :parent-item="currentItem"
+              :all-items="inputsArray"
               @handle-submit="handleSubmit()"
             ></GenericInput>
           </v-col>

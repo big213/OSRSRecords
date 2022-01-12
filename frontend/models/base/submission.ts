@@ -67,6 +67,9 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Event Category',
       hasAvatar: true,
     }),
+    'eventEra.isRelevant': {
+      text: 'Is From Relevant Event Era',
+    },
     'submissionCharacterParticipantLink/character': {
       text: 'Character Name',
       fields: ['submissionCharacterParticipantLink/character.id'],
@@ -299,6 +302,11 @@ export const Submission = <RecordInfo<'submission'>>{
         field: 'eventEra',
         operator: 'eq',
         inputType: 'select',
+      },
+      {
+        field: 'eventEra.isRelevant',
+        operator: 'eq',
+        inputType: 'switch',
       },
       {
         field: 'event',

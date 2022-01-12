@@ -173,8 +173,12 @@ export default {
             divider: true,
           },
           {
+            id: '__relevant',
+            name: 'Relevant Eras',
+          },
+          {
             id: '__undefined',
-            name: 'Any',
+            name: 'All Eras',
           },
         ])
       )
@@ -232,7 +236,12 @@ export default {
         ? JSON.parse(atob(decodeURIComponent(this.$route.query.pageOptions)))
         : null
       // replace event filters with new ones
-      const excludeFilterKeys = ['event', 'eventEra', 'participants']
+      const excludeFilterKeys = [
+        'event',
+        'eventEra',
+        'participants',
+        'eventEra.isRelevant',
+      ]
 
       const filters = originalPageOptions?.filters
         ? originalPageOptions.filters.filter(
@@ -251,13 +260,22 @@ export default {
       }
 
       if (eventEraInputObject.value) {
-        filters.push({
-          field: 'eventEra',
-          operator: 'eq',
-          value: isObject(eventEraInputObject.value)
-            ? eventEraInputObject.value.id
-            : eventEraInputObject.value,
-        })
+        const eventEraValue = isObject(eventEraInputObject.value)
+          ? eventEraInputObject.value.id
+          : eventEraInputObject.value
+        if (eventEraValue === '__relevant') {
+          filters.push({
+            field: 'eventEra.isRelevant',
+            operator: 'eq',
+            value: true,
+          })
+        } else {
+          filters.push({
+            field: 'eventEra',
+            operator: 'eq',
+            value: eventEraValue,
+          })
+        }
       }
 
       if (participantsInputObject.value) {
@@ -294,6 +312,16 @@ export default {
 
       const rawFilters = pageOptions?.filters
       if (rawFilters) {
+        // changed: if there is an eventEra.isRelevant filter and it is true, translate this to the "__relevant" option on eventEraInputObject
+        if (
+          rawFilters.find(
+            (rawFilterObject) =>
+              rawFilterObject.field === 'eventEra.isRelevant' &&
+              rawFilterObject.value === true
+          )
+        ) {
+          this.setInputValue('eventEra', '__relevant')
+        }
         const inputFieldsSet = new Set(this.filterInputsArray)
         promisesArray.push(
           ...rawFilters.map(async (rawFilterObject) => {

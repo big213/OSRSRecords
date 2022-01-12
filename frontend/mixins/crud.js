@@ -813,6 +813,12 @@ export default {
                   }
                 })
 
+                // if main fieldInfo has args, process them
+                if (fieldInfo.args) {
+                  total[fieldInfo.args.path + '.__args'] =
+                    fieldInfo.args.getArgs(this)
+                }
+
                 return total
               },
               { id: true, __typename: true } // always add id, typename

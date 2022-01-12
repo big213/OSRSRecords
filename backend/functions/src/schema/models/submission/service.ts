@@ -47,6 +47,7 @@ export class SubmissionService extends PaginatedService {
     "createdBy.id": {},
     "event.id": {},
     "eventEra.id": {},
+    "eventEra.isRelevant": {},
     participants: {},
     status: {},
     "submissionCharacterParticipantLink/character.id": {},
@@ -81,12 +82,14 @@ export class SubmissionService extends PaginatedService {
     eventId,
     participants,
     eventEraId,
+    isRelevantEventEra = null,
     status,
     score,
   }: {
     eventId: string;
     participants: number | null;
     eventEraId: string | null;
+    isRelevantEventEra?: boolean | null;
     status: submissionStatusKenum | null;
     score: number;
   }) {
@@ -128,6 +131,14 @@ export class SubmissionService extends PaginatedService {
         field: "eventEra.id",
         operator: "eq",
         value: eventEraId,
+      });
+    }
+
+    if (isRelevantEventEra !== null) {
+      whereObject.fields.push({
+        field: "eventEra.isRelevant",
+        operator: "eq",
+        value: isRelevantEventEra,
       });
     }
 

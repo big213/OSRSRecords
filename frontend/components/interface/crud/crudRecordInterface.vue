@@ -153,11 +153,12 @@
       </v-toolbar>
     </v-container>
     <v-card class="text-center">
-      <span v-if="!isDataLoading">
+      <span v-if="isDataLoading">...</span>
+      <span v-else-if="!totalRecords">---</span>
+      <span v-else>
         (Showing {{ records.length }} of {{ totalRecords }}
         {{ recordInfo.pluralName }})
       </span>
-      <span v-else>&nbsp;</span>
     </v-card>
     <v-divider />
 
@@ -247,11 +248,12 @@
                   @click="loadMore()"
                   >View More</v-btn
                 >
-                <span v-if="!isDataLoading">
+                <span v-if="isDataLoading">...</span>
+                <span v-else-if="!totalRecords">---</span>
+                <span v-else>
                   (Showing {{ records.length }} of {{ totalRecords }}
                   {{ recordInfo.pluralName }})
                 </span>
-                <span v-else>&nbsp;</span>
               </div>
             </v-col>
           </v-row>
@@ -385,11 +387,12 @@
             @click="loadMore()"
             >View More</v-btn
           >
-          <span v-if="!isDataLoading">
+          <span v-if="isDataLoading">...</span>
+          <span v-else-if="!totalRecords">---</span>
+          <span v-else>
             (Showing {{ records.length }} of {{ totalRecords }}
             {{ recordInfo.pluralName }})
           </span>
-          <span v-else>&nbsp;</span>
         </div>
       </template>
 

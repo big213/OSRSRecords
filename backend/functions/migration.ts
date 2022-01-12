@@ -137,6 +137,8 @@ export async function up(knex: Knex): Promise<void[]> {
       table.text("description").nullable();
       table.dateTime("begin_date").notNullable();
       table.dateTime("end_date").nullable();
+      table.boolean("is_buff").nullable();
+      table.boolean("is_relevant").notNullable().defaultTo(false);
       table.boolean("is_current").notNullable().defaultTo(false);
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();

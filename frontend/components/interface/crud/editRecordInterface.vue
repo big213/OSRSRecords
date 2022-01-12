@@ -17,6 +17,7 @@
             <GenericInput
               :item="inputObject"
               :parent-item="currentItem"
+              :all-items="inputsArray"
               @handle-submit="handleSubmit()"
             ></GenericInput>
           </v-col>

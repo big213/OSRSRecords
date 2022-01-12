@@ -178,6 +178,10 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
             excludeEventEra: new GiraffeqlInputFieldType({
               type: Scalars.boolean,
             }),
+            isRelevantEventEra: new GiraffeqlInputFieldType({
+              type: Scalars.boolean,
+              allowNull: true,
+            }),
           },
         }),
       }),
@@ -191,6 +195,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
           eventEraId: validatedArgs?.excludeEventEra
             ? null
             : parentValue.eventEra.id,
+          isRelevantEventEra: validatedArgs?.isRelevantEventEra,
           status: submissionStatusKenum.fromUnknown(parentValue.status),
           score: parentValue.score,
         });

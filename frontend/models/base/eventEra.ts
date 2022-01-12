@@ -55,7 +55,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     },
     'event.id': {},
     'event.name': {},
-    eventEraRecord: generatePreviewableRecordField({
+    eventRecord: generatePreviewableRecordField({
       fieldname: 'event',
       text: 'Event Category',
     }),
@@ -90,6 +90,17 @@ export const EventEra = <RecordInfo<'eventEra'>>{
         return msTimestamp / 1000
       },
       component: TimeStringColumn,
+    },
+    isBuff: {
+      text: 'Is Buff',
+      inputType: 'switch',
+      component: BooleanColumn,
+      default: () => true,
+    },
+    isRelevant: {
+      text: 'Is Relevant',
+      inputType: 'switch',
+      component: BooleanColumn,
     },
     isCurrent: {
       text: 'Is Current',
@@ -148,7 +159,15 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     },
   },
   addOptions: {
-    fields: ['event', 'avatar', 'name', 'description', 'beginDate', 'endDate'],
+    fields: [
+      'event',
+      'avatar',
+      'name',
+      'description',
+      'beginDate',
+      'endDate',
+      'isBuff',
+    ],
   },
   importOptions: {
     fields: [
@@ -158,10 +177,19 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       'description',
       'beginDate',
       'endDate',
+      'isBuff',
     ],
   },
   editOptions: {
-    fields: ['event', 'avatar', 'name', 'description', 'beginDate', 'endDate'],
+    fields: [
+      'event',
+      'avatar',
+      'name',
+      'description',
+      'beginDate',
+      'endDate',
+      'isBuff',
+    ],
   },
   viewOptions: {
     fields: [
@@ -170,7 +198,9 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       'description',
       'beginDate',
       'endDate',
+      'isBuff',
       'isCurrent',
+      'isRelevant',
     ],
   },
   enterOptions: {},

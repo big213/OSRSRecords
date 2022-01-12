@@ -36,6 +36,19 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       allowNull: true,
       sqlOptions: { field: "end_date" },
     }),
+    isBuff: generateBooleanField({
+      allowNull: true,
+      sqlOptions: { field: "is_buff" },
+    }),
+    isRelevant: generateBooleanField({
+      allowNull: false,
+      defaultValue: false,
+      sqlOptions: { field: "is_relevant" },
+      typeDefOptions: {
+        addable: false,
+        updateable: false,
+      },
+    }),
     isCurrent: generateBooleanField({
       allowNull: false,
       defaultValue: false,
