@@ -322,8 +322,12 @@ export default {
           icon: 'mdi-account',
           title: 'Characters',
           to: generateCrudRecordInterfaceRoute('/public-characters', {
-            sortBy: ['createdAt'],
-            sortDesc: [true],
+            search: '',
+            filters: [],
+            sort: {
+              field: 'createdAt',
+              desc: true,
+            },
           }),
           loginRequired: false,
         },
@@ -351,8 +355,7 @@ export default {
           icon: 'mdi-format-list-checkbox',
           title: 'Review Queue',
           to: generateCrudRecordInterfaceRoute('/submissions', {
-            sortBy: ['createdAt'],
-            sortDesc: [true],
+            search: '',
             filters: [
               {
                 field: 'status',
@@ -360,21 +363,28 @@ export default {
                 value: ['UNDER_REVIEW', 'SUBMITTED'],
               },
             ],
+            sort: {
+              field: 'createdAt',
+              desc: true,
+            },
           }),
         },
         {
           icon: 'mdi-checkbox-marked',
           title: 'Done',
           to: generateCrudRecordInterfaceRoute('/submissions', {
-            sortBy: ['createdAt'],
-            sortDesc: [true],
+            search: '',
             filters: [
               {
                 field: 'status',
                 operator: 'in',
-                value: ['APPROVED', 'REJECTED', 'INFORMATION_REQUESTED'],
+                value: ['APPROVED', 'REJECTED'],
               },
             ],
+            sort: {
+              field: 'updatedAt',
+              desc: true,
+            },
           }),
         },
       ],

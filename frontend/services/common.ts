@@ -1,6 +1,7 @@
 import { generateCrudRecordInterfaceRoute } from './base'
 import { getEventEras, getEventsByGroup } from '~/services/dropdown'
 import { participantsTextMap } from './constants'
+import { CrudRawFilterObject } from '~/types/misc'
 
 type StringKeyObject = { [x: string]: any }
 
@@ -30,6 +31,7 @@ export function serializeTime(ms: number | null): string | null {
 type LeaderboardInputs = {
   eventId: string | undefined
   eventEraId: string | undefined
+  eventEraMode: 'NORMAL' | 'CURRENT_ERA' | 'RELEVANT_ERAS' | undefined
   participants: number | undefined
 }
 
@@ -45,11 +47,13 @@ export async function generateLeaderboardRoute(
 
 export async function generateLeaderboardPageOptions(
   that,
-  { eventId, eventEraId, participants }: LeaderboardInputs
+  { eventId, eventEraId, eventEraMode, participants }: LeaderboardInputs
 ) {
   let actualEventId = eventId
   let actualEventEraId = eventEraId
   let actualParticipants = participants
+
+  const filters: CrudRawFilterObject[] = []
 
   // use the eventId or fall back to the first eventId
   if (!actualEventId) {
@@ -62,17 +66,38 @@ export async function generateLeaderboardPageOptions(
     actualEventId = firstEvent.id
   }
 
-  // use the eventEraId or fall back to the first eventId
-  if (!actualEventEraId) {
-    const eventEras = await getEventEras(that, false, [
-      {
-        'event.id': {
-          eq: actualEventId,
-        },
-      },
-    ])
+  filters.push({
+    field: 'event',
+    operator: 'eq',
+    value: actualEventId,
+  })
 
-    actualEventEraId = eventEras.find((ele) => ele.isCurrent)?.id
+  // use the eventEraId or fall back to the eventEra.isRelevant = true
+  if (eventEraMode === 'RELEVANT_ERAS') {
+    filters.push({
+      field: 'eventEra.isRelevant',
+      operator: 'eq',
+      value: true,
+    })
+  } else {
+    if (eventEraMode === 'CURRENT_ERA') {
+      // fetch the eras for the eventId
+      const eventEras = await getEventEras(that, false, [
+        {
+          'event.id': {
+            eq: actualEventId,
+          },
+        },
+      ])
+
+      actualEventEraId = eventEras.find((ele) => ele.isCurrent)?.id
+    }
+
+    filters.push({
+      field: 'eventEra',
+      operator: 'eq',
+      value: actualEventEraId ?? '__undefined',
+    })
   }
 
   // use the participants or fall back to 1
@@ -80,25 +105,15 @@ export async function generateLeaderboardPageOptions(
     actualParticipants = 1
   }
 
+  filters.push({
+    field: 'participants',
+    operator: 'eq',
+    value: actualParticipants,
+  })
+
   return {
     search: '',
-    filters: [
-      {
-        field: 'event',
-        operator: 'eq',
-        value: actualEventId,
-      },
-      {
-        field: 'participants',
-        operator: 'eq',
-        value: actualParticipants,
-      },
-      {
-        field: 'eventEra',
-        operator: 'eq',
-        value: actualEventEraId,
-      },
-    ],
+    filters,
     sort: {
       field: 'score',
       desc: false,

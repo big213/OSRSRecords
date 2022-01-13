@@ -272,6 +272,22 @@ export class EventEraService extends PaginatedService {
           ],
         },
       });
+    } else {
+      // if no most recent nerfed eventEra, all eventEras should be isRelevant = true
+      await updateTableRow({
+        fields: {
+          isRelevant: true,
+        },
+        table: this.typename,
+        where: {
+          fields: [
+            {
+              field: "event",
+              value: eventId,
+            },
+          ],
+        },
+      });
     }
   }
 }

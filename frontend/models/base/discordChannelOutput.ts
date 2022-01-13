@@ -1,6 +1,6 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import { getEventsByGroup } from '~/services/dropdown'
+import { getEventEraModes, getEventsByGroup } from '~/services/dropdown'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import {
   generateJoinableField,
@@ -57,14 +57,11 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       fieldname: 'eventEra',
       text: 'Event Era',
     }),
-    useCurrentEventEra: {
-      text: 'Use Current Era',
-      inputType: 'switch',
-      default: () => true,
-      component: BooleanColumn,
-      parseImportValue: (val: string) => {
-        return val === 'TRUE'
-      },
+    eventEraMode: {
+      text: 'Event Era Mode',
+      getOptions: getEventEraModes,
+      inputType: 'select',
+      default: () => 'RELEVANT_ERAS',
     },
     participants: {
       text: 'Team Size',
@@ -148,7 +145,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
         'discordChannel.id',
         'event.id',
         'participants',
-        'useCurrentEventEra',
+        'eventEraMode',
         'eventEra.id',
         'ranksToShow',
       ],
@@ -160,7 +157,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
-      'useCurrentEventEra',
+      'eventEraMode',
       'eventEra',
       'ranksToShow',
     ],
@@ -171,7 +168,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel.id',
       'event.id',
       'participants',
-      'useCurrentEventEra',
+      'eventEraMode',
       'eventEra.id',
       'ranksToShow',
     ],
@@ -182,7 +179,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannel',
       'event',
       'participants',
-      'useCurrentEventEra',
+      'eventEraMode',
       'eventEra',
       'ranksToShow',
     ],
@@ -193,7 +190,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'discordChannelName',
       'eventRecord',
       'participants',
-      'useCurrentEventEra',
+      'eventEraMode',
       'eventEraRecord',
       'ranksToShow',
     ],

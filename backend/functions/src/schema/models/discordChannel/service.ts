@@ -5,7 +5,7 @@ import {
   updateTableRow,
 } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
-import { submissionStatusKenum } from "../../enums";
+import { eventEraModeKenum, submissionStatusKenum } from "../../enums";
 import {
   generateParticipantsText,
   placeEmojisMap,
@@ -25,6 +25,7 @@ import { createObjectType } from "../../core/helpers/resolver";
 type outputObject = {
   event: any;
   eventEraId: any | null;
+  eventEraMode: eventEraModeKenum;
   participants: any;
   ranksToShow: number;
   submissions: {
@@ -140,7 +141,7 @@ export class DiscordChannelService extends PaginatedService {
           field: "eventEra.id",
         },
         {
-          field: "useCurrentEventEra",
+          field: "eventEraMode",
         },
         {
           field: "ranksToShow",
@@ -175,7 +176,8 @@ export class DiscordChannelService extends PaginatedService {
           avatar:
             output["event.avatarOverride"] ?? output["event.eventClass.avatar"],
         },
-        eventEraId: output.useCurrentEventEra ? null : output["eventEra.id"],
+        eventEraId: output["eventEra.id"],
+        eventEraMode: eventEraModeKenum.fromUnknown(output.eventEraMode),
         participants: output.participants,
         ranksToShow: output.ranksToShow,
         submissions: [],
@@ -192,9 +194,15 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      if (output.useCurrentEventEra) {
+      if (heading.eventEraMode === eventEraModeKenum.CURRENT_ERA) {
         additionalFilters.push({
           field: "eventEra.isCurrent",
+          operator: "eq",
+          value: true,
+        });
+      } else if (heading.eventEraMode === eventEraModeKenum.RELEVANT_ERAS) {
+        additionalFilters.push({
+          field: "eventEra.isRelevant",
           operator: "eq",
           value: true,
         });
@@ -380,6 +388,7 @@ export class DiscordChannelService extends PaginatedService {
         url: generateLeaderboardRoute({
           eventId: outputObject.event.id, // required
           eventEraId: outputObject.eventEraId, // optional
+          eventEraMode: outputObject.eventEraMode.name, // required
           participants: outputObject.participants, // required
         }),
         thumbnail: outputObject.event.avatar

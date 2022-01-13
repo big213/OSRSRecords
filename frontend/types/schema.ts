@@ -90,7 +90,6 @@ export type FilterByField<T> = {
     | 'SUBMITTED'
     | 'UNDER_REVIEW'
     | 'APPROVED'
-    | 'INFORMATION_REQUESTED'
     | 'REJECTED'
   /**Enum stored as a separate key value*/ eventDifficulty:
     | 'EASY'
@@ -111,6 +110,10 @@ export type FilterByField<T> = {
     | 'user_create'
     | 'user_delete'
     | 'file_getMultiple'
+  /**Enum stored as a separate key value*/ eventEraMode:
+    | 'NORMAL'
+    | 'CURRENT_ERA'
+    | 'RELEVANT_ERAS'
   submissionCharacterParticipantLinkSortByKey: 'createdAt'
   submissionCharacterParticipantLinkGroupByKey: undefined
   userSortByKey: 'id' | 'createdAt' | 'updatedAt'
@@ -160,6 +163,7 @@ export type FilterByField<T> = {
   rankingInput: {
     excludeParticipants?: Scalars['boolean']
     excludeEventEra?: Scalars['boolean']
+    isRelevantEventEra?: Scalars['boolean'] | null
   }
   /**Input object for syncCurrentUser*/ syncCurrentUser: {
     email: Scalars['string']
@@ -365,6 +369,9 @@ export type FilterByField<T> = {
   'submissionFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'submissionFilterByField/event.id': FilterByField<Scalars['id']>
   'submissionFilterByField/eventEra.id': FilterByField<Scalars['id']>
+  'submissionFilterByField/eventEra.isRelevant': FilterByField<
+    Scalars['boolean']
+  >
   'submissionFilterByField/participants': FilterByField<Scalars['number']>
   'submissionFilterByField/status': FilterByField<Scalars['submissionStatus']>
   'submissionFilterByField/submissionCharacterParticipantLink/character.id': FilterByField<
@@ -375,6 +382,7 @@ export type FilterByField<T> = {
     'createdBy.id'?: InputTypes['submissionFilterByField/createdBy.id']
     'event.id'?: InputTypes['submissionFilterByField/event.id']
     'eventEra.id'?: InputTypes['submissionFilterByField/eventEra.id']
+    'eventEra.isRelevant'?: InputTypes['submissionFilterByField/eventEra.isRelevant']
     participants?: InputTypes['submissionFilterByField/participants']
     status?: InputTypes['submissionFilterByField/status']
     'submissionCharacterParticipantLink/character.id'?: InputTypes['submissionFilterByField/submissionCharacterParticipantLink/character.id']
@@ -559,7 +567,7 @@ export type FilterByField<T> = {
     event: InputTypes['event']
     participants?: Scalars['number'] | null
     eventEra?: InputTypes['eventEra'] | null
-    useCurrentEventEra: Scalars['boolean']
+    eventEraMode?: Scalars['eventEraMode']
     ranksToShow?: Scalars['number']
     sort: Scalars['number']
   }
@@ -568,7 +576,7 @@ export type FilterByField<T> = {
     event?: InputTypes['event']
     participants?: Scalars['number'] | null
     eventEra?: InputTypes['eventEra'] | null
-    useCurrentEventEra?: Scalars['boolean']
+    eventEraMode?: Scalars['eventEraMode']
     ranksToShow?: Scalars['number']
     sort?: Scalars['number']
   }
@@ -602,6 +610,7 @@ export type FilterByField<T> = {
     description?: Scalars['string'] | null
     beginDate: Scalars['unixTimestamp']
     endDate?: Scalars['unixTimestamp'] | null
+    isBuff?: Scalars['boolean'] | null
     isCurrent?: Scalars['boolean']
   }
   updateEventEraFields: {
@@ -611,6 +620,7 @@ export type FilterByField<T> = {
     description?: Scalars['string'] | null
     beginDate?: Scalars['unixTimestamp']
     endDate?: Scalars['unixTimestamp'] | null
+    isBuff?: Scalars['boolean'] | null
     isCurrent?: Scalars['boolean']
   }
   updateEventEra: {
@@ -710,6 +720,10 @@ export type FilterByField<T> = {
   eventDifficultyEnumPaginator: {
     Typename: 'eventDifficultyEnumPaginator'
     Type: GetType<EventDifficultyEnumPaginator>
+  }
+  eventEraModeEnumPaginator: {
+    Typename: 'eventEraModeEnumPaginator'
+    Type: GetType<EventEraModeEnumPaginator>
   }
   user: { Typename: 'user'; Type: GetType<User> }
   apiKey: { Typename: 'apiKey'; Type: GetType<ApiKey> }
@@ -873,6 +887,13 @@ export type SubmissionCharacterParticipantLinkEdge =
     Args: [Scalars['number']]
   }
   values: { Type: Scalars['eventDifficulty'][]; Args: undefined }
+}
+/**EnumPaginator*/ export type EventEraModeEnumPaginator = {
+  /**The typename of the record*/ __typename: {
+    Type: Scalars['string']
+    Args: [Scalars['number']]
+  }
+  values: { Type: Scalars['eventEraMode'][]; Args: undefined }
 }
 /**User type*/ export type User = {
   /**The unique ID of the field*/ id: { Type: Scalars['id']; Args: undefined }
@@ -1113,7 +1134,7 @@ export type ParticipantsList = {
   event: { Type: Event; Args: undefined }
   participants: { Type: Scalars['number'] | null; Args: undefined }
   eventEra: { Type: EventEra | null; Args: undefined }
-  useCurrentEventEra: { Type: Scalars['boolean']; Args: undefined }
+  eventEraMode: { Type: Scalars['eventEraMode']; Args: undefined }
   ranksToShow: { Type: Scalars['number']; Args: undefined }
   sort: { Type: Scalars['number']; Args: undefined }
   /**When the record was created*/ createdAt: {
@@ -1138,6 +1159,8 @@ export type ParticipantsList = {
   description: { Type: Scalars['string'] | null; Args: undefined }
   beginDate: { Type: Scalars['unixTimestamp']; Args: undefined }
   endDate: { Type: Scalars['unixTimestamp'] | null; Args: undefined }
+  isBuff: { Type: Scalars['boolean'] | null; Args: undefined }
+  isRelevant: { Type: Scalars['boolean']; Args: undefined }
   isCurrent: { Type: Scalars['boolean']; Args: undefined }
   /**When the record was created*/ createdAt: {
     Type: Scalars['unixTimestamp']
@@ -1176,6 +1199,10 @@ export type ParticipantsList = {
   }
   getEventDifficultyEnumPaginator: {
     Type: EventDifficultyEnumPaginator
+    Args: undefined
+  }
+  getEventEraModeEnumPaginator: {
+    Type: EventEraModeEnumPaginator
     Args: undefined
   }
   getCurrentUser: { Type: User; Args: undefined }
@@ -1298,6 +1325,7 @@ export type ParticipantsList = {
   deleteEventEra: { Type: EventEra; Args: InputTypes['eventEra'] }
   createEventEra: { Type: EventEra; Args: InputTypes['createEventEra'] }
   updateEventEra: { Type: EventEra; Args: InputTypes['updateEventEra'] }
+  getImgurData: { Type: Scalars['unknown']; Args: Scalars['string'] }
   getSubmissionCharacterParticipantLink: {
     Type: SubmissionCharacterParticipantLink
     Args: InputTypes['submissionCharacterParticipantLink']

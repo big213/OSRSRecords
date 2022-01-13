@@ -24,7 +24,7 @@ import {
   SqlWhereObject,
   updateTableRow,
 } from "../../core/helpers/sql";
-import { submissionStatusKenum } from "../../enums";
+import { eventEraModeKenum, submissionStatusKenum } from "../../enums";
 import {
   DiscordChannel,
   DiscordChannelOutput,
@@ -432,6 +432,7 @@ export class SubmissionService extends PaginatedService {
         eventId: item["event.id"],
         participants: item.participants,
         eventEraId: item["eventEra.id"],
+        isRelevantEventEra: true,
         status: submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
         score: item.score,
       });
@@ -696,6 +697,7 @@ export class SubmissionService extends PaginatedService {
                 url: generateLeaderboardRoute({
                   eventId: submission["event.id"], // required
                   eventEraId: submission["eventEra.id"], // required
+                  eventEraMode: eventEraModeKenum.RELEVANT_ERAS.name,
                   participants: submission.participants, // required
                 }),
               },
@@ -832,6 +834,7 @@ export class SubmissionService extends PaginatedService {
       eventId: item["event.id"],
       participants: item.participants,
       eventEraId: item["eventEra.id"],
+      isRelevantEventEra: true,
       status: submissionStatusKenum.fromUnknown(item.status),
       score: item.score,
     });

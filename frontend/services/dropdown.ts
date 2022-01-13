@@ -189,3 +189,16 @@ export const getEventDifficulties = memoize(async function (
 
   return data.values
 })
+
+export const getEventEraModes = memoize(async function (
+  that,
+  _forceReload = false
+) {
+  const data = await executeGiraffeql<'getEventEraModeEnumPaginator'>(that, {
+    getEventEraModeEnumPaginator: {
+      values: true,
+    },
+  })
+
+  return data.values
+})

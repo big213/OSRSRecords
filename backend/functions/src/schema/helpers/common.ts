@@ -1,4 +1,5 @@
 import { env } from "../../config";
+import { eventEraModeKenum } from "../enums";
 
 // tens digits only
 export function serializeTime(ms: number | null): string | null {
@@ -32,6 +33,7 @@ export function formatUnixTimestamp(unixTimestampSeconds: number) {
 export function generateLeaderboardRoute(leaderboardInputs: {
   eventId: string | null;
   eventEraId: string | null;
+  eventEraMode: string | null;
   participants: number | null;
 }) {
   const paramsStr: string = Object.entries(leaderboardInputs)

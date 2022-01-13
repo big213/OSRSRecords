@@ -7,6 +7,7 @@ import {
   submissionStatusKenum,
   userPermissionEnum,
   eventDifficultyKenum,
+  eventEraModeKenum,
 } from "../enums";
 
 import { BaseScalars, GiraffeqlScalarType } from "giraffeql";
@@ -43,4 +44,8 @@ export const userRole = new GiraffeqlScalarType(
 
 export const userPermission = new GiraffeqlScalarType(
   generateEnumScalarDefinition("userPermission", userPermissionEnum)
+);
+
+export const eventEraMode = new GiraffeqlScalarType(
+  generateKenumScalarDefinition("eventEraMode", eventEraModeKenum)
 );

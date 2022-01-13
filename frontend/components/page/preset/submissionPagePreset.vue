@@ -203,11 +203,9 @@ export default {
         ]
       )
 
-      // set to current era by default if eventEra is null
+      // set to "__relevant" by default if eventEra is null
       if (!eventEraInputObject.value) {
-        eventEraInputObject.value = eventEraInputObject.options.find(
-          (ele) => ele.isCurrent
-        )
+        eventEraInputObject.value = '__relevant'
       }
 
       // set participants to the first option if it is not an object
@@ -322,6 +320,15 @@ export default {
         ) {
           this.setInputValue('eventEra', '__relevant')
         }
+
+        // changed: if there is an eventEra filter, set it
+        const eventEraFilter = rawFilters.find(
+          (rawFilterObject) => rawFilterObject.field === 'eventEra'
+        )
+        if (eventEraFilter) {
+          this.setInputValue('eventEra', eventEraFilter.value)
+        }
+
         const inputFieldsSet = new Set(this.filterInputsArray)
         promisesArray.push(
           ...rawFilters.map(async (rawFilterObject) => {
@@ -345,7 +352,7 @@ export default {
           ...this.filterInputsArray.reduce((total, filterObject) => {
             // filterObject.inputObject.value = null
 
-            // changed: if field is eventEra, don't run this, as we are already populating in handleEventChange()
+            // changed: if field is eventEra, don't run this, as we are already populating earlier in this fn, and we don't want to trigger stuff in populateInputObject
             if (filterObject.inputObject.fieldKey === 'eventEra') {
               return total
             }

@@ -326,6 +326,11 @@ export default {
     // this should trigger mainly when switching routes on admin pages
     recordInfo() {
       this.cancelPageOptionsReset = true
+
+      this.$nextTick(() => {
+        this.cancelPageOptionsReset = false
+      })
+
       this.reset({
         initFilters: true,
         resetSort: true,
@@ -336,6 +341,11 @@ export default {
     // this should trigger if the locked filters gets updated
     lockedFilters() {
       this.cancelPageOptionsReset = true
+
+      this.$nextTick(() => {
+        this.cancelPageOptionsReset = false
+      })
+
       this.reset({
         initFilters: true,
         resetSort: true,

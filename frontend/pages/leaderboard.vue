@@ -77,6 +77,7 @@ export default {
         generateLeaderboardRoute(this, {
           eventId: this.$route.query.eventId,
           eventEraId: this.$route.query.eventEraId,
+          eventEraMode: this.$route.query.eventEraMode ?? 'RELEVANT_ERAS',
           participants: this.$route.query.participants,
         })
           .then((route) => {
@@ -93,6 +94,7 @@ export default {
       generateLeaderboardRoute(this, {
         eventId: this.$route.query.eventId,
         eventEraId: this.$route.query.eventEraId,
+        eventEraMode: this.$route.query.eventEraMode ?? 'RELEVANT_ERAS',
         participants: this.$route.query.participants,
       })
         .then((route) => {

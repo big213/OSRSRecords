@@ -330,6 +330,10 @@ export const Submission = <RecordInfo<'submission'>>{
         desc: true,
       },
       {
+        field: 'updatedAt',
+        desc: true,
+      },
+      {
         field: 'happenedOn',
         desc: true,
       },

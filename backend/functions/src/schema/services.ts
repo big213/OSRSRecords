@@ -1,5 +1,6 @@
 import {
   eventDifficultyKenum,
+  eventEraModeKenum,
   submissionStatusKenum,
   userRoleKenum,
 } from "./enums";
@@ -17,7 +18,7 @@ import { FileService } from "./models/file/service";
 import { DiscordChannelService } from "./models/discordChannel/service";
 import { DiscordChannelOutputService } from "./models/discordChannelOutput/service";
 import { EventEraService } from "./models/eventEra/service";
-import { ImgurService } from "./models/imgur/service"
+import { ImgurService } from "./models/imgur/service";
 /** END Service Import */
 
 import { SubmissionCharacterParticipantLinkService } from "./links/submissionCharacterParticipantLink/service";
@@ -68,3 +69,5 @@ export const EventDifficulty = new KenumService(
   "eventDifficulty",
   eventDifficultyKenum
 );
+
+export const EventEraMode = new KenumService("eventEraMode", eventEraModeKenum);

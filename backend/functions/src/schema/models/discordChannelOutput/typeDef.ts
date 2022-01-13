@@ -15,7 +15,9 @@ import {
   generateJoinableField,
   generateIntegerField,
   generateBooleanField,
+  generateEnumField,
 } from "../../core/helpers/typeDef";
+import { Scalars } from "../..";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: DiscordChannelOutput.typename,
@@ -42,9 +44,14 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       allowNull: true,
       sqlOptions: { field: "event_era" },
     }),
-    useCurrentEventEra: generateBooleanField({
+    eventEraMode: generateEnumField({
+      scalarDefinition: Scalars.eventEraMode,
       allowNull: false,
-      sqlOptions: { field: "use_current_event_era" },
+      defaultValue: "NORMAL",
+      isKenum: true,
+      sqlOptions: {
+        field: "event_era_mode",
+      },
     }),
     ranksToShow: generateIntegerField({
       allowNull: false,
