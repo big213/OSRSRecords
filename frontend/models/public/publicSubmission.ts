@@ -15,6 +15,17 @@ export const PublicSubmission = {
         align: 'right',
       },
       {
+        field: 'eventEraRecord',
+        width: '150px',
+        hideIf: (that) => {
+          // hide this column if the eventEra raw filter is specified and it is not '__undefined'
+          const eventEraFilter = that.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'eventEra'
+          )
+          return eventEraFilter && eventEraFilter.value !== '__undefined'
+        },
+      },
+      {
         field: 'eventRecordWithParticipants',
         width: '250px',
       },
@@ -32,7 +43,7 @@ export const PublicSubmission = {
       },
       {
         field: 'happenedOn',
-        width: '150px',
+        width: '120px',
       },
     ],
     downloadOptions: undefined,

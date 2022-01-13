@@ -1,6 +1,7 @@
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
 import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
+import DateStringColumn from '~/components/table/common/dateStringColumn.vue'
 import PreviewableFilesColumn from '~/components/table/common/previewableFilesColumn.vue'
 import BooleanColumn from '~/components/table/common/booleanColumn.vue'
 import SubmissionStatusColumn from '~/components/table/common/submissionStatusColumn.vue'
@@ -223,13 +224,13 @@ export const Submission = <RecordInfo<'submission'>>{
       hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
-      component: TimeStringColumn,
+      component: DateStringColumn,
     },
     previousRecordHappenedOn: {
       text: 'Previous Record Time',
       fields: ['previousRecord.happenedOn'],
       pathPrefix: 'previousRecord.happenedOn',
-      component: TimeStringColumn,
+      component: DateStringColumn,
     },
     status: {
       text: 'Status',
