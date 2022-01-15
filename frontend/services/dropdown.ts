@@ -63,8 +63,12 @@ export const getEventEras = <any>(
       },
       {
         filterBy,
-        sortBy: ['beginDate'],
-        sortDesc: [true],
+        sortBy: [
+          {
+            field: 'beginDate',
+            desc: true,
+          },
+        ],
       }
     )
   })
@@ -83,7 +87,12 @@ export const getEventsByGroup = <any>(
       },
       {
         filterBy,
-        sortBy: ['sort'],
+        sortBy: [
+          {
+            field: 'sort',
+            desc: false,
+          },
+        ],
       }
     )
 
@@ -144,7 +153,12 @@ export const getEvents = <any>(
       },
       {
         filterBy,
-        sortBy: ['name'],
+        sortBy: [
+          {
+            field: 'name',
+            desc: false,
+          },
+        ],
       }
     )
   })

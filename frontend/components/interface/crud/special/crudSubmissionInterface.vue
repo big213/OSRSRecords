@@ -670,52 +670,11 @@ export default {
         ),
       }
 
-      const args = {
-        first: this.resultsPerPage,
-        after: this.endCursor ?? undefined,
-        sortBy: this.currentSort ? [this.currentSort.field] : [],
-        sortDesc: this.currentSort ? [this.currentSort.desc] : [],
-        filterBy: [
-          this.allFilters.reduce((total, rawFilterObject) => {
-            const fieldInfo = lookupFieldInfo(
-              this.recordInfo,
-              rawFilterObject.field
-            )
-
-            const primaryField = fieldInfo.fields
-              ? fieldInfo.fields[0]
-              : rawFilterObject.field
-
-            if (!total[primaryField]) total[primaryField] = {}
-
-            // if value is '__undefined', exclude it entirely
-            if (rawFilterObject.value === '__undefined') return total
-
-            // parse '__null' to null first
-            // also parse '__now()' to current date string
-            const value =
-              rawFilterObject.value === '__null'
-                ? null
-                : rawFilterObject.value === '__now()'
-                ? generateDateLocaleString(new Date().getTime() / 1000)
-                : rawFilterObject.value
-
-            // apply parseValue function, if any
-            total[primaryField][rawFilterObject.operator] = fieldInfo.parseValue
-              ? fieldInfo.parseValue(value)
-              : value
-
-            return total
-          }, {}),
-        ],
-        ...(this.search && { search: this.search }),
-      }
-
       const results = await getPaginatorData(
         this,
         'get' + this.capitalizedType + 'Paginator',
         query,
-        args
+        this.generatePaginatorArgs(true)
       )
 
       // remove any undefined serializeMap elements

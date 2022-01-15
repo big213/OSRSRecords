@@ -445,15 +445,15 @@ export class NormalService extends BaseService {
 
     let isBeforeQuery = false;
 
-    // only the first sortKey works at the moment. falls back to "id" if not provided
-    const sortByField =
-      (Array.isArray(validatedArgs.sortBy) ? validatedArgs.sortBy[0] : "id") ??
-      "id";
-    if (sortByField !== "id" && !(sortByField in this.sortFieldsMap))
-      throw errorHelper.generateError("Invalid sortBy field", fieldPath);
-    const sortByDesc = Array.isArray(validatedArgs.sortDesc)
-      ? validatedArgs.sortDesc[0] === true
-      : false;
+    // set the primary sort params, which must be handled specially. falls back to "id" asc.
+    // the sortBy field should be pre-validated through giraffeql validation
+    const primarySortByObject =
+      Array.isArray(validatedArgs.sortBy) && validatedArgs.sortBy.length
+        ? validatedArgs.sortBy[0]
+        : {
+            field: "id",
+            desc: false,
+          };
 
     // process the "after" constraint, if provided
     if (validatedArgs.after) {
@@ -462,13 +462,13 @@ export class NormalService extends BaseService {
 
       const isNullLastValue = parsedCursor.last_value === null;
 
-      const operator = sortByDesc ? "lt" : "gt";
+      const operator = primarySortByObject.desc ? "lt" : "gt";
 
       const whereAndObject: SqlWhereObject = {
         connective: "AND",
         fields: [
           {
-            field: sortByField,
+            field: primarySortByObject.field,
             value: parsedCursor.last_value,
             operator: isNullLastValue ? "eq" : operator,
           },
@@ -493,7 +493,7 @@ export class NormalService extends BaseService {
         // if operator is > and is null last value, must allow not null
         if (operator === "gt") {
           whereOrObject.fields.push({
-            field: sortByField,
+            field: primarySortByObject.field,
             value: null,
             operator: "neq",
           });
@@ -502,7 +502,7 @@ export class NormalService extends BaseService {
         // if operator is < and not null last value, must allow null
         if (operator === "lt") {
           whereOrObject.fields.push({
-            field: sortByField,
+            field: primarySortByObject.field,
             value: null,
             operator: "eq",
           });
@@ -520,13 +520,13 @@ export class NormalService extends BaseService {
 
       const isNullLastValue = parsedCursor.last_value === null;
 
-      const operator = sortByDesc ? "gt" : "lt";
+      const operator = primarySortByObject.desc ? "gt" : "lt";
 
       const whereAndObject: SqlWhereObject = {
         connective: "AND",
         fields: [
           {
-            field: sortByField,
+            field: primarySortByObject.field,
             value: parsedCursor.last_value,
             operator: isNullLastValue ? "eq" : operator,
           },
@@ -551,7 +551,7 @@ export class NormalService extends BaseService {
         // if operator is > and is null last value, must allow not null
         if (operator === "gt") {
           whereOrObject.fields.push({
-            field: sortByField,
+            field: primarySortByObject.field,
             value: null,
             operator: "neq",
           });
@@ -560,7 +560,7 @@ export class NormalService extends BaseService {
         // if operator is < and not null last value, must allow null
         if (operator === "lt") {
           whereOrObject.fields.push({
-            field: sortByField,
+            field: primarySortByObject.field,
             value: null,
             operator: "eq",
           });
@@ -577,17 +577,23 @@ export class NormalService extends BaseService {
     const orderBy: SqlOrderByObject[] = [];
     const rawSelect: SqlSelectQueryObject[] = [{ field: "id", as: "last_id" }];
 
-    if (sortByField) {
+    if (primarySortByObject.field) {
       rawSelect.push({
-        field: sortByField,
+        field: primarySortByObject.field,
         as: "last_value",
       });
 
-      // overwrite orderBy statement
       orderBy.push({
-        field: sortByField,
-        desc: isBeforeQuery ? !sortByDesc : sortByDesc,
+        field: primarySortByObject.field,
+        desc: isBeforeQuery
+          ? !primarySortByObject.desc
+          : primarySortByObject.desc,
       });
+
+      // add secondary, etc. sort parameters
+      if (Array.isArray(validatedArgs.sortBy)) {
+        orderBy.push(...validatedArgs.sortBy.slice(1));
+      }
     }
 
     const sqlParams: Omit<SqlSelectQuery, "from" | "select"> = {

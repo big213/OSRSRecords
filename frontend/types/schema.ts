@@ -1,7 +1,6 @@
 // Query builder (Typescript version >= 4.1.3 required)
 /* const queryResult = executeGiraffeql({
   // Start typing here to get hints
-  
 }); */
 
 export function executeGiraffeql<Key extends keyof Root>(
@@ -73,6 +72,11 @@ export type FilterByField<T> = {
   regex?: Scalars['regex']
 }
 
+export type SortByField<T> = {
+  field: T
+  desc: boolean
+}
+
 /**All Scalar values*/ export type Scalars = {
   /**String value*/ string: string
   /**True or False*/ boolean: boolean
@@ -140,6 +144,9 @@ export type FilterByField<T> = {
   eventEraGroupByKey: undefined
 }
 /**All Input types*/ export type InputTypes = {
+  submissionCharacterParticipantLinkSortByObject: SortByField<
+    Scalars['submissionCharacterParticipantLinkSortByKey']
+  >
   'submissionCharacterParticipantLinkFilterByField/submission.id': FilterByField<
     Scalars['id']
   >
@@ -155,8 +162,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['submissionCharacterParticipantLinkSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['submissionCharacterParticipantLinkSortByObject'][]
     filterBy?: InputTypes['submissionCharacterParticipantLinkFilterByObject'][]
     groupBy?: Scalars['submissionCharacterParticipantLinkGroupByKey'][]
   }
@@ -169,6 +175,7 @@ export type FilterByField<T> = {
     email: Scalars['string']
   }
   user: { id?: Scalars['id'] }
+  userSortByObject: SortByField<Scalars['userSortByKey']>
   'userFilterByField/id': FilterByField<Scalars['id']>
   'userFilterByField/createdBy.name': FilterByField<Scalars['string']>
   'userFilterByField/isPublic': FilterByField<Scalars['boolean']>
@@ -184,8 +191,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['userSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['userSortByObject'][]
     filterBy?: InputTypes['userFilterByObject'][]
     groupBy?: Scalars['userGroupByKey'][]
     search?: Scalars['string']
@@ -215,6 +221,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateUserFields']
   }
   apiKey: { id?: Scalars['id'] }
+  apiKeySortByObject: SortByField<Scalars['apiKeySortByKey']>
   'apiKeyFilterByField/id': FilterByField<Scalars['id']>
   'apiKeyFilterByField/user.id': FilterByField<Scalars['id']>
   apiKeyFilterByObject: {
@@ -226,8 +233,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['apiKeySortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['apiKeySortByObject'][]
     filterBy?: InputTypes['apiKeyFilterByObject'][]
     groupBy?: Scalars['apiKeyGroupByKey'][]
     search?: Scalars['string']
@@ -247,6 +253,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateApiKeyFields']
   }
   eventClass: { id?: Scalars['id'] }
+  eventClassSortByObject: SortByField<Scalars['eventClassSortByKey']>
   'eventClassFilterByField/id': FilterByField<Scalars['id']>
   'eventClassFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'eventClassFilterByField/parent.id': FilterByField<Scalars['id']>
@@ -260,8 +267,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['eventClassSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['eventClassSortByObject'][]
     filterBy?: InputTypes['eventClassFilterByObject'][]
     groupBy?: Scalars['eventClassGroupByKey'][]
     search?: Scalars['string']
@@ -285,6 +291,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateEventClassFields']
   }
   eventGroup: { id?: Scalars['id'] }
+  eventGroupSortByObject: SortByField<Scalars['eventGroupSortByKey']>
   'eventGroupFilterByField/id': FilterByField<Scalars['id']>
   'eventGroupFilterByField/createdBy.id': FilterByField<Scalars['id']>
   eventGroupFilterByObject: {
@@ -296,8 +303,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['eventGroupSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['eventGroupSortByObject'][]
     filterBy?: InputTypes['eventGroupFilterByObject'][]
     groupBy?: Scalars['eventGroupGroupByKey'][]
     search?: Scalars['string']
@@ -319,6 +325,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateEventGroupFields']
   }
   event: { id?: Scalars['id'] }
+  eventSortByObject: SortByField<Scalars['eventSortByKey']>
   'eventFilterByField/id': FilterByField<Scalars['id']>
   'eventFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'eventFilterByField/eventClass.id': FilterByField<Scalars['id']>
@@ -332,8 +339,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['eventSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['eventSortByObject'][]
     filterBy?: InputTypes['eventFilterByObject'][]
     groupBy?: Scalars['eventGroupByKey'][]
     search?: Scalars['string']
@@ -365,6 +371,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateEventFields']
   }
   submission: { id?: Scalars['id'] }
+  submissionSortByObject: SortByField<Scalars['submissionSortByKey']>
   'submissionFilterByField/id': FilterByField<Scalars['id']>
   'submissionFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'submissionFilterByField/event.id': FilterByField<Scalars['id']>
@@ -392,8 +399,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['submissionSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['submissionSortByObject'][]
     filterBy?: InputTypes['submissionFilterByObject'][]
     groupBy?: Scalars['submissionGroupByKey'][]
     search?: Scalars['string']
@@ -438,6 +444,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateSubmissionFields']
   }
   character: { id?: Scalars['id'] }
+  characterSortByObject: SortByField<Scalars['characterSortByKey']>
   'characterFilterByField/id': FilterByField<Scalars['id']>
   'characterFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'characterFilterByField/submissionCharacterParticipantLink/character.id': FilterByField<
@@ -453,8 +460,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['characterSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['characterSortByObject'][]
     filterBy?: InputTypes['characterFilterByObject'][]
     groupBy?: Scalars['characterGroupByKey'][]
     search?: Scalars['string']
@@ -479,6 +485,7 @@ export type FilterByField<T> = {
     first: Scalars['number']
   }
   file: { id?: Scalars['id'] }
+  fileSortByObject: SortByField<Scalars['fileSortByKey']>
   'fileFilterByField/id': FilterByField<Scalars['id']>
   'fileFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'fileFilterByField/parentKey': FilterByField<Scalars['string']>
@@ -492,8 +499,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['fileSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['fileSortByObject'][]
     filterBy?: InputTypes['fileFilterByObject'][]
     groupBy?: Scalars['fileGroupByKey'][]
     search?: Scalars['string']
@@ -509,6 +515,7 @@ export type FilterByField<T> = {
     fields: InputTypes['updateFileFields']
   }
   discordChannel: { id?: Scalars['id'] }
+  discordChannelSortByObject: SortByField<Scalars['discordChannelSortByKey']>
   'discordChannelFilterByField/id': FilterByField<Scalars['id']>
   'discordChannelFilterByField/createdBy.id': FilterByField<Scalars['id']>
   discordChannelFilterByObject: {
@@ -520,8 +527,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['discordChannelSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['discordChannelSortByObject'][]
     filterBy?: InputTypes['discordChannelFilterByObject'][]
     groupBy?: Scalars['discordChannelGroupByKey'][]
     search?: Scalars['string']
@@ -541,6 +547,9 @@ export type FilterByField<T> = {
     fields: InputTypes['updateDiscordChannelFields']
   }
   discordChannelOutput: { id?: Scalars['id'] }
+  discordChannelOutputSortByObject: SortByField<
+    Scalars['discordChannelOutputSortByKey']
+  >
   'discordChannelOutputFilterByField/id': FilterByField<Scalars['id']>
   'discordChannelOutputFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'discordChannelOutputFilterByField/discordChannel.id': FilterByField<
@@ -556,8 +565,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['discordChannelOutputSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['discordChannelOutputSortByObject'][]
     filterBy?: InputTypes['discordChannelOutputFilterByObject'][]
     groupBy?: Scalars['discordChannelOutputGroupByKey'][]
     search?: Scalars['string']
@@ -584,6 +592,7 @@ export type FilterByField<T> = {
     item: InputTypes['discordChannelOutput']
     fields: InputTypes['updateDiscordChannelOutputFields']
   }
+  eventEraSortByObject: SortByField<Scalars['eventEraSortByKey']>
   'eventEraFilterByField/id': FilterByField<Scalars['id']>
   'eventEraFilterByField/createdBy.id': FilterByField<Scalars['id']>
   'eventEraFilterByField/event.id': FilterByField<Scalars['id']>
@@ -597,8 +606,7 @@ export type FilterByField<T> = {
     last?: Scalars['number']
     after?: Scalars['string']
     before?: Scalars['string']
-    sortBy?: Scalars['eventEraSortByKey'][]
-    sortDesc?: Scalars['boolean'][]
+    sortBy?: InputTypes['eventEraSortByObject'][]
     filterBy?: InputTypes['eventEraFilterByObject'][]
     groupBy?: Scalars['eventEraGroupByKey'][]
     search?: Scalars['string']
@@ -1041,6 +1049,7 @@ export type ParticipantsList = {
   publicComments: { Type: Scalars['string'] | null; Args: undefined }
   discordMessageId: { Type: Scalars['string'] | null; Args: undefined }
   mainExternalLink: { Type: Scalars['url'] | null; Args: undefined }
+  evidenceKey: { Type: Scalars['string'] | null; Args: undefined }
   isRecord: { Type: Scalars['boolean']; Args: undefined }
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars['number'] | null

@@ -77,6 +77,9 @@ export type RecordInfo<T extends keyof MainTypes> = {
 
     sortOptions: SortObject[]
 
+    // extra sort params that are to be appended to the user-selected sort params
+    additionalSortParams?: CrudRawSortObject[]
+
     // the headers of the table
     headerOptions: HeaderObject[]
     // special options for overriding the action header element

@@ -993,16 +993,28 @@ export function generatePaginatorPivotResolverObject(params: {
               type: Scalars.string,
             }),
             sortBy: new GiraffeqlInputFieldType({
-              type: new GiraffeqlScalarType(sortByScalarDefinition, true),
               arrayOptions: {
                 allowNullElement: false,
               },
-            }),
-            sortDesc: new GiraffeqlInputFieldType({
-              type: Scalars.boolean,
-              arrayOptions: {
-                allowNullElement: false,
-              },
+              type: new GiraffeqlInputType(
+                {
+                  name: `${pivotService.typename}SortByObject`,
+                  fields: {
+                    field: new GiraffeqlInputFieldType({
+                      type: new GiraffeqlScalarType(
+                        sortByScalarDefinition,
+                        true
+                      ),
+                      required: true,
+                    }),
+                    desc: new GiraffeqlInputFieldType({
+                      type: Scalars.boolean,
+                      required: true,
+                    }),
+                  },
+                },
+                true
+              ),
             }),
             filterBy: new GiraffeqlInputFieldType({
               arrayOptions: {
@@ -1024,6 +1036,7 @@ export function generatePaginatorPivotResolverObject(params: {
           },
           inputsValidator: (args, fieldPath) => {
             // check for invalid first/last, before/after combos
+            const validatedArgs = <any>args;
 
             // after
             if (!isObject(args)) {
@@ -1083,6 +1096,32 @@ export function generatePaginatorPivotResolverObject(params: {
             if (Number(args.first ?? args.last) > 500) {
               throw new GiraffeqlArgsError({
                 message: `Cannot request more than 500 results at a time`,
+                fieldPath,
+              });
+            }
+
+            // if args.sortBy is provided, all of the fields must be unique
+            if ("sortBy" in validatedArgs) {
+              const sortFields = validatedArgs.sortBy.map(
+                (sortObject) => sortObject.field
+              );
+              if (sortFields.length > new Set(sortFields).size) {
+                throw new GiraffeqlArgsError({
+                  message: `All sortBy fields provided must be unique`,
+                  fieldPath,
+                });
+              }
+            }
+
+            // if args.filterBy is provided, all of its objects must be non-empty
+            if (
+              validatedArgs.filterBy &&
+              validatedArgs.filterBy.some(
+                (filterObject) => Object.keys(filterObject).length < 1
+              )
+            ) {
+              throw new GiraffeqlArgsError({
+                message: `All filterBy objects must have at least one filter parameter specified`,
                 fieldPath,
               });
             }

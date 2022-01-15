@@ -17,6 +17,11 @@ export type FilterByField<T> = {
   in?: T[]
   nin?: T[]
   regex?: Scalars['regex']
+}
+
+export type SortByField<T> = {
+  field: T
+  desc: boolean
 }\n\n`;
   }
 
@@ -31,6 +36,20 @@ export type FilterByField<T> = {
           if (filterByType) {
             this.inputTypeTsTypeFields.value.set(key, {
               value: `FilterByField<${filterByType}>`,
+              isNullable: false,
+              isOptional: false,
+            });
+          }
+        }
+      }
+
+      // if inputDefName ends with SortByObject, transform it into a SortByField<T>
+      if (key.match(/SortByObject$/)) {
+        if (typeof value.value !== "string") {
+          const sortByType = value.value.get("field")?.value;
+          if (sortByType) {
+            this.inputTypeTsTypeFields.value.set(key, {
+              value: `SortByField<${sortByType}>`,
               isNullable: false,
               isOptional: false,
             });

@@ -153,16 +153,6 @@ export class SubmissionService extends PaginatedService {
     return resultsCount + 1;
   }
 
-  sqlParamsModifier(sqlParams: Omit<SqlSelectQuery, "from" | "select">) {
-    // need to add sorting by dateHappened asc to all queries
-    if (sqlParams.orderBy) {
-      sqlParams.orderBy.push({
-        field: "happenedOn",
-        desc: false,
-      });
-    }
-  }
-
   async validateEvidenceKeyConstraint(
     evidenceKey: string | null,
     eventId: string,

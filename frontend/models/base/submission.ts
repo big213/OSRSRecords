@@ -347,6 +347,12 @@ export const Submission = <RecordInfo<'submission'>>{
         desc: false,
       },
     ],
+    additionalSortParams: [
+      {
+        field: 'happenedOn',
+        desc: false,
+      },
+    ],
     headerOptions: [
       {
         field: 'eventRecordWithParticipants',
