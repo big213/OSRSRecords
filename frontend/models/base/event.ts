@@ -4,16 +4,13 @@ import AvatarColumn from '~/components/table/common/avatarColumn.vue'
 import UrlColumn from '~/components/table/common/urlColumn.vue'
 import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
 import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
-import {
-  generateDateLocaleString,
-  generateParseDateTimeStringFn,
-} from '~/services/base'
+import { generateParseDateTimeStringFn } from '~/services/base'
 import { getEventDifficulties } from '~/services/dropdown'
-import { EventEra } from '.'
 import {
   generateJoinableField,
   generatePreviewableRecordField,
 } from '~/services/recordInfo'
+import { PublicEventEra } from '../public/publicEventEra'
 
 export const Event = <RecordInfo<'event'>>{
   typename: 'event',
@@ -206,7 +203,7 @@ export const Event = <RecordInfo<'event'>>{
   shareOptions: {},
   expandTypes: [
     {
-      recordInfo: EventEra,
+      recordInfo: PublicEventEra,
       lockedFilters: (_that, item) => {
         return [
           {
@@ -218,7 +215,7 @@ export const Event = <RecordInfo<'event'>>{
       },
       initialSortOptions: {
         field: 'beginDate',
-        desc: false,
+        desc: true,
       },
     },
   ],

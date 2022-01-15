@@ -29,6 +29,7 @@ import {
   DiscordChannel,
   DiscordChannelOutput,
   Event,
+  EventEra,
   SubmissionCharacterParticipantLink,
 } from "../../services";
 import {
@@ -162,6 +163,42 @@ export class SubmissionService extends PaginatedService {
     }
   }
 
+  async validateEvidenceKeyConstraint(
+    evidenceKey: string | null,
+    eventId: string,
+    fieldPath: string[]
+  ) {
+    // if no evidenceKey, pass
+    if (!evidenceKey) return;
+
+    const count = await this.getRecordCount(
+      {
+        fields: [
+          {
+            field: "evidenceKey",
+            value: evidenceKey,
+          },
+          {
+            field: "event",
+            value: eventId,
+          },
+          {
+            field: "status",
+            value: submissionStatusKenum.APPROVED.index,
+          },
+        ],
+      },
+      fieldPath
+    );
+
+    if (count) {
+      throw new GiraffeqlBaseError({
+        message: `An existing approved submission with this evidenceKey-event combination already exists`,
+        fieldPath,
+      });
+    }
+  }
+
   @permissionsCheck("create")
   async createRecord({
     req,
@@ -181,6 +218,24 @@ export class SubmissionService extends PaginatedService {
         message: "Must have at least 1 participant",
         fieldPath,
       });
+    }
+
+    const inferredStatus = args.status
+      ? submissionStatusKenum.fromUnknown(args.status)
+      : submissionStatusKenum.SUBMITTED;
+
+    const evidenceKey =
+      (validatedArgs.externalLinks ? validatedArgs.externalLinks[0] : null) ??
+      null;
+
+    // changed: if adding as APPROVED and at least 1 externalLink provided, use the first link as the evidenceKey
+    if (inferredStatus === submissionStatusKenum.APPROVED) {
+      // check it against the existing evidenceKeys for approved submissions
+      await this.validateEvidenceKeyConstraint(
+        evidenceKey,
+        validatedArgs.event,
+        fieldPath
+      );
     }
 
     // changed: check if number of participants is between minParticipants and maxParticipants for the event
@@ -210,12 +265,37 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
+    // changed: check if happenedOn is between beginDate and endDate for eventEra
+    const eventEraRecord = await EventEra.lookupRecord(
+      ["beginDate", "endDate"],
+      { id: validatedArgs.eventEra },
+      fieldPath
+    );
+
+    if (validatedArgs.happenedOn < eventEraRecord.beginDate) {
+      throw new GiraffeqlBaseError({
+        message: `HappenedOn cannot be before the eventEra's begin date`,
+        fieldPath,
+      });
+    }
+
+    if (
+      eventEraRecord.endDate &&
+      validatedArgs.happenedOn > eventEraRecord.endDate
+    ) {
+      throw new GiraffeqlBaseError({
+        message: `HappenedOn cannot be after the eventEra's end date`,
+        fieldPath,
+      });
+    }
+
     const addResults = await createObjectType({
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
         participants: validatedArgs.participantsList.length, // computed
+        evidenceKey: evidenceKey, // computed
         score: validatedArgs.timeElapsed,
         createdBy: req.user?.id, // nullable
       },
@@ -240,10 +320,6 @@ export class SubmissionService extends PaginatedService {
         fieldPath,
       });
     }
-
-    const inferredStatus = args.status
-      ? submissionStatusKenum.fromUnknown(args.status)
-      : submissionStatusKenum.SUBMITTED;
 
     // if the record was added as approved, also need to run syncSubmissionIsRecord
     // HOWEVER, will NOT be triggering handleNewApprovedSubmission and handleRankingChange. admin can flick the status if they want to trigger these events
@@ -388,6 +464,7 @@ export class SubmissionService extends PaginatedService {
         "score",
         "status",
         "discordMessageId",
+        "externalLinks",
       ],
       validatedArgs.item,
       fieldPath
@@ -405,6 +482,32 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
+    const inferredExternalLinks =
+      validatedArgs.fields.externalLinks ?? item.externalLinks;
+
+    const evidenceKey = inferredExternalLinks[0] ?? null;
+
+    // changed: if status is being updated from !APPROVED to APPROVED, need to validate the evidenceKey
+    if (validatedArgs.fields.status) {
+      const previousStatus = submissionStatusKenum.fromUnknown(item.status);
+
+      const newStatus = submissionStatusKenum.fromUnknown(
+        validatedArgs.fields.status
+      );
+
+      if (
+        previousStatus !== submissionStatusKenum.APPROVED &&
+        newStatus === submissionStatusKenum.APPROVED
+      ) {
+        // check it against the existing evidenceKeys for approved submissions
+        await this.validateEvidenceKeyConstraint(
+          evidenceKey,
+          item["event.id"],
+          fieldPath
+        );
+      }
+    }
+
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
 
@@ -414,6 +517,9 @@ export class SubmissionService extends PaginatedService {
       updateFields: {
         ...validatedArgs.fields,
         score: validatedArgs.fields.timeElapsed ?? undefined,
+        evidenceKey: validatedArgs.fields.externalLinks
+          ? validatedArgs.fields.externalLinks[0]
+          : undefined, // computed
         updatedAt: 1,
       },
       req,

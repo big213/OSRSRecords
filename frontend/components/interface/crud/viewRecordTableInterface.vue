@@ -36,6 +36,13 @@
           </template>
         </v-simple-table>
       </v-container>
+      <component
+        v-if="recordInfo.commentOptions"
+        :is="recordInfo.commentOptions.component"
+        :item="selectedItem"
+        :record-info="recordInfo.commentOptions.recordInfo"
+        :generation="commentsGeneration"
+      ></component>
     </v-card-text>
     <v-card-actions v-if="!isLoading">
       <v-spacer></v-spacer>
@@ -65,6 +72,8 @@ export default {
       loading: {
         loadRecord: false,
       },
+
+      commentsGeneration: 0,
 
       inputsArray: [],
     }
@@ -114,6 +123,8 @@ export default {
 
   watch: {
     generation() {
+      // also need to reset the comments, if any
+      this.commentsGeneration++
       this.reset()
     },
 
@@ -144,6 +155,7 @@ export default {
 
     handleItemUpdated() {
       this.$emit('item-updated')
+      this.commentsGeneration++
       this.reset()
     },
 
@@ -160,9 +172,7 @@ export default {
             ...collapseObject(
               fields.reduce(
                 (total, fieldKey) => {
-                  const fieldInfo = this.recordInfo.fields[fieldKey]
-                  // field unknown, abort
-                  if (!fieldInfo) throw new Error('Unknown field: ' + fieldKey)
+                  const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
 
                   // if field is hidden, exclude
                   if (fieldInfo.hidden) return total

@@ -149,15 +149,38 @@ export default {
     handleTeamMembersInputChange(val) {
       if (!val) return
 
-      // parse for a timeElapsed
-      const timesArray = val.split(/\s*-\s*/)
+      let timeStr
+      let charactersStr
 
-      // set the timeElapsed to the first part of the string if there's 2 or more parts
-      if (timesArray.length > 1) {
-        this.setInputValue('timeElapsed', timesArray[0])
+      const regexMatch = val.match(/^(\d|:|\.)*(\s*)-?(\s)*/)
+      // if the string starts with some time-related digits, split it out and use that
+      if (regexMatch) {
+        timeStr = regexMatch[0].replace(/\s|-/g, '')
+        charactersStr = val.replace(regexMatch[0], '')
+      } else {
+        charactersStr = val
       }
 
-      const charactersStr = timesArray[1] ?? val
+      // set the timeElapsed to timeStr if it exists
+      if (timeStr) {
+        // is the timeStr missing '.'? if so, need to calculate the worse tick
+        if (!timeStr.match(/\./)) {
+          const timeStrParts = timeStr.split(':')
+          const seconds = Number(timeStrParts[0]) * 60 + Number(timeStrParts[1])
+          let roundedSeconds = Number(
+            (Math.ceil(seconds / 0.6) * 0.6).toFixed(1)
+          )
+          // if it is possible to add 0.6 without going one second higher, then do it
+          if (Math.floor(roundedSeconds + 0.6) === roundedSeconds) {
+            roundedSeconds += 0.6
+          }
+
+          // append the tens place digit to the timeStr
+          const ticksSuffix = String(roundedSeconds).split('.')[1]
+          timeStr += '.' + ticksSuffix
+        }
+        this.setInputValue('timeElapsed', timeStr)
+      }
 
       // parse team members string and populate the participantsList based on those
       const characterNamesArray = charactersStr
@@ -255,6 +278,24 @@ export default {
             }
           }
         }
+
+        const eventEraInputObject = this.getInputObject('eventEra')
+        // set the eventEra based on the happenedOn date
+        const matchingEventEra = eventEraInputObject.options.find(
+          (eventEra) => {
+            return (
+              inputs.happenedOn >= eventEra.beginDate &&
+              (eventEra.endDate === null ||
+                inputs.happenedOn <= eventEra.endDate)
+            )
+          }
+        )
+
+        if (!matchingEventEra) {
+          throw new Error('No matching eventEra for the happenedOn date')
+        }
+
+        inputs['eventEra.id'] = matchingEventEra.id
 
         // add/copy mode
         let query

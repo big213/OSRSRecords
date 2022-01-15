@@ -57,6 +57,8 @@ export const getEventEras = <any>(
         id: true,
         name: true,
         avatar: true,
+        beginDate: true,
+        endDate: true,
         isCurrent: true,
       },
       {

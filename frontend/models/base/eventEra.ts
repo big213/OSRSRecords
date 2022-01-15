@@ -124,6 +124,10 @@ export const EventEra = <RecordInfo<'eventEra'>>{
         field: 'createdAt',
         desc: true,
       },
+      {
+        field: 'beginDate',
+        desc: true,
+      },
     ],
     headerOptions: [
       {

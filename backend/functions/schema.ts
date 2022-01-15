@@ -1048,6 +1048,7 @@ export type ParticipantsList = {
   publicComments: { Type: Scalars["string"] | null; Args: undefined };
   discordMessageId: { Type: Scalars["string"] | null; Args: undefined };
   mainExternalLink: { Type: Scalars["url"] | null; Args: undefined };
+  evidenceKey: { Type: Scalars["string"]; Args: undefined };
   isRecord: { Type: Scalars["boolean"]; Args: undefined };
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars["number"] | null;

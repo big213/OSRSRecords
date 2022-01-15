@@ -992,33 +992,35 @@ export default {
     async loadFiles(inputObject) {
       inputObject.loading = true
       try {
-        // fetch data
-        const fileData = await collectPaginatorData(
-          this,
-          'getFilePaginator',
-          {
-            id: true,
-            name: true,
-            size: true,
-            contentType: true,
-          },
-          {
-            filterBy: [
-              {
-                parentKey: {
-                  eq: `${this.parentItem.__typename}_${this.parentItem.id}`,
+        if (Array.isArray(inputObject.value) && inputObject.value.length > 0) {
+          // fetch data
+          const fileData = await collectPaginatorData(
+            this,
+            'getFilePaginator',
+            {
+              id: true,
+              name: true,
+              size: true,
+              contentType: true,
+            },
+            {
+              filterBy: [
+                {
+                  parentKey: {
+                    eq: `${this.parentItem.__typename}_${this.parentItem.id}`,
+                  },
+                  id: {
+                    in: inputObject.value,
+                  },
                 },
-                id: {
-                  in: inputObject.value,
-                },
-              },
-            ],
-          }
-        )
+              ],
+            }
+          )
 
-        this.filesData = inputObject.value
-          .map((fileId) => fileData.find((val) => val.id === fileId))
-          .filter((val) => val)
+          this.filesData = inputObject.value
+            .map((fileId) => fileData.find((val) => val.id === fileId))
+            .filter((val) => val)
+        }
       } catch (err) {
         handleError(this, err)
       }

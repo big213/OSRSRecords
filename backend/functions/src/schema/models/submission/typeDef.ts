@@ -9,7 +9,6 @@ import {
   GiraffeqlInputFieldType,
   GiraffeqlInputType,
   GiraffeqlObjectType,
-  GiraffeqlScalarType,
   ObjectTypeDefinition,
 } from "giraffeql";
 import {
@@ -30,7 +29,6 @@ import {
   generateBooleanField,
 } from "../../core/helpers/typeDef";
 import { Scalars } from "../..";
-import { fetchTableRows } from "../../core/helpers/sql";
 import { submissionStatusKenum } from "../../enums";
 import { getObjectType } from "../../core/helpers/resolver";
 
@@ -147,6 +145,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         return parentValue.externalLinks[0] ?? null;
       },
     },
+    evidenceKey: generateStringField({
+      allowNull: true,
+      typeDefOptions: { addable: false, updateable: false },
+      sqlOptions: {
+        field: "evidence_key",
+      },
+    }),
     isRecord: generateBooleanField({
       allowNull: false,
       defaultValue: false,

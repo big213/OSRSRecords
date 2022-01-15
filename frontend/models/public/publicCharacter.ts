@@ -2,6 +2,7 @@ import { PublicSubmission } from './publicSubmission'
 import { Character } from '../base'
 export const PublicCharacter = {
   ...Character,
+  routeName: 'i-view',
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,
@@ -15,6 +16,7 @@ export const PublicCharacter = {
             {
               field: 'ranking',
               width: '100px',
+              align: 'right',
             },
             {
               field: 'eventRecordWithParticipants',
