@@ -213,7 +213,7 @@ export default {
         // attempt to set to the option with the same id value. else do the first one
         participantsInputObject.value =
           participantsInputObject.options.find(
-            (option) => option.id === participantsInputObject.value
+            (option) => option.id === Number(participantsInputObject.value)
           ) ?? participantsInputObject.options[0]
       }
     },
