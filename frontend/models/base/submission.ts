@@ -244,6 +244,15 @@ export const Submission = <RecordInfo<'submission'>>{
       fields: ['status'],
       component: SubmissionStatusReadonlyColumn,
     },
+    isRecordingVerified: {
+      text: 'Recording Verified',
+      inputType: 'switch',
+      component: BooleanColumn,
+      default: () => false,
+    },
+    discordId: {
+      text: 'Discord ID',
+    },
     isCurrent: {
       text: 'Is Current',
       inputType: 'switch',
@@ -395,6 +404,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'privateComments',
       'publicComments',
       'status',
+      'isRecordingVerified',
     ],
 
     component: AdminEditSubmissionInterface,
@@ -411,6 +421,8 @@ export const Submission = <RecordInfo<'submission'>>{
       'happenedOn',
       'privateComments',
       'publicComments',
+      'isRecordingVerified',
+      'discordId',
     ],
     component: AdminEditSubmissionInterface,
   },
@@ -422,6 +434,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'score',
       'happenedOn',
       'status',
+      'isRecordingVerified',
       'world',
       'ranking',
       'previousRecordHappenedOn',
@@ -429,6 +442,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'externalLinks',
       'privateComments',
       'publicComments',
+      'discordId',
     ],
   },
   enterOptions: {},

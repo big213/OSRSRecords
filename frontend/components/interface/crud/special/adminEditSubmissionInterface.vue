@@ -8,7 +8,7 @@
       ></CircularLoader>
       <v-container v-else class="px-0">
         <v-row>
-          <v-col cols="12" class="py-0">
+          <v-col v-if="mode === 'add'" cols="12" class="py-0">
             <v-text-field
               v-model="teamMembersInput"
               label="Time + Team Members (Express Input)"
@@ -252,6 +252,11 @@ export default {
           inputs[inputObject.primaryField] = await this.processInputObject(
             inputObject
           )
+        }
+
+        // changed: only on add mode, set discordId field if first participant's discordId is populated
+        if (this.mode === 'add' && inputs.participantsList.length > 0) {
+          inputs.discordId = inputs.participantsList[0].discordId
         }
 
         // changed: if happenedOn field is empty, attempt to fetch it from the first externalLink, if it is an imgur link

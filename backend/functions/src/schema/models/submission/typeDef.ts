@@ -160,6 +160,13 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "is_record",
       },
     }),
+    isRecordingVerified: generateBooleanField({
+      allowNull: false,
+      defaultValue: false,
+      sqlOptions: {
+        field: "is_recording_verified",
+      },
+    }),
     ranking: {
       type: Scalars.number,
       description:

@@ -71,11 +71,17 @@ export class SubmissionService extends PaginatedService {
     getMultiple: () => true,
 
     /*
-    Only allow creation of submission if the status is empty or "SUBMITTED"
+    - Only allow creation of submission if the status is empty or "SUBMITTED"
+    - AND if isRecordingVerified is false or not specified
     */
     create: ({ args }) => {
+      if (args.status && args.status !== "SUBMITTED") return false;
+
+      if ("isRecordingVerified" in args && args.isRecordingVerified !== false)
+        return false;
+
       if (!args.status || args.status === "SUBMITTED") return true;
-      return false;
+      return true;
     },
   };
 
@@ -319,31 +325,6 @@ export class SubmissionService extends PaginatedService {
         args.participantsList.length,
         args.eventEra
       );
-
-      /*
-      const ranking = await this.calculateRank({
-        eventId: args.event,
-        participants: args.participants,
-        eventEraId: args.eventEra,
-        status: validatedArgs.status
-          ? submissionStatusKenum.fromUnknown(validatedArgs.status)
-          : null,
-        score: validatedArgs.timeElapsed, // same as score
-      });
-
-      await this.handleNewApprovedSubmission({
-        submissionId: addResults.id,
-        ranking,
-        fieldPath,
-      });
-      await this.handleRankingChange({
-        eventId: args.event,
-        participants: args.participants,
-        eventEraId: args.eventEra,
-        ranking,
-        fieldPath,
-      });
-      */
     }
 
     // do post-create fn, if any
@@ -386,13 +367,11 @@ export class SubmissionService extends PaginatedService {
         generateSubmissionMessage(itemId, inferredStatus)
       );
 
-      // also, if the record was added as NOT approved, also need to DM the discordId on the first team member entry, if any
-      const firstParticipantDiscordId = args.participantsList[0].discordId;
-
-      if (firstParticipantDiscordId) {
+      // also, if the record was added as NOT approved, also need to DM the discordId, if any
+      if (args.discordId) {
         const foundDiscordUserId = await getGuildMemberId(
           channelMap.guildId,
-          firstParticipantDiscordId
+          args.discordId
         );
 
         if (foundDiscordUserId) {
@@ -449,12 +428,12 @@ export class SubmissionService extends PaginatedService {
         "id",
         "event.id",
         "participants",
-        "participantsList",
         "eventEra.id",
         "score",
         "status",
         "discordMessageId",
         "externalLinks",
+        "discordId",
       ],
       validatedArgs.item,
       fieldPath
@@ -573,13 +552,11 @@ export class SubmissionService extends PaginatedService {
         );
       }
 
-      // also need to DM the discordId on the first team member entry about the status change, if any
-      const firstParticipantDiscordId = item.participantsList[0].discordId;
-
-      if (firstParticipantDiscordId) {
+      // also need to DM the discordId about the status change, if any
+      if (item.discordId) {
         const foundDiscordUserId = await getGuildMemberId(
           channelMap.guildId,
-          firstParticipantDiscordId
+          item.discordId
         );
 
         if (foundDiscordUserId) {
@@ -704,6 +681,7 @@ export class SubmissionService extends PaginatedService {
           "score",
           "externalLinks",
           "happenedOn",
+          "isRecordingVerified",
         ],
         { id: submissionId },
         fieldPath
@@ -764,6 +742,55 @@ export class SubmissionService extends PaginatedService {
         )
       );
 
+      let significancePreText = "";
+      let significancePostText = "";
+      let isTie = false;
+      // if new rank is #1, say WR
+      if (ranking === 1) {
+        // check if it was a tie (more than one other approved submission in relevant era with same score)
+        const sameScoreCount = await this.getRecordCount(
+          {
+            fields: [
+              {
+                field: "score",
+                operator: "eq",
+                value: submission.score,
+              },
+              {
+                field: "event.id",
+                operator: "eq",
+                value: submission["event.id"],
+              },
+              {
+                field: "status",
+                operator: "eq",
+                value: submissionStatusKenum.APPROVED.index,
+              },
+              {
+                field: "eventEra.isRelevant",
+                operator: "eq",
+                value: true,
+              },
+              {
+                field: "participants",
+                operator: "eq",
+                value: submission.participants,
+              },
+            ],
+          },
+          fieldPath
+        );
+
+        // it is a tie
+        if (sameScoreCount > 1) {
+          isTie = true;
+        }
+        significancePostText = "WR";
+      } else {
+        // else, do top 3
+        significancePreText = "Top 3";
+      }
+
       await sendDiscordMessage(channelMap.updateLogs, {
         content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
           relevantChannelIds.size
@@ -777,11 +804,15 @@ export class SubmissionService extends PaginatedService {
           submission.score
         )}** by\n\`\`\`fix\n${submissionLinks
           .map((link) => link["character.name"])
-          .join(", ")}\`\`\`\n🔸 to **Top 3 ${
-          submission["event.name"]
-        } - ${generateParticipantsText(
+          .join(", ")}\`\`\`\n🔸 ${isTie ? "as a tie for" : "to"} **${
+          significancePreText ? significancePreText + " " : ""
+        }${submission["event.name"]} - ${generateParticipantsText(
           submission.participants
-        )}**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>`,
+        )}${
+          significancePostText ? " " + significancePostText : ""
+        }**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>${
+          submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+        }`,
         components: [
           {
             type: 1,
@@ -800,32 +831,6 @@ export class SubmissionService extends PaginatedService {
             ],
           },
         ],
-
-        /*
-        embeds: [
-          {
-            title: `Top 3 Update: ${submission["event.name"]}`,
-            url: generateCrudRecordInterfaceUrl(
-              "/leaderboard",
-              generateLeaderboardPageOptions({
-                eventId: submission["event.id"],
-                eventEraId: submission["eventEra.id"],
-                participants: submission.participants,
-              })
-            ),
-            description: "Click link to view full leaderboard",
-          },
-          {
-            title: `#${ranking} - ${serializeTime(
-              submission.score
-            )} - ${submissionLinks
-              .map((link) => link["character.name"])
-              .join(", ")}`,
-            url: `${submission.externalLinks[0]}`,
-            color: 15105570,
-          },
-        ],
-        */
       });
     }
   }

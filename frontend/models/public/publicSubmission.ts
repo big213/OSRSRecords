@@ -57,6 +57,7 @@ export const PublicSubmission = {
       'score',
       'happenedOn',
       'statusReadonly',
+      // 'isRecordingVerified',
       'world',
       'ranking',
       'previousRecordHappenedOn',

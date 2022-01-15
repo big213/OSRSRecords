@@ -186,6 +186,11 @@ export default {
           )
         }
 
+        // changed: set discordId field if first participant's discordId is populated
+        if (inputs.participantsList.length > 0) {
+          inputs.discordId = inputs.participantsList[0].discordId
+        }
+
         // changed: if happenedOn field is empty, attempt to fetch it from the first externalLink, if it is an imgur link
         if (!inputs.happenedOn) {
           // check if the first externalLink follows the imgur pattern
