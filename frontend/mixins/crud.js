@@ -540,6 +540,59 @@ export default {
       return getNestedProperty(item, headerItem.value)
     },
 
+    generateQuery(fields, firstFieldOnly = false) {
+      return {
+        ...collapseObject(
+          fields.reduce(
+            (total, field) => {
+              const fieldInfo = lookupFieldInfo(this.recordInfo, field)
+
+              const fieldsToAdd = new Set()
+
+              // in export mode, generally will only be fetching the first field
+              if (fieldInfo.fields) {
+                if (firstFieldOnly) {
+                  fieldsToAdd.add(fieldInfo.fields[0])
+                } else {
+                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                }
+              } else {
+                fieldsToAdd.add(field)
+              }
+
+              // process fields
+              fieldsToAdd.forEach((field) => {
+                total[field] = true
+
+                // add a serializer if there is one for the field
+                const currentFieldInfo = this.recordInfo.fields[field]
+                if (currentFieldInfo) {
+                  if (currentFieldInfo.serialize) {
+                    serializeMap.set(field, currentFieldInfo.serialize)
+                  }
+
+                  // if field has args, process them
+                  if (currentFieldInfo.args) {
+                    total[currentFieldInfo.args.path + '.__args'] =
+                      currentFieldInfo.args.getArgs(this)
+                  }
+                }
+              })
+
+              // if main fieldInfo has args, process them
+              if (fieldInfo.args) {
+                total[fieldInfo.args.path + '.__args'] =
+                  fieldInfo.args.getArgs(this)
+              }
+
+              return total
+            },
+            { id: true, __typename: true } // always add id and typename
+          )
+        ),
+      }
+    },
+
     generatePaginatorArgs(pagination = true) {
       const sortBy = this.currentSort
         ? [{ field: this.currentSort.field, desc: this.currentSort.desc }]
@@ -621,52 +674,11 @@ export default {
 
         if (fields.length < 1) throw new Error('No fields to export')
 
-        const query = {
-          ...collapseObject(
-            fields.reduce(
-              (total, field) => {
-                const fieldInfo = lookupFieldInfo(this.recordInfo, field)
-
-                const fieldsToAdd = new Set()
-
-                // add only the first field
-                if (fieldInfo.fields) {
-                  fieldsToAdd.add(fieldInfo.fields[0])
-                } else {
-                  fieldsToAdd.add(field)
-                }
-
-                // process fields
-                fieldsToAdd.forEach((field) => {
-                  total[field] = true
-
-                  // add a serializer if there is one for the field
-                  const currentFieldInfo = this.recordInfo.fields[field]
-                  if (currentFieldInfo) {
-                    if (currentFieldInfo.serialize) {
-                      serializeMap.set(field, currentFieldInfo.serialize)
-                    }
-
-                    // if field has args, process them
-                    if (currentFieldInfo.args) {
-                      total[currentFieldInfo.args.path + '.__args'] =
-                        currentFieldInfo.args.getArgs(this)
-                    }
-                  }
-                })
-
-                return total
-              },
-              { id: true, __typename: true } // always add id and typename
-            )
-          ),
-        }
-
         // fetch data
         const results = await collectPaginatorData(
           this,
           'get' + this.capitalizedType + 'Paginator',
-          query,
+          this.generateQuery(fields),
           this.generatePaginatorArgs(false)
         )
 
@@ -802,66 +814,14 @@ export default {
       // create a map field -> serializeFn for fast serialization
       const serializeMap = new Map()
 
-      const query = {
-        ...collapseObject(
-          this.recordInfo.paginationOptions.headerOptions
-            .concat(
-              (this.recordInfo.requiredFields ?? []).map((field) => ({
-                field,
-              }))
-            )
-            .reduce(
-              (total, headerInfo) => {
-                const fieldInfo = lookupFieldInfo(
-                  this.recordInfo,
-                  headerInfo.field
-                )
-
-                const fieldsToAdd = new Set()
-
-                // add all fields
-                if (fieldInfo.fields) {
-                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
-                } else {
-                  fieldsToAdd.add(headerInfo.field)
-                }
-
-                // process fields
-                fieldsToAdd.forEach((field) => {
-                  total[field] = true
-
-                  // add a serializer if there is one for the field
-                  const currentFieldInfo = this.recordInfo.fields[field]
-                  if (currentFieldInfo) {
-                    if (currentFieldInfo.serialize) {
-                      serializeMap.set(field, currentFieldInfo.serialize)
-                    }
-
-                    // if field has args, process them
-                    if (currentFieldInfo.args) {
-                      total[currentFieldInfo.args.path + '.__args'] =
-                        currentFieldInfo.args.getArgs(this)
-                    }
-                  }
-                })
-
-                // if main fieldInfo has args, process them
-                if (fieldInfo.args) {
-                  total[fieldInfo.args.path + '.__args'] =
-                    fieldInfo.args.getArgs(this)
-                }
-
-                return total
-              },
-              { id: true, __typename: true } // always add id, typename
-            )
-        ),
-      }
+      const fields = this.recordInfo.paginationOptions.headerOptions
+        .map((headerInfo) => headerInfo.field)
+        .concat(this.recordInfo.requiredFields ?? [])
 
       const results = await getPaginatorData(
         this,
         'get' + this.capitalizedType + 'Paginator',
-        query,
+        this.generateQuery(fields),
         this.generatePaginatorArgs(true)
       )
 

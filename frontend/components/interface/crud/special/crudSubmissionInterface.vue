@@ -610,70 +610,19 @@ export default {
       // create a map field -> serializeFn for fast serialization
       const serializeMap = new Map()
 
-      const query = {
-        ...collapseObject(
-          this.recordInfo.paginationOptions.headerOptions
-            .concat(
-              (this.recordInfo.requiredFields ?? []).map((field) => ({
-                field,
-              }))
-            )
-            .reduce(
-              (total, headerInfo) => {
-                // changed: if field is ranking, exclude if in rank mode
-                if (this.isRankMode && headerInfo.field === 'ranking')
-                  return total
+      const fields = this.recordInfo.paginationOptions.headerOptions
+        .map((headerInfo) => headerInfo.field)
+        .concat(this.recordInfo.requiredFields ?? [])
 
-                const fieldInfo = lookupFieldInfo(
-                  this.recordInfo,
-                  headerInfo.field
-                )
-
-                const fieldsToAdd = new Set()
-
-                // add all fields
-                if (fieldInfo.fields) {
-                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
-                } else {
-                  fieldsToAdd.add(headerInfo.field)
-                }
-
-                // process fields
-                fieldsToAdd.forEach((field) => {
-                  total[field] = true
-
-                  // add a serializer if there is one for the field
-                  const currentFieldInfo = this.recordInfo.fields[field]
-                  if (currentFieldInfo) {
-                    if (currentFieldInfo.serialize) {
-                      serializeMap.set(field, currentFieldInfo.serialize)
-                    }
-
-                    // if field has args, process them
-                    if (currentFieldInfo.args) {
-                      total[currentFieldInfo.args.path + '.__args'] =
-                        currentFieldInfo.args.getArgs(this)
-                    }
-                  }
-                })
-
-                // if main fieldInfo has args, process them
-                if (fieldInfo.args) {
-                  total[fieldInfo.args.path + '.__args'] =
-                    fieldInfo.args.getArgs(this)
-                }
-
-                return total
-              },
-              { id: true, __typename: true } // always add id, typename
-            )
-        ),
-      }
-
+      // changed: exclude 'ranking' field from query in isRankMode
       const results = await getPaginatorData(
         this,
         'get' + this.capitalizedType + 'Paginator',
-        query,
+        this.generateQuery(
+          this.isRankMode
+            ? fields.filter((field) => field !== 'ranking')
+            : fields
+        ),
         this.generatePaginatorArgs(true)
       )
 
