@@ -21,6 +21,7 @@ import {
   deleteTableRow,
   fetchTableRows,
   SqlSelectQuery,
+  SqlWhereFieldObject,
   SqlWhereObject,
   updateTableRow,
 } from "../../core/helpers/sql";
@@ -503,10 +504,11 @@ export class SubmissionService extends PaginatedService {
     );
 
     if (validatedArgs.fields.status) {
+      // this is the RELEVANT_ERA rank
       const ranking = await this.calculateRank({
         eventId: item["event.id"],
         participants: item.participants,
-        eventEraId: item["eventEra.id"],
+        eventEraId: null,
         isRelevantEventEra: true,
         status: submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
         score: item.score,
@@ -658,6 +660,111 @@ export class SubmissionService extends PaginatedService {
     }
   }
 
+  // returns Nth fastest unique score
+  async getNthFastestScore({
+    n,
+    eventId,
+    eventEraMode,
+    eventEraId,
+    participants,
+  }: {
+    n: number;
+    eventId: string;
+    eventEraMode: eventEraModeKenum;
+    eventEraId: string | null;
+    participants: number;
+  }) {
+    const additionalFilters: SqlWhereFieldObject[] = [];
+
+    if (participants) {
+      additionalFilters.push({
+        field: "participants",
+        operator: "eq",
+        value: participants,
+      });
+    }
+
+    if (eventEraMode === eventEraModeKenum.CURRENT_ERA) {
+      additionalFilters.push({
+        field: "eventEra.isCurrent",
+        operator: "eq",
+        value: true,
+      });
+    } else if (eventEraMode === eventEraModeKenum.RELEVANT_ERAS) {
+      additionalFilters.push({
+        field: "eventEra.isRelevant",
+        operator: "eq",
+        value: true,
+      });
+    } else if (eventEraId) {
+      additionalFilters.push({
+        field: "eventEra.id",
+        operator: "eq",
+        value: eventEraId,
+      });
+    }
+
+    // get the nth fastest score, where n = ranksToShow
+    const nthScoreResults = await fetchTableRows({
+      select: [
+        {
+          field: "score",
+        },
+      ],
+      from: this.typename,
+      distinctOn: ["score"],
+      where: {
+        fields: [
+          {
+            field: "event.id",
+            operator: "eq",
+            value: eventId,
+          },
+          {
+            field: "status",
+            operator: "eq",
+            value: submissionStatusKenum.APPROVED.index,
+          },
+          ...additionalFilters,
+        ],
+      },
+      orderBy: [
+        {
+          field: "score",
+          desc: false,
+        },
+      ],
+      limit: 1,
+      offset: n - 1,
+    });
+
+    return nthScoreResults[0]?.score ?? null;
+  }
+
+  async getSubmissionCharacters(submissionId: string) {
+    const submissionLinks = await fetchTableRows({
+      select: [{ field: "character.name" }],
+      from: SubmissionCharacterParticipantLink.typename,
+      where: {
+        fields: [
+          {
+            field: "submission",
+            operator: "eq",
+            value: submissionId,
+          },
+        ],
+      },
+      orderBy: [
+        {
+          field: "character.name",
+          desc: false,
+        },
+      ],
+    });
+
+    return submissionLinks.map((link) => link["character.name"]);
+  }
+
   // this basically will broadcast an update in update-logs channel if it's a new top 3.
   async handleNewApprovedSubmission({
     submissionId,
@@ -669,6 +776,21 @@ export class SubmissionService extends PaginatedService {
     fieldPath: string[];
   }) {
     if (!ranking) return;
+
+    type UpdateLogPostSubmission = {
+      submission: any;
+      characters: string[];
+    };
+
+    type UpdateLogPost = {
+      relevantChannelIds: Set<string>;
+      currentSubmission: UpdateLogPostSubmission;
+      ranking: number;
+      isTie: boolean;
+      isNewWR: boolean;
+      secondPlaceSubmissions: UpdateLogPostSubmission[] | null;
+    };
+
     // if ranking <= 3, send an update in the update-logs channel
     if (submissionId && ranking <= 3) {
       // fetch relevant submission info
@@ -700,6 +822,12 @@ export class SubmissionService extends PaginatedService {
             },
           ],
         },
+        orderBy: [
+          {
+            field: "character.name",
+            desc: false,
+          },
+        ],
       });
 
       // check which discord channels this record could be a part of
@@ -736,18 +864,24 @@ export class SubmissionService extends PaginatedService {
         },
       });
 
-      const relevantChannelIds: Set<string> = new Set(
-        discordChannelOutputs.map(
-          (output) => output["discordChannel.channelId"]
-        )
-      );
+      const updateLogPost: UpdateLogPost = {
+        relevantChannelIds: new Set(
+          discordChannelOutputs.map(
+            (output) => output["discordChannel.channelId"]
+          )
+        ),
+        currentSubmission: {
+          submission,
+          characters: submissionLinks.map((link) => link["character.name"]),
+        },
+        isTie: false,
+        ranking,
+        isNewWR: false,
+        secondPlaceSubmissions: null,
+      };
 
-      let significancePreText = "";
-      let significancePostText = "";
-      let isTie = false;
-      // if new rank is #1, say WR
       if (ranking === 1) {
-        // check if it was a tie (more than one other approved submission in relevant era with same score)
+        // check if it was a WR tie (more than one other approved submission in relevant era with same score)
         const sameScoreCount = await this.getRecordCount(
           {
             fields: [
@@ -783,36 +917,138 @@ export class SubmissionService extends PaginatedService {
 
         // it is a tie
         if (sameScoreCount > 1) {
-          isTie = true;
+          updateLogPost.isTie = true;
         }
-        significancePostText = "WR";
-      } else {
-        // else, do top 3
-        significancePreText = "Top 3";
       }
 
-      await sendDiscordMessage(channelMap.updateLogs, {
-        content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
-          relevantChannelIds.size
-            ? [...relevantChannelIds]
+      if (ranking === 1 && !updateLogPost.isTie) {
+        updateLogPost.isNewWR = true;
+        updateLogPost.secondPlaceSubmissions = [];
+        // get current 2nd place submission(s)
+        const secondPlaceScore = await this.getNthFastestScore({
+          n: 2,
+          eventId: submission["event.id"],
+          eventEraMode: eventEraModeKenum.RELEVANT_ERAS,
+          eventEraId: submission["eventEra.id"],
+          participants: submission.participants,
+        });
+
+        if (secondPlaceScore) {
+          const secondPlaceSubmissions = await fetchTableRows({
+            select: [
+              {
+                field: "id",
+              },
+              {
+                field: "score",
+              },
+            ],
+            from: this.typename,
+            where: {
+              fields: [
+                {
+                  field: "event.id",
+                  operator: "eq",
+                  value: submission["event.id"],
+                },
+                {
+                  field: "status",
+                  operator: "eq",
+                  value: submissionStatusKenum.APPROVED.index,
+                },
+                {
+                  field: "score",
+                  operator: "eq",
+                  value: secondPlaceScore,
+                },
+                {
+                  field: "eventEra.isRelevant",
+                  operator: "eq",
+                  value: true,
+                },
+                {
+                  field: "participants",
+                  operator: "eq",
+                  value: submission.participants,
+                },
+              ],
+            },
+            orderBy: [
+              {
+                field: "happenedOn",
+                desc: false,
+              },
+            ],
+          });
+
+          for (const currentSubmission of secondPlaceSubmissions) {
+            updateLogPost.secondPlaceSubmissions.push({
+              submission: currentSubmission,
+              characters: await this.getSubmissionCharacters(
+                currentSubmission.id
+              ),
+            });
+          }
+        }
+      }
+
+      let discordMessageContent: string;
+      const eventStr = `${
+        submission["event.name"]
+      } - ${generateParticipantsText(submission.participants)}`;
+
+      // case 1: isNewWR with at least one secondPlaceWR
+      if (
+        updateLogPost.isNewWR &&
+        updateLogPost.secondPlaceSubmissions &&
+        updateLogPost.secondPlaceSubmissions.length > 0
+      ) {
+        discordMessageContent = `${formatUnixTimestamp(
+          submission.happenedOn
+        )}\n\n${
+          updateLogPost.relevantChannelIds.size
+            ? [...updateLogPost.relevantChannelIds]
                 .map((channelId) => "<#" + channelId + ">")
                 .join(" ") + "\n\n"
             : ""
-        }🔸 Added ** ${submission["event.name"]} - ${generateParticipantsText(
-          submission.participants
-        )} - ${serializeTime(
+        }🔸 Replaced **${eventStr} WR - ${serializeTime(
+          updateLogPost.secondPlaceSubmissions[0].submission.score
+        )}** by\n${updateLogPost.secondPlaceSubmissions
+          .map(
+            (submissionObject) =>
+              `\`\`\`diff\n- ${submissionObject.characters.join(", ")}\`\`\``
+          )
+          .join("\n")}\n🔸 with **${eventStr} WR - ${serializeTime(
           submission.score
-        )}** by\n\`\`\`fix\n${submissionLinks
-          .map((link) => link["character.name"])
-          .join(", ")}\`\`\`\n🔸 ${isTie ? "as a tie for" : "to"} **${
-          significancePreText ? significancePreText + " " : ""
-        }${submission["event.name"]} - ${generateParticipantsText(
-          submission.participants
-        )}${
-          significancePostText ? " " + significancePostText : ""
+        )}** by\n\`\`\`yaml\n+ ${updateLogPost.currentSubmission.characters.join(
+          ", "
+        )}\`\`\`\n♦️ **Proof** - <${submission.externalLinks[0]}>${
+          submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+        }`;
+      } else {
+        discordMessageContent = `${formatUnixTimestamp(
+          submission.happenedOn
+        )}\n\n${
+          updateLogPost.relevantChannelIds.size
+            ? [...updateLogPost.relevantChannelIds]
+                .map((channelId) => "<#" + channelId + ">")
+                .join(" ") + "\n\n"
+            : ""
+        }🔸 Added **${eventStr} - ${serializeTime(
+          submission.score
+        )}** by\n\`\`\`fix\n${updateLogPost.currentSubmission.characters.join(
+          ", "
+        )}\`\`\`\n🔸 ${updateLogPost.isTie ? "as a tie for" : "to"} **${
+          updateLogPost.ranking > 1 ? "Top 3 " : ""
+        }${eventStr}${
+          updateLogPost.ranking === 1 ? " WR" : ""
         }**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>${
           submission.isRecordingVerified ? "\n*Recording Verified*" : ""
-        }`,
+        }`;
+      }
+
+      await sendDiscordMessage(channelMap.updateLogs, {
+        content: discordMessageContent,
         components: [
           {
             type: 1,
@@ -931,10 +1167,11 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
+    // this is the RELEVANT_ERA rank
     const ranking = await this.calculateRank({
       eventId: item["event.id"],
       participants: item.participants,
-      eventEraId: item["eventEra.id"],
+      eventEraId: null,
       isRelevantEventEra: true,
       status: submissionStatusKenum.fromUnknown(item.status),
       score: item.score,

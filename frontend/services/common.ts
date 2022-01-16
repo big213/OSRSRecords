@@ -21,8 +21,8 @@ export function serializeTime(ms: number | null): string | null {
   const cs = totalCs
 
   return (
-    (minutes ? minutes + ':' : '') +
-    (minutes ? String(seconds).padStart(2, '0') : seconds) +
+    (minutes ? minutes + ':' : '0:') +
+    String(seconds).padStart(2, '0') +
     '.' +
     String(Math.floor(cs / 10)).padStart(1, '0')
   )
@@ -32,7 +32,7 @@ type LeaderboardInputs = {
   eventId: string | undefined
   eventEraId: string | undefined
   eventEraMode: 'NORMAL' | 'CURRENT_ERA' | 'RELEVANT_ERAS' | undefined
-  participants: number | undefined
+  participants: number | '__undefined' | undefined
 }
 
 export async function generateLeaderboardRoute(
@@ -100,7 +100,7 @@ export async function generateLeaderboardPageOptions(
     })
   }
 
-  // use the participants or fall back to 1
+  // use the participants or fall back to '__undefined' for "any"
   if (!actualParticipants) {
     actualParticipants = 1
   }

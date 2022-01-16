@@ -65,7 +65,7 @@ export const Submission = <RecordInfo<'submission'>>{
     eventEra: generateJoinableField({
       fieldname: 'eventEra',
       typename: 'eventEra',
-      text: 'Event Category',
+      text: 'Event Era',
       hasAvatar: true,
     }),
     'eventEra.isRelevant': {

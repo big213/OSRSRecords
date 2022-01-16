@@ -1,5 +1,4 @@
 import { env } from "../../config";
-import { eventEraModeKenum } from "../enums";
 
 // tens digits only
 export function serializeTime(ms: number | null): string | null {
@@ -17,8 +16,8 @@ export function serializeTime(ms: number | null): string | null {
   const cs = totalCs;
 
   return (
-    (minutes ? minutes + ":" : "") +
-    (minutes ? String(seconds).padStart(2, "0") : seconds) +
+    (minutes ? minutes + ":" : "0:") +
+    String(seconds).padStart(2, "0") +
     "." +
     String(Math.floor(cs / 10)).padStart(1, "0")
   );
@@ -34,8 +33,9 @@ export function generateLeaderboardRoute(leaderboardInputs: {
   eventId: string | null;
   eventEraId: string | null;
   eventEraMode: string | null;
-  participants: number | null;
+  participants: number | null | "__undefined";
 }) {
+  // if participants is null, translate to undefined
   const paramsStr: string = Object.entries(leaderboardInputs)
     .filter(([_key, value]) => value)
     .map(([key, value]) => `${key}=${String(value)}`)

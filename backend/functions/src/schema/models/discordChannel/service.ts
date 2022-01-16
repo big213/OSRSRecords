@@ -26,7 +26,7 @@ type outputObject = {
   event: any;
   eventEraId: any | null;
   eventEraMode: eventEraModeKenum;
-  participants: any;
+  participants: number | null;
   ranksToShow: number;
   submissions: {
     submission: any;
@@ -214,15 +214,44 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      // get the nth fastest score, where n = ranksToShow
-      const nthScoreResults = await fetchTableRows({
+      const nthScore = await Submission.getNthFastestScore({
+        n: output.ranksToShow,
+        eventId: output["event.id"],
+        eventEraMode: heading.eventEraMode,
+        eventEraId: output["eventEra.id"],
+        participants: output.participants,
+      });
+
+      const scoreFilters: SqlWhereFieldObject[] = [];
+
+      // if nthScore doesn't exist, dont filter by score
+      if (nthScore) {
+        scoreFilters.push({
+          field: "score",
+          operator: "lte",
+          value: nthScore,
+        });
+      }
+
+      const submissions = await fetchTableRows({
         select: [
+          {
+            field: "id",
+          },
+          {
+            field: "event.name",
+          },
+          {
+            field: "participants",
+          },
           {
             field: "score",
           },
+          {
+            field: "externalLinks",
+          },
         ],
         from: Submission.typename,
-        distinctOn: ["score"],
         where: {
           fields: [
             {
@@ -235,6 +264,7 @@ export class DiscordChannelService extends PaginatedService {
               operator: "eq",
               value: submissionStatusKenum.APPROVED.index,
             },
+            ...scoreFilters,
             ...additionalFilters,
           ],
         },
@@ -243,93 +273,26 @@ export class DiscordChannelService extends PaginatedService {
             field: "score",
             desc: false,
           },
+          {
+            field: "happenedOn",
+            desc: false,
+          },
         ],
-        limit: 1,
-        offset: output.ranksToShow - 1,
       });
 
-      const nthScore = nthScoreResults[0]?.score;
-
-      if (nthScore) {
-        const submissions = await fetchTableRows({
-          select: [
-            {
-              field: "id",
-            },
-            {
-              field: "event.name",
-            },
-            {
-              field: "participants",
-            },
-            {
-              field: "score",
-            },
-            {
-              field: "externalLinks",
-            },
-          ],
-          from: Submission.typename,
-          where: {
-            fields: [
-              {
-                field: "score",
-                operator: "lte",
-                value: nthScore,
-              },
-              {
-                field: "event.id",
-                operator: "eq",
-                value: output["event.id"],
-              },
-              {
-                field: "status",
-                operator: "eq",
-                value: submissionStatusKenum.APPROVED.index,
-              },
-              ...additionalFilters,
-            ],
-          },
-          orderBy: [
-            {
-              field: "score",
-              desc: false,
-            },
-            {
-              field: "happenedOn",
-              desc: false,
-            },
-          ],
-        });
-
-        heading.submissions.push(
-          ...submissions.map((submission) => ({
-            submission,
-            characters: [],
-          }))
-        );
-      }
+      heading.submissions.push(
+        ...submissions.map((submission) => ({
+          submission,
+          characters: [],
+        }))
+      );
 
       // for each submission, also populate the characters field if non-null
       for (const submissionObject of heading.submissions) {
         if (!submissionObject) continue;
 
-        const submissionLinks = await fetchTableRows({
-          select: [{ field: "character.name" }],
-          from: SubmissionCharacterParticipantLink.typename,
-          where: {
-            fields: [
-              {
-                field: "submission",
-                operator: "eq",
-                value: submissionObject.submission.id,
-              },
-            ],
-          },
-        });
-
-        submissionObject.characters = submissionLinks.map(
-          (link) => link["character.name"]
+        submissionObject.characters = await Submission.getSubmissionCharacters(
+          submissionObject.submission.id
         );
       }
     }
@@ -389,7 +352,7 @@ export class DiscordChannelService extends PaginatedService {
           eventId: outputObject.event.id, // required
           eventEraId: outputObject.eventEraId, // optional
           eventEraMode: outputObject.eventEraMode.name, // required
-          participants: outputObject.participants, // required
+          participants: outputObject.participants ?? "__undefined", // required
         }),
         thumbnail: outputObject.event.avatar
           ? {

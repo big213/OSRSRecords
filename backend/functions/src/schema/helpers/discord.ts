@@ -215,6 +215,8 @@ const participantsTextMap = {
   "3": "Trio",
 };
 
-export function generateParticipantsText(participants: number) {
+export function generateParticipantsText(participants: number | null) {
+  if (participants === null) return "Fastest Completion";
+
   return participantsTextMap[participants] ?? participants + "-Man";
 }
