@@ -120,6 +120,11 @@ export default {
       type: Boolean,
       default: false,
     },
+    // will default to participants "any" if it is not specified
+    participantsAny: {
+      type: Boolean,
+      default: false,
+    },
   },
   computed: {
     inputsArray() {
@@ -154,9 +159,25 @@ export default {
     async handleEventChange() {
       const eventEraInputObject = this.getInputObject('eventEra')
       const participantsInputObject = this.getInputObject('participants')
-      const eventValue = this.getInputValue('event')
-      // if event is not specified, skip
-      if (!eventValue) return
+      const eventInputObject = this.getInputObject('event')
+
+      // if event value is empty and eventClearable = false, set event to first one (with an id)
+      if (!eventInputObject.value && !this.eventClearable) {
+        eventInputObject.value = eventInputObject.options.find((ele) => ele.id)
+      }
+
+      // if event is not specified at this point, set the participants options to "any", eventEras to empty, and skip
+      if (!eventInputObject.value) {
+        eventEraInputObject.options = []
+        eventEraInputObject.value = null
+        participantsInputObject.value = '__undefined'
+        participantsInputObject.options.push({
+          id: '__undefined',
+          name: 'Any',
+        })
+
+        return
+      }
 
       eventEraInputObject.loading = true
       eventEraInputObject.options = []
@@ -164,7 +185,7 @@ export default {
       eventEraInputObject.options = await getEventEras(this, false, [
         {
           'event.id': {
-            eq: eventValue.id,
+            eq: eventInputObject.value.id,
           },
         },
       ]).then((res) =>
@@ -186,8 +207,8 @@ export default {
       eventEraInputObject.loading = false
 
       participantsInputObject.options = generateParticipantsOptions(
-        eventValue.minParticipants,
-        eventValue.maxParticipants
+        eventInputObject.value.minParticipants,
+        eventInputObject.value.maxParticipants
       )
 
       // also add an "any" option
@@ -210,12 +231,15 @@ export default {
 
       // set participants to the first option if it is not an object
       if (!isObject(participantsInputObject.value)) {
+        const defaultOption = this.participantsAny
+          ? '__undefined'
+          : participantsInputObject.options[0]
         // attempt to set to the option with the same id value. else do the first one
         participantsInputObject.value =
           participantsInputObject.options.find(
             (option) =>
               String(option.id) === String(participantsInputObject.value)
-          ) ?? participantsInputObject.options[0]
+          ) ?? defaultOption
       }
     },
 

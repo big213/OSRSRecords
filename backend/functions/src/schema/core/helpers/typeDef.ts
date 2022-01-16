@@ -27,6 +27,7 @@ import { BaseService, NormalService, PaginatedService } from "../services";
 import * as Scalars from "../../scalars";
 import type { ObjectTypeDefSqlOptions, SqlType } from "../../../types";
 import { getObjectType } from "./resolver";
+import { SqlSelectQuery } from "./sql";
 
 type GenerateFieldParams = {
   name?: string;
@@ -741,9 +742,11 @@ function validateFieldPath(
 export function generatePivotResolverObject({
   pivotService,
   filterByField,
+  sqlParams,
 }: {
   pivotService: PaginatedService;
   filterByField: string;
+  sqlParams?: Omit<SqlSelectQuery, "from" | "select" | "where">;
 }) {
   return {
     type: pivotService.typeDefLookup,
@@ -768,6 +771,7 @@ export function generatePivotResolverObject({
               },
             ],
           },
+          ...sqlParams,
         },
       });
     },

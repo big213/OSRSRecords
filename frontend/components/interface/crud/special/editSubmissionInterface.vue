@@ -196,11 +196,18 @@ export default {
           // check if the first externalLink follows the imgur pattern
           const externalLinksInputObject = this.getInputObject('externalLinks')
 
-          const firstExternalLink =
-            externalLinksInputObject.nestedInputsArray[0][0]?.inputObject.value
+          const validImgurExternalLink =
+            externalLinksInputObject.nestedInputsArray.find(
+              (nestedInputObjectArray) => {
+                const value = nestedInputObjectArray[0].inputObject.value
+                console.log(value)
+                if (!value) return false
+                return value.match(/https:\/\/i.imgur.com\/(.*?)\..*/)
+              }
+            )[0]?.inputObject.value
 
-          if (firstExternalLink) {
-            const regexMatch = firstExternalLink.match(
+          if (validImgurExternalLink) {
+            const regexMatch = validImgurExternalLink.match(
               /https:\/\/i.imgur.com\/(.*?)\..*/
             )
 

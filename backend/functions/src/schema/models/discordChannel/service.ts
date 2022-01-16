@@ -13,14 +13,8 @@ import {
   updateDiscordMessage,
 } from "../../helpers/discord";
 import { generateLeaderboardRoute, serializeTime } from "../../helpers/common";
-
-import {
-  DiscordChannelOutput,
-  Submission,
-  SubmissionCharacterParticipantLink,
-} from "../../services";
+import { DiscordChannelOutput, Submission } from "../../services";
 import { permissionsCheck } from "../../core/helpers/permissions";
-import { createObjectType } from "../../core/helpers/resolver";
 
 type outputObject = {
   event: any;

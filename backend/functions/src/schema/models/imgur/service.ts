@@ -5,6 +5,7 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import { EventEra, Submission } from "../../services";
 import { updateTableRow } from "../../core/helpers/sql";
+import { sendDiscordRequest } from "../../helpers/discord";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -12,6 +13,26 @@ const prodResource = axios.create({
 
 export class ImgurService extends BaseService {
   accessControl: AccessControlMap = {};
+
+  @permissionsCheck("get")
+  async sendDiscordRequest({
+    req,
+    fieldPath,
+    args,
+    query,
+    isAdmin = false,
+  }: ServiceFunctionInputs) {
+    const validatedArgs = <any>args;
+
+    if (!["get", "post", "put", "delete"].includes(validatedArgs.method))
+      throw new Error(`Invalid method: ${validatedArgs.method}`);
+
+    return sendDiscordRequest(
+      validatedArgs.method,
+      validatedArgs.path,
+      validatedArgs.params
+    );
+  }
 
   @permissionsCheck("get")
   async getImageData({

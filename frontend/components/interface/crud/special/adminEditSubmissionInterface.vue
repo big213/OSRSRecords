@@ -261,14 +261,21 @@ export default {
 
         // changed: if happenedOn field is empty, attempt to fetch it from the first externalLink, if it is an imgur link
         if (!inputs.happenedOn) {
-          // check if the first externalLink follows the imgur pattern
+          // find the first exteralLink that follows the imgur pattern, if any
           const externalLinksInputObject = this.getInputObject('externalLinks')
 
-          const firstExternalLink =
-            externalLinksInputObject.nestedInputsArray[0][0]?.inputObject.value
+          const validImgurExternalLink =
+            externalLinksInputObject.nestedInputsArray.find(
+              (nestedInputObjectArray) => {
+                const value = nestedInputObjectArray[0].inputObject.value
+                console.log(value)
+                if (!value) return false
+                return value.match(/https:\/\/i.imgur.com\/(.*?)\..*/)
+              }
+            )[0]?.inputObject.value
 
-          if (firstExternalLink) {
-            const regexMatch = firstExternalLink.match(
+          if (validImgurExternalLink) {
+            const regexMatch = validImgurExternalLink.match(
               /https:\/\/i.imgur.com\/(.*?)\..*/
             )
 

@@ -15,12 +15,7 @@
         <v-card-text>
           <p>
             OSRSRecords.com is a website dedicated to tracking records in the
-            Old School RuneScape community. Feel free to check out our
-            <a href="https://github.com/big213/OSRSRecords" target="_blank"
-              >Github repository</a
-            >
-            to let us know your feedback, report bugs, or to contribute. Please
-            also check out our official
+            Old School RuneScape community. Please also check out our official
             <a href="https://discord.gg/8U56ZZn" target="_blank"
               >Discord server</a
             >. If you would prefer to email, our email is
@@ -33,13 +28,6 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <!--             <v-btn v-if="user" color="primary" nuxt to="/my-pb-card">
-              <v-icon left> mdi-card-text </v-icon>
-              Track My PBs</v-btn
-            >
-            <v-btn v-else nuxt to="/login" text @click="goToWcaAuth()">
-              Login
-            </v-btn> -->
           <v-btn color="primary" @click="openCreateSubmissionDialog()">
             <v-icon left> mdi-plus </v-icon>
             Submit Record</v-btn

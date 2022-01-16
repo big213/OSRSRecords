@@ -18,6 +18,21 @@ export const channelMap = {
   guildId: env.discord.guild_id,
 };
 
+export async function sendDiscordRequest(
+  method: "get" | "post" | "put" | "delete",
+  path: string,
+  params: any
+) {
+  const { data } = await discordApi.request({
+    method,
+    url: path,
+    headers: authHeaders.headers,
+    params,
+  });
+
+  return data;
+}
+
 export async function sendDiscordMessage(
   channelId: string,
   messagePayload: any

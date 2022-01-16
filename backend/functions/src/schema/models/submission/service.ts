@@ -1162,7 +1162,15 @@ export class SubmissionService extends PaginatedService {
     const validatedArgs = <any>args;
     // confirm existence of item and get ID
     const item = await this.lookupRecord(
-      ["id", "status", "event.id", "eventEra.id", "participants", "score"],
+      [
+        "id",
+        "status",
+        "event.id",
+        "eventEra.id",
+        "participants",
+        "score",
+        "discordMessageId",
+      ],
       validatedArgs,
       fieldPath
     );
@@ -1222,6 +1230,11 @@ export class SubmissionService extends PaginatedService {
         fieldPath,
       });
     }
+
+    // edit the discordMessageId to indicate it was deleted
+    await updateDiscordMessage(channelMap.subAlerts, item.discordChannelId, {
+      content: "Submission deleted",
+    });
 
     return requestedResults;
   }

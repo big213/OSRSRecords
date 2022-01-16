@@ -1,6 +1,9 @@
 <template>
   <div v-if="$route.query.pageOptions">
-    <SubmissionPagePreset event-clearable></SubmissionPagePreset>
+    <SubmissionPagePreset
+      event-clearable
+      participants-any
+    ></SubmissionPagePreset>
     <CrudRecordPage
       :record-info="recordInfo"
       :locked-filters="lockedFilters"

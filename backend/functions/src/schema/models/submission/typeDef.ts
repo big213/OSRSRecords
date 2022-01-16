@@ -76,6 +76,14 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     participantsLinksList: generatePivotResolverObject({
       pivotService: SubmissionCharacterParticipantLink,
       filterByField: "submission.id",
+      sqlParams: {
+        orderBy: [
+          {
+            field: "character.name",
+            desc: false,
+          },
+        ],
+      },
     }),
     score: generateIntegerField({
       allowNull: false,

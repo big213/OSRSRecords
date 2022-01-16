@@ -221,7 +221,8 @@ export const Submission = <RecordInfo<'submission'>>{
     happenedOn: {
       text: 'Happened On',
       inputType: 'datepicker',
-      hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
+      optional: true,
+      hint: 'If you used at least one https://i.imgur.com/abcdefg.xyz link in the evidence, you can leave this blank',
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
       component: DateStringColumn,
@@ -278,6 +279,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     publicComments: {
       text: 'Public Comments',
+      hint: 'Comments for everyone to see',
       inputType: 'textarea',
     },
     ranking: {
