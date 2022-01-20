@@ -33,6 +33,7 @@ type LeaderboardInputs = {
   eventEraId: string | undefined
   eventEraMode: 'NORMAL' | 'CURRENT_ERA' | 'RELEVANT_ERAS' | undefined
   participants: number | '__undefined' | undefined
+  isSoloPersonalBest: boolean | undefined
 }
 
 export async function generateLeaderboardRoute(
@@ -47,7 +48,13 @@ export async function generateLeaderboardRoute(
 
 export async function generateLeaderboardPageOptions(
   that,
-  { eventId, eventEraId, eventEraMode, participants }: LeaderboardInputs
+  {
+    eventId,
+    eventEraId,
+    eventEraMode,
+    participants,
+    isSoloPersonalBest,
+  }: LeaderboardInputs
 ) {
   let actualEventId = eventId
   let actualEventEraId = eventEraId
@@ -108,8 +115,16 @@ export async function generateLeaderboardPageOptions(
   filters.push({
     field: 'participants',
     operator: 'eq',
-    value: actualParticipants,
+    value: Number(actualParticipants),
   })
+
+  if (isSoloPersonalBest !== undefined) {
+    filters.push({
+      field: 'isSoloPersonalBest',
+      operator: 'eq',
+      value: isSoloPersonalBest,
+    })
+  }
 
   return {
     search: '',
@@ -145,6 +160,14 @@ export function generateParticipantsOptions(
         participantsTextMap[participantsCounter] ??
         participantsCounter + '-Man',
     })
+
+    // for any set of options with a solo option, also add a special Solo PB option
+    if (participantsCounter === 1) {
+      returnOptions.push({
+        id: '__solopb',
+        name: 'Solo PB',
+      })
+    }
   }
 
   return returnOptions

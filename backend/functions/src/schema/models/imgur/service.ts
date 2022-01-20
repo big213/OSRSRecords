@@ -24,7 +24,9 @@ export class ImgurService extends BaseService {
   }: ServiceFunctionInputs) {
     const validatedArgs = <any>args;
 
-    if (!["get", "post", "put", "delete"].includes(validatedArgs.method))
+    if (
+      !["get", "post", "put", "delete", "patch"].includes(validatedArgs.method)
+    )
       throw new Error(`Invalid method: ${validatedArgs.method}`);
 
     return sendDiscordRequest(
@@ -50,6 +52,48 @@ export class ImgurService extends BaseService {
     });
 
     return data.data;
+  }
+
+  async syncIsSoloPersonalBest() {
+    const submissions = await Submission.lookupMultipleRecord(
+      ["id", "event.id", "participantsList"],
+      {
+        fields: [
+          {
+            field: "participants",
+            value: 1,
+          },
+        ],
+      },
+      []
+    );
+
+    // map of eventId+characterId -> submissionId
+    const submissionIdMap: Map<
+      string,
+      {
+        submissionId: string;
+        eventId: string;
+      }
+    > = new Map();
+
+    submissions.forEach((submission) => {
+      submissionIdMap.set(
+        `${submission["event.id"]}-${submission.participantsList[0].characterId}`,
+        {
+          submissionId: submission.id,
+          eventId: submission["event.id"],
+        }
+      );
+    });
+
+    // for each submissionId in the map, run syncSoloPBState
+    for (const [key, submission] of submissionIdMap) {
+      await Submission.syncSoloPBState(
+        submission.submissionId,
+        submission.eventId
+      );
+    }
   }
 
   async syncEvidenceKey() {

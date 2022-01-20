@@ -60,6 +60,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       },
       defaultValue: 1,
     }),
+    isSoloPersonalBest: generateBooleanField({
+      allowNull: true,
+      sqlOptions: {
+        field: "is_solo_personal_best",
+      },
+    }),
     sort: generateIntegerField({
       allowNull: false,
     }),

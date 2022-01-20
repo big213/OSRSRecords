@@ -36,10 +36,49 @@ import {
 import {
   formatUnixTimestamp,
   generateLeaderboardRoute,
+  isVideoUrl,
   serializeTime,
 } from "../../helpers/common";
 import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
+import e = require("firebase-functions/node_modules/@types/express");
+
+type UpdateLogPostSubmission = {
+  submission: any;
+  characters: string[];
+};
+
+type RelevantErasUpdateLogPost = {
+  currentSubmission: UpdateLogPostSubmission;
+  ranksToShow: number | null;
+  relevantChannelIds: Set<string>;
+  ranking: number | null;
+  isWR:
+    | false
+    | {
+        isTie: boolean;
+      };
+  secondPlaceSubmissions: UpdateLogPostSubmission[] | null;
+};
+
+type SoloPBUpdateLogPost = {
+  currentSubmission: UpdateLogPostSubmission;
+  currentUserSecondPlaceSubmission: {
+    ranking: number;
+    score: number;
+  } | null;
+  kickedSubmissions:
+    | null
+    | {
+        characters: string[];
+        score: number;
+      }[];
+  ranksToShow: number | null;
+  relevantChannelIds: Set<string>;
+  ranking: number | null;
+  isWR: boolean;
+  isTie: boolean;
+};
 
 export class SubmissionService extends PaginatedService {
   defaultTypename = "submission";
@@ -50,6 +89,7 @@ export class SubmissionService extends PaginatedService {
     "event.id": {},
     "eventEra.id": {},
     "eventEra.isRelevant": {},
+    isSoloPersonalBest: {},
     participants: {},
     status: {},
     "submissionCharacterParticipantLink/character.id": {},
@@ -91,6 +131,8 @@ export class SubmissionService extends PaginatedService {
     participants,
     eventEraId,
     isRelevantEventEra = null,
+    isSoloPersonalBest = null,
+    characterId = null,
     status,
     score,
   }: {
@@ -98,6 +140,8 @@ export class SubmissionService extends PaginatedService {
     participants: number | null;
     eventEraId: string | null;
     isRelevantEventEra?: boolean | null;
+    isSoloPersonalBest?: boolean | null;
+    characterId?: string | null;
     status: submissionStatusKenum | null;
     score: number;
   }) {
@@ -105,6 +149,8 @@ export class SubmissionService extends PaginatedService {
     if (status !== submissionStatusKenum.APPROVED) {
       return null;
     }
+
+    if (isSoloPersonalBest === true && participants !== 1) return null;
 
     const whereObject: SqlWhereObject = {
       fields: [
@@ -147,6 +193,22 @@ export class SubmissionService extends PaginatedService {
         field: "eventEra.isRelevant",
         operator: "eq",
         value: isRelevantEventEra,
+      });
+    }
+
+    if (isSoloPersonalBest !== null) {
+      whereObject.fields.push({
+        field: "isSoloPersonalBest",
+        operator: "eq",
+        value: isSoloPersonalBest,
+      });
+    }
+
+    if (characterId) {
+      whereObject.fields.push({
+        field: "submissionCharacterParticipantLink/character.id",
+        operator: "eq",
+        value: characterId,
       });
     }
 
@@ -310,7 +372,7 @@ export class SubmissionService extends PaginatedService {
           ),
           submission: addResults.id,
           character: participant.characterId,
-          title: null,
+          title: participant.discordId,
           createdBy: req.user?.id, // nullable
         },
         req,
@@ -319,13 +381,18 @@ export class SubmissionService extends PaginatedService {
     }
 
     // if the record was added as approved, also need to run syncSubmissionIsRecord
-    // HOWEVER, will NOT be triggering handleNewApprovedSubmission and handleRankingChange. admin can flick the status if they want to trigger these events
+    // HOWEVER, will NOT be triggering broadcastUpdateLogs and syncDiscordLeaderboards. admin can flick the status if they want to trigger these events
     if (inferredStatus === submissionStatusKenum.APPROVED) {
       await this.syncSubmissionIsRecord(
         args.event,
         args.participantsList.length,
         args.eventEra
       );
+
+      // also need to sync the isSoloPersonalBest state if it is a solo record
+      if (validatedArgs.participantsList.length === 1) {
+        await this.syncSoloPBState(addResults.id, args.event);
+      }
     }
 
     // do post-create fn, if any
@@ -400,16 +467,6 @@ export class SubmissionService extends PaginatedService {
         },
       });
     }
-
-    /*
-    return File.updateFileParentKeys(
-      req.user!.id,
-      this.typename,
-      itemId,
-      [args.files],
-      fieldPath
-    );
-    */
   }
 
   @permissionsCheck("update")
@@ -452,30 +509,28 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
+    const previousStatus = submissionStatusKenum.fromUnknown(item.status);
+
+    const newStatus = validatedArgs.fields.status
+      ? submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
+      : null;
+
     const inferredExternalLinks =
       validatedArgs.fields.externalLinks ?? item.externalLinks;
 
     const evidenceKey = inferredExternalLinks[0] ?? null;
 
     // changed: if status is being updated from !APPROVED to APPROVED, need to validate the evidenceKey
-    if (validatedArgs.fields.status) {
-      const previousStatus = submissionStatusKenum.fromUnknown(item.status);
-
-      const newStatus = submissionStatusKenum.fromUnknown(
-        validatedArgs.fields.status
+    if (
+      previousStatus !== submissionStatusKenum.APPROVED &&
+      newStatus === submissionStatusKenum.APPROVED
+    ) {
+      // check it against the existing evidenceKeys for approved submissions
+      await this.validateEvidenceKeyConstraint(
+        evidenceKey,
+        item["event.id"],
+        fieldPath
       );
-
-      if (
-        previousStatus !== submissionStatusKenum.APPROVED &&
-        newStatus === submissionStatusKenum.APPROVED
-      ) {
-        // check it against the existing evidenceKeys for approved submissions
-        await this.validateEvidenceKeyConstraint(
-          evidenceKey,
-          item["event.id"],
-          fieldPath
-        );
-      }
     }
 
     // convert any lookup/joined fields into IDs
@@ -503,42 +558,52 @@ export class SubmissionService extends PaginatedService {
       item["eventEra.id"]
     );
 
-    if (validatedArgs.fields.status) {
+    // also need to sync the isSoloPersonalBest if it is a solo record
+    if (item.participants === 1) {
+      await this.syncSoloPBState(item.id, item["event.id"]);
+    }
+
+    if (newStatus) {
       // this is the RELEVANT_ERA rank
-      const ranking = await this.calculateRank({
+      const relevantEraRanking = await this.calculateRank({
         eventId: item["event.id"],
         participants: item.participants,
         eventEraId: null,
         isRelevantEventEra: true,
-        status: submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
+        isSoloPersonalBest: null,
+        status: newStatus,
         score: item.score,
       });
 
-      const previousStatus = submissionStatusKenum.fromUnknown(item.status);
-
-      const newStatus = submissionStatusKenum.fromUnknown(
-        validatedArgs.fields.status
-      );
-
+      const soloPBRanking = await this.calculateRank({
+        eventId: item["event.id"],
+        participants: item.participants,
+        eventEraId: null,
+        isRelevantEventEra: true,
+        isSoloPersonalBest: true,
+        status: newStatus,
+        score: item.score,
+      });
       // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
       if (
         (previousStatus === submissionStatusKenum.APPROVED &&
           newStatus !== submissionStatusKenum.APPROVED) ||
         newStatus === submissionStatusKenum.APPROVED
       ) {
-        await this.handleRankingChange({
+        await this.syncDiscordLeaderboards({
           eventId: item["event.id"],
           participants: item.participants,
           eventEraId: item["eventEra.id"],
-          ranking,
-          fieldPath,
+          relevantEraRanking,
+          soloPBRanking,
         });
       }
 
       // if the status changed from ANY->APPROVED, need to also possibly send an announcement in update-logs
-      await this.handleNewApprovedSubmission({
+      await this.broadcastUpdateLogs({
         submissionId: item.id,
-        ranking,
+        relevantEraRanking,
+        soloPBRanking,
         fieldPath,
       });
 
@@ -551,7 +616,7 @@ export class SubmissionService extends PaginatedService {
             item.id,
             submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
           )
-        );
+        ).catch((e) => e); // fail silently, if the discordMessageId DNE, for example
       }
 
       // also need to DM the discordId about the status change, if any
@@ -600,63 +665,124 @@ export class SubmissionService extends PaginatedService {
         });
   }
 
-  // this mainly updates any leaderboards necessary
-  async handleRankingChange({
+  // syncs any leaderboards that would contain this submission
+  // if any leaderboard was updated, also trigger #update-logs message
+  // currently only handles the RELEVANT_ERAS and isSoloPersonalBest: true situations
+  async syncDiscordLeaderboards({
     eventId,
     participants,
     eventEraId,
-    ranking,
-    fieldPath,
+    relevantEraRanking,
+    soloPBRanking,
   }: {
-    submissionId?: string;
     eventId: string;
     participants: number;
     eventEraId: string;
-    ranking: number | null;
-    fieldPath: string[];
+    relevantEraRanking: number | null;
+    soloPBRanking: number | null;
   }) {
-    if (!ranking) return;
+    // discord channels that need to be refreshed
+    const discordChannelIds: Set<string> = new Set();
 
-    const discordChannelOutputs = await fetchTableRows({
-      select: [
-        {
-          field: "discordChannel.id",
-        },
-      ],
-      from: DiscordChannelOutput.typename,
-      where: {
-        fields: [
+    // see if any discord leaderboards with eventEraMode: "RELEVANT_ERAS" need to be refreshed
+    if (relevantEraRanking) {
+      const discordChannelOutputs = await fetchTableRows({
+        select: [
           {
-            field: "event.id",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            operator: "in",
-            value: [null, participants],
-          },
-          {
-            field: "eventEra.id",
-            operator: "in",
-            value: [null, eventEraId],
-          },
-          {
-            field: "ranksToShow",
-            operator: "gte",
-            value: ranking,
+            field: "discordChannel.id",
           },
         ],
-      },
-    });
+        from: DiscordChannelOutput.typename,
+        where: {
+          fields: [
+            {
+              field: "event.id",
+              operator: "eq",
+              value: eventId,
+            },
+            {
+              field: "participants",
+              operator: "in",
+              value: [null, participants],
+            },
+            {
+              field: "eventEra.id",
+              operator: "in",
+              value: [null, eventEraId],
+            },
+            {
+              field: "ranksToShow",
+              operator: "gte",
+              value: relevantEraRanking,
+            },
+            {
+              field: "eventEraMode",
+              value: eventEraModeKenum.RELEVANT_ERAS.index,
+            },
+            {
+              field: "isSoloPersonalBest",
+              value: null,
+            },
+          ],
+        },
+      });
 
-    // if any entries to render, update them
-    const discordChannelIds: Set<string> = new Set(
-      discordChannelOutputs.map((ele) => ele["discordChannel.id"])
-    );
+      discordChannelOutputs.forEach((ele) => {
+        discordChannelIds.add(ele["discordChannel.id"]);
+      });
+    }
 
+    // see if any discord leaderboards with isSoloPersonalBest: true need to be refreshed
+    if (participants === 1 && soloPBRanking) {
+      const discordChannelOutputs = await fetchTableRows({
+        select: [
+          {
+            field: "discordChannel.id",
+          },
+        ],
+        from: DiscordChannelOutput.typename,
+        where: {
+          fields: [
+            {
+              field: "event.id",
+              operator: "eq",
+              value: eventId,
+            },
+            {
+              field: "participants",
+              operator: "in",
+              value: [null, participants],
+            },
+            {
+              field: "eventEra.id",
+              operator: "in",
+              value: [null, eventEraId],
+            },
+            {
+              field: "ranksToShow",
+              operator: "gte",
+              value: soloPBRanking,
+            },
+            {
+              field: "eventEraMode",
+              value: eventEraModeKenum.RELEVANT_ERAS.index,
+            },
+            {
+              field: "isSoloPersonalBest",
+              value: true,
+            },
+          ],
+        },
+      });
+
+      discordChannelOutputs.forEach((ele) => {
+        discordChannelIds.add(ele["discordChannel.id"]);
+      });
+    }
+
+    // re-render all discord channels necessary
     for (const discordChannelId of discordChannelIds) {
-      await DiscordChannel.renderOutput(discordChannelId, fieldPath);
+      await DiscordChannel.renderOutput(discordChannelId, []);
     }
   }
 
@@ -666,12 +792,16 @@ export class SubmissionService extends PaginatedService {
     eventId,
     eventEraMode,
     eventEraId,
+    isSoloPersonalBest,
+    characterId = null,
     participants,
   }: {
     n: number;
     eventId: string;
     eventEraMode: eventEraModeKenum;
     eventEraId: string | null;
+    isSoloPersonalBest: boolean | null;
+    characterId?: string | null;
     participants: number;
   }) {
     const additionalFilters: SqlWhereFieldObject[] = [];
@@ -701,6 +831,22 @@ export class SubmissionService extends PaginatedService {
         field: "eventEra.id",
         operator: "eq",
         value: eventEraId,
+      });
+    }
+
+    if (isSoloPersonalBest !== null) {
+      additionalFilters.push({
+        field: "isSoloPersonalBest",
+        operator: "eq",
+        value: isSoloPersonalBest,
+      });
+    }
+
+    if (characterId) {
+      additionalFilters.push({
+        field: "submissionCharacterParticipantLink/character.id",
+        operator: "eq",
+        value: characterId,
       });
     }
 
@@ -765,74 +911,99 @@ export class SubmissionService extends PaginatedService {
     return submissionLinks.map((link) => link["character.name"]);
   }
 
-  // this basically will broadcast an update in update-logs channel if it's a new top 3.
-  async handleNewApprovedSubmission({
+  // this will broadcast an update in update-logs channel if there were any changes in leaderboards
+  async broadcastUpdateLogs({
     submissionId,
-    ranking,
+    relevantEraRanking,
+    soloPBRanking,
     fieldPath,
   }: {
     submissionId: string;
-    ranking: number | null;
+    relevantEraRanking: number | null;
+    soloPBRanking: number | null;
     fieldPath: string[];
   }) {
-    if (!ranking) return;
+    const discordMessageContents: {
+      content: string;
+      isSoloPersonalBest: boolean | null;
+    }[] = [];
 
-    type UpdateLogPostSubmission = {
-      submission: any;
-      characters: string[];
-    };
+    // fetch relevant submission info
+    const submission = await this.lookupRecord(
+      [
+        "id",
+        "event.id",
+        "event.name",
+        "eventEra.id",
+        "participants",
+        "score",
+        "externalLinks",
+        "happenedOn",
+        "isRecordingVerified",
+      ],
+      { id: submissionId },
+      fieldPath
+    );
 
-    type UpdateLogPost = {
-      relevantChannelIds: Set<string>;
-      currentSubmission: UpdateLogPostSubmission;
-      ranking: number;
-      isTie: boolean;
-      isNewWR: boolean;
-      secondPlaceSubmissions: UpdateLogPostSubmission[] | null;
-    };
+    const eventStr = `${submission["event.name"]} - ${generateParticipantsText(
+      submission.participants
+    )}`;
 
-    // if ranking <= 3, send an update in the update-logs channel
-    if (submissionId && ranking <= 3) {
-      // fetch relevant submission info
-      const submission = await this.lookupRecord(
-        [
-          "event.id",
-          "event.name",
-          "eventEra.id",
-          "participants",
-          "score",
-          "externalLinks",
-          "happenedOn",
-          "isRecordingVerified",
-        ],
-        { id: submissionId },
-        fieldPath
-      );
-
-      // fetch the participants
-      const submissionLinks = await fetchTableRows({
-        select: [{ field: "character.name" }],
-        from: SubmissionCharacterParticipantLink.typename,
-        where: {
-          fields: [
-            {
-              field: "submission",
-              operator: "eq",
-              value: submissionId,
-            },
-          ],
-        },
-        orderBy: [
+    const submissionLinks = await fetchTableRows({
+      select: [{ field: "character.name" }, { field: "character.id" }],
+      from: SubmissionCharacterParticipantLink.typename,
+      where: {
+        fields: [
           {
-            field: "character.name",
-            desc: false,
+            field: "submission",
+            operator: "eq",
+            value: submissionId,
           },
         ],
-      });
+      },
+      orderBy: [
+        {
+          field: "character.name",
+          desc: false,
+        },
+      ],
+    });
 
-      // check which discord channels this record could be a part of
+    const relevantErasUpdateLogPost: RelevantErasUpdateLogPost = {
+      currentSubmission: {
+        submission,
+        characters: submissionLinks.map((link) => link["character.name"]),
+      },
+      ranksToShow: null,
+      relevantChannelIds: new Set(),
+      ranking: relevantEraRanking,
+      isWR: relevantEraRanking === 1 ? { isTie: false } : false,
+      secondPlaceSubmissions: null,
+    };
+
+    const firstCharacterId = submissionLinks[0]["character.id"];
+
+    const soloPBUpdateLogPost: SoloPBUpdateLogPost = {
+      currentSubmission: {
+        submission,
+        characters: submissionLinks.map((link) => link["character.name"]),
+      },
+      currentUserSecondPlaceSubmission: null,
+      kickedSubmissions: null,
+      ranksToShow: null,
+      relevantChannelIds: new Set(),
+      ranking: soloPBRanking,
+      isWR: soloPBRanking === 1,
+      isTie: false,
+    };
+
+    // check if this record would appear in any rank style leaderboards. isSoloPersonalBest: true and relevant_eras only
+    if (soloPBUpdateLogPost.ranking) {
       const discordChannelOutputs = await fetchTableRows({
         select: [
+          {
+            field: "ranksToShow",
+          },
           {
             field: "discordChannel.channelId",
           },
@@ -858,30 +1029,32 @@ export class SubmissionService extends PaginatedService {
             {
               field: "ranksToShow",
               operator: "gte",
-              value: ranking,
+              value: soloPBRanking,
+            },
+            {
+              field: "eventEraMode",
+              value: eventEraModeKenum.RELEVANT_ERAS.index,
+            },
+            {
+              field: "isSoloPersonalBest",
+              value: true,
             },
           ],
         },
       });
 
-      const updateLogPost: UpdateLogPost = {
-        relevantChannelIds: new Set(
+      if (discordChannelOutputs.length > 0) {
+        soloPBUpdateLogPost.ranksToShow = Math.max(
+          ...discordChannelOutputs.map((ele) => ele.ranksToShow)
+        );
+
+        soloPBUpdateLogPost.relevantChannelIds = new Set(
           discordChannelOutputs.map(
             (output) => output["discordChannel.channelId"]
           )
-        ),
-        currentSubmission: {
-          submission,
-          characters: submissionLinks.map((link) => link["character.name"]),
-        },
-        isTie: false,
-        ranking,
-        isNewWR: false,
-        secondPlaceSubmissions: null,
-      };
+        );
 
-      if (ranking === 1) {
-        // check if it was a WR tie (more than one other approved submission in relevant era with same score)
+        // check if it was a tie (more than one other approved submission in relevant era with same score)
         const sameScoreCount = await this.getRecordCount(
           {
             fields: [
@@ -910,145 +1083,438 @@ export class SubmissionService extends PaginatedService {
                 operator: "eq",
                 value: submission.participants,
               },
+              {
+                field: "isSoloPersonalBest",
+                value: true,
+              },
             ],
           },
           fieldPath
         );
 
-        // it is a tie
-        if (sameScoreCount > 1) {
-          updateLogPost.isTie = true;
-        }
-      }
+        // was it a tie?
+        soloPBUpdateLogPost.isTie = sameScoreCount > 1;
 
-      if (ranking === 1 && !updateLogPost.isTie) {
-        updateLogPost.isNewWR = true;
-        updateLogPost.secondPlaceSubmissions = [];
-        // get current 2nd place submission(s)
-        const secondPlaceScore = await this.getNthFastestScore({
+        // get the soloPBRank of the character's previous record (given relevantEra, eventId, participants), if any.
+        const charactersSecondFastestScore = await this.getNthFastestScore({
           n: 2,
           eventId: submission["event.id"],
+          eventEraId: null,
           eventEraMode: eventEraModeKenum.RELEVANT_ERAS,
-          eventEraId: submission["eventEra.id"],
-          participants: submission.participants,
+          participants: 1,
+          isSoloPersonalBest: null,
+          characterId: firstCharacterId,
         });
 
-        if (secondPlaceScore) {
-          const secondPlaceSubmissions = await fetchTableRows({
-            select: [
-              {
-                field: "id",
-              },
-              {
-                field: "score",
-              },
-            ],
-            from: this.typename,
-            where: {
-              fields: [
-                {
-                  field: "event.id",
-                  operator: "eq",
-                  value: submission["event.id"],
-                },
-                {
-                  field: "status",
-                  operator: "eq",
-                  value: submissionStatusKenum.APPROVED.index,
-                },
-                {
-                  field: "score",
-                  operator: "eq",
-                  value: secondPlaceScore,
-                },
-                {
-                  field: "eventEra.isRelevant",
-                  operator: "eq",
-                  value: true,
-                },
-                {
-                  field: "participants",
-                  operator: "eq",
-                  value: submission.participants,
-                },
-              ],
-            },
-            orderBy: [
-              {
-                field: "happenedOn",
-                desc: false,
-              },
-            ],
+        if (charactersSecondFastestScore) {
+          const previousScoreRank = await this.calculateRank({
+            eventId: submission["event.id"],
+            participants: submission.participants,
+            eventEraId: null,
+            isRelevantEventEra: true,
+            isSoloPersonalBest: true,
+            status: submissionStatusKenum.APPROVED,
+            score: charactersSecondFastestScore,
           });
 
-          for (const currentSubmission of secondPlaceSubmissions) {
-            updateLogPost.secondPlaceSubmissions.push({
-              submission: currentSubmission,
-              characters: await this.getSubmissionCharacters(
-                currentSubmission.id
-              ),
+          // actual rank is previousScoreRank - 1
+          const previousRank = previousScoreRank ? previousScoreRank - 1 : null;
+
+          // if the previous submission's rank would have appeared on a leaderboard, add it to soloPBUpdateLogPost.currentUserSecondPlaceSubmission
+          if (previousRank && previousRank <= soloPBUpdateLogPost.ranksToShow) {
+            soloPBUpdateLogPost.currentUserSecondPlaceSubmission = {
+              ranking: previousRank,
+              score: charactersSecondFastestScore,
+            };
+          }
+        } else if (!soloPBUpdateLogPost.isTie) {
+          // if it was not an improvement in the leaderboard AND it was not a tie, someone (or multiple people) just got kicked to 11th place. find out who that was, if any
+          const nPlusOneHighestScore = await this.getNthFastestScore({
+            n: soloPBUpdateLogPost.ranksToShow + 1,
+            eventId: submission["event.id"],
+            eventEraId: null,
+            eventEraMode: eventEraModeKenum.RELEVANT_ERAS,
+            participants: 1,
+            isSoloPersonalBest: true,
+          });
+
+          if (nPlusOneHighestScore) {
+            soloPBUpdateLogPost.kickedSubmissions = [];
+            // get ids of submissions with this score
+            const submissions = await fetchTableRows({
+              select: [
+                {
+                  field: "id",
+                },
+              ],
+              from: this.typename,
+              where: {
+                fields: [
+                  {
+                    field: "event.id",
+                    value: submission["event.id"],
+                  },
+                  {
+                    field: "participants",
+                    value: submission.participants,
+                  },
+                  {
+                    field: "eventEra.isRelevant",
+                    value: true,
+                  },
+                  {
+                    field: "score",
+                    value: nPlusOneHighestScore,
+                  },
+                  {
+                    field: "isSoloPersonalBest",
+                    value: true,
+                  },
+                ],
+              },
+              orderBy: [
+                {
+                  field: "happenedOn",
+                  desc: true,
+                },
+              ],
             });
+
+            for (const submission of submissions) {
+              soloPBUpdateLogPost.kickedSubmissions.push({
+                characters: await this.getSubmissionCharacters(submission.id),
+                score: nPlusOneHighestScore,
+              });
+            }
           }
         }
       }
+    }
 
-      let discordMessageContent: string;
-      const eventStr = `${
-        submission["event.name"]
-      } - ${generateParticipantsText(submission.participants)}`;
+    // check if this record would appear in any normal style leaderboards. eventEraMode: relevant_eras only
+    if (relevantErasUpdateLogPost.ranking) {
+      const discordChannelOutputs = await fetchTableRows({
+        select: [
+          {
+            field: "ranksToShow",
+          },
+          {
+            field: "discordChannel.channelId",
+          },
+        ],
+        from: DiscordChannelOutput.typename,
+        where: {
+          fields: [
+            {
+              field: "event.id",
+              operator: "eq",
+              value: submission["event.id"],
+            },
+            {
+              field: "participants",
+              operator: "in",
+              value: [null, submission.participants],
+            },
+            {
+              field: "eventEra.id",
+              operator: "in",
+              value: [null, submission["eventEra.id"]],
+            },
+            {
+              field: "ranksToShow",
+              operator: "gte",
+              value: relevantEraRanking,
+            },
+            {
+              field: "eventEraMode",
+              value: eventEraModeKenum.RELEVANT_ERAS.index,
+            },
+            {
+              field: "isSoloPersonalBest",
+              value: null,
+            },
+          ],
+        },
+      });
 
-      // case 1: isNewWR with at least one secondPlaceWR
-      if (
-        updateLogPost.isNewWR &&
-        updateLogPost.secondPlaceSubmissions &&
-        updateLogPost.secondPlaceSubmissions.length > 0
-      ) {
-        discordMessageContent = `${formatUnixTimestamp(
-          submission.happenedOn
-        )}\n\n${
-          updateLogPost.relevantChannelIds.size
-            ? [...updateLogPost.relevantChannelIds]
-                .map((channelId) => "<#" + channelId + ">")
-                .join(" ") + "\n\n"
-            : ""
-        }🔸 Replaced **${eventStr} WR - ${serializeTime(
-          updateLogPost.secondPlaceSubmissions[0].submission.score
-        )}** by\n${updateLogPost.secondPlaceSubmissions
-          .map(
-            (submissionObject) =>
-              `\`\`\`diff\n- ${submissionObject.characters.join(", ")}\`\`\``
+      if (discordChannelOutputs.length > 0) {
+        relevantErasUpdateLogPost.ranksToShow = Math.max(
+          ...discordChannelOutputs.map((ele) => ele.ranksToShow)
+        );
+
+        relevantErasUpdateLogPost.relevantChannelIds = new Set(
+          discordChannelOutputs.map(
+            (output) => output["discordChannel.channelId"]
           )
-          .join("\n")}\n🔸 with **${eventStr} WR - ${serializeTime(
-          submission.score
-        )}** by\n\`\`\`yaml\n+ ${updateLogPost.currentSubmission.characters.join(
-          ", "
-        )}\`\`\`\n♦️ **Proof** - <${submission.externalLinks[0]}>${
-          submission.isRecordingVerified ? "\n*Recording Verified*" : ""
-        }`;
-      } else {
-        discordMessageContent = `${formatUnixTimestamp(
-          submission.happenedOn
-        )}\n\n${
-          updateLogPost.relevantChannelIds.size
-            ? [...updateLogPost.relevantChannelIds]
-                .map((channelId) => "<#" + channelId + ">")
-                .join(" ") + "\n\n"
-            : ""
-        }🔸 Added **${eventStr} - ${serializeTime(
-          submission.score
-        )}** by\n\`\`\`fix\n${updateLogPost.currentSubmission.characters.join(
-          ", "
-        )}\`\`\`\n🔸 ${updateLogPost.isTie ? "as a tie for" : "to"} **${
-          updateLogPost.ranking > 1 ? "Top 3 " : ""
-        }${eventStr}${
-          updateLogPost.ranking === 1 ? " WR" : ""
-        }**\n\n♦️ **Proof** - <${submission.externalLinks[0]}>${
-          submission.isRecordingVerified ? "\n*Recording Verified*" : ""
-        }`;
-      }
+        );
 
+        // only proceed if no update-log message already
+        // if update-log message already exists, load in the relevantChannelIds and skip
+        if (soloPBUpdateLogPost.relevantChannelIds.size > 0) {
+          relevantErasUpdateLogPost.relevantChannelIds.forEach((channelId) => {
+            soloPBUpdateLogPost.relevantChannelIds.add(channelId);
+          });
+        } else {
+          if (relevantErasUpdateLogPost.isWR) {
+            // check if it was a WR tie (more than one other approved submission in relevant era with same score)
+            const sameScoreCount = await this.getRecordCount(
+              {
+                fields: [
+                  {
+                    field: "score",
+                    operator: "eq",
+                    value: submission.score,
+                  },
+                  {
+                    field: "event.id",
+                    operator: "eq",
+                    value: submission["event.id"],
+                  },
+                  {
+                    field: "status",
+                    operator: "eq",
+                    value: submissionStatusKenum.APPROVED.index,
+                  },
+                  {
+                    field: "eventEra.isRelevant",
+                    operator: "eq",
+                    value: true,
+                  },
+                  {
+                    field: "participants",
+                    operator: "eq",
+                    value: submission.participants,
+                  },
+                ],
+              },
+              fieldPath
+            );
+
+            // was it a tie of a WR?
+            relevantErasUpdateLogPost.isWR.isTie = sameScoreCount > 1;
+          }
+
+          if (relevantErasUpdateLogPost.isWR) {
+            relevantErasUpdateLogPost.secondPlaceSubmissions = [];
+            // get current 2nd place submission(s)
+            const secondPlaceScore = await this.getNthFastestScore({
+              n: 2,
+              eventId: submission["event.id"],
+              eventEraMode: eventEraModeKenum.RELEVANT_ERAS,
+              eventEraId: submission["eventEra.id"],
+              participants: submission.participants,
+              isSoloPersonalBest: null,
+            });
+
+            if (secondPlaceScore) {
+              const secondPlaceSubmissions = await fetchTableRows({
+                select: [
+                  {
+                    field: "id",
+                  },
+                  {
+                    field: "score",
+                  },
+                ],
+                from: this.typename,
+                where: {
+                  fields: [
+                    {
+                      field: "event.id",
+                      operator: "eq",
+                      value: submission["event.id"],
+                    },
+                    {
+                      field: "status",
+                      operator: "eq",
+                      value: submissionStatusKenum.APPROVED.index,
+                    },
+                    {
+                      field: "score",
+                      operator: "eq",
+                      value: secondPlaceScore,
+                    },
+                    {
+                      field: "eventEra.isRelevant",
+                      operator: "eq",
+                      value: true,
+                    },
+                    {
+                      field: "participants",
+                      operator: "eq",
+                      value: submission.participants,
+                    },
+                  ],
+                },
+                orderBy: [
+                  {
+                    field: "happenedOn",
+                    desc: false,
+                  },
+                ],
+              });
+
+              for (const currentSubmission of secondPlaceSubmissions) {
+                relevantErasUpdateLogPost.secondPlaceSubmissions.push({
+                  submission: currentSubmission,
+                  characters: await this.getSubmissionCharacters(
+                    currentSubmission.id
+                  ),
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // use the first video link, or fall back to first link.
+    const proofLink =
+      submission.externalLinks.find((link) => isVideoUrl(link)) ??
+      submission.externalLinks[0];
+
+    // generate the discord message for soloPBUpdateLogPost
+    // case 1: improvement from X -> Y place
+    if (soloPBUpdateLogPost.relevantChannelIds.size) {
+      if (soloPBUpdateLogPost.currentUserSecondPlaceSubmission) {
+        discordMessageContents.push({
+          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+            soloPBUpdateLogPost.relevantChannelIds.size
+              ? [...soloPBUpdateLogPost.relevantChannelIds]
+                  .map((channelId) => "<#" + channelId + ">")
+                  .join(" ") + "\n\n"
+              : ""
+          }🔸 Improved **Rank ${
+            soloPBUpdateLogPost.currentUserSecondPlaceSubmission.ranking
+          } - ${eventStr} ${
+            soloPBUpdateLogPost.currentUserSecondPlaceSubmission.ranking === 1
+              ? "WR"
+              : "PB"
+          } - ${serializeTime(
+            soloPBUpdateLogPost.currentUserSecondPlaceSubmission.score
+          )}** by\n\`\`\`fix\n${soloPBUpdateLogPost.currentSubmission.characters.join(
+            ", "
+          )}\`\`\`\n🔸 to **Rank ${soloPBUpdateLogPost.ranking} - ${eventStr} ${
+            soloPBUpdateLogPost.isWR ? "WR" : "PB"
+          } - ${serializeTime(
+            submission.score
+          )}**\n\n♦️ **Proof** - <${proofLink}>${
+            submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+          }`,
+          isSoloPersonalBest: true,
+        });
+      } else {
+        // case 2: new on leaderboard
+        const kickedText =
+          soloPBUpdateLogPost.kickedSubmissions &&
+          soloPBUpdateLogPost.kickedSubmissions.length > 0
+            ? `\n🔸 thus kicking **Rank ${
+                soloPBUpdateLogPost.ranksToShow
+              } - ${eventStr} ${
+                soloPBUpdateLogPost.isWR ? "WR" : "PB"
+              } -  ${serializeTime(
+                soloPBUpdateLogPost.kickedSubmissions[0].score
+              )}** by\n${soloPBUpdateLogPost.kickedSubmissions
+                .map(
+                  (submissionObject) =>
+                    `\`\`\`diff\n- ${submissionObject.characters.join(
+                      ", "
+                    )}\`\`\``
+                )
+                .join("\n")}\n🔸 from **Top ${
+                soloPBUpdateLogPost.ranksToShow
+              } - ${eventStr} Ranking**`
+            : "";
+
+        discordMessageContents.push({
+          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+            soloPBUpdateLogPost.relevantChannelIds.size
+              ? [...soloPBUpdateLogPost.relevantChannelIds]
+                  .map((channelId) => "<#" + channelId + ">")
+                  .join(" ") + "\n\n"
+              : ""
+          }🔸 Added new **Rank ${soloPBUpdateLogPost.ranking} - ${eventStr} ${
+            soloPBUpdateLogPost.isWR ? "WR" : "PB"
+          } - ${serializeTime(
+            submission.score
+          )}** by\n\`\`\`fix\n${soloPBUpdateLogPost.currentSubmission.characters.join(
+            ", "
+          )}\`\`\`${
+            kickedText ? kickedText + "\n" : ""
+          }\n♦️ **Proof** - <${proofLink}>${
+            submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+          }`,
+          isSoloPersonalBest: true,
+        });
+      }
+    }
+
+    // generate the discord message for relevantErasUpdateLogPost only if there is not already a discord message.
+    // case 1: isNewWR with at least one secondPlaceWR
+    if (
+      relevantErasUpdateLogPost.relevantChannelIds.size &&
+      discordMessageContents.length < 1
+    ) {
+      if (
+        relevantErasUpdateLogPost.isWR &&
+        !relevantErasUpdateLogPost.isWR.isTie &&
+        relevantErasUpdateLogPost.secondPlaceSubmissions &&
+        relevantErasUpdateLogPost.secondPlaceSubmissions.length > 0
+      ) {
+        discordMessageContents.push({
+          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+            relevantErasUpdateLogPost.relevantChannelIds.size
+              ? [...relevantErasUpdateLogPost.relevantChannelIds]
+                  .map((channelId) => "<#" + channelId + ">")
+                  .join(" ") + "\n\n"
+              : ""
+          }🔸 Replaced **${eventStr} WR - ${serializeTime(
+            relevantErasUpdateLogPost.secondPlaceSubmissions[0].submission.score
+          )}** by\n${relevantErasUpdateLogPost.secondPlaceSubmissions
+            .map(
+              (submissionObject) =>
+                `\`\`\`diff\n- ${submissionObject.characters.join(", ")}\`\`\``
+            )
+            .join("\n")}\n🔸 with **${eventStr} WR - ${serializeTime(
+            submission.score
+          )}** by\n\`\`\`yaml\n+ ${relevantErasUpdateLogPost.currentSubmission.characters.join(
+            ", "
+          )}\`\`\`\n♦️ **Proof** - <${proofLink}>${
+            submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+          }`,
+          isSoloPersonalBest: null,
+        });
+      } else {
+        // if we end up here, relevantErasUpdateLogPost.isWR will always be either false or { isTie: true }
+        discordMessageContents.push({
+          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+            relevantErasUpdateLogPost.relevantChannelIds.size
+              ? [...relevantErasUpdateLogPost.relevantChannelIds]
+                  .map((channelId) => "<#" + channelId + ">")
+                  .join(" ") + "\n\n"
+              : ""
+          }🔸 Added **${eventStr} - ${serializeTime(
+            submission.score
+          )}** by\n\`\`\`fix\n${relevantErasUpdateLogPost.currentSubmission.characters.join(
+            ", "
+          )}\`\`\`\n🔸 ${
+            relevantErasUpdateLogPost.isWR ? "as a tie for" : "to"
+          } **${
+            relevantErasUpdateLogPost.ranking! > 1 ? "Top 3 " : ""
+          }${eventStr}${
+            relevantErasUpdateLogPost.isWR ? " WR" : ""
+          }**\n\n♦️ **Proof** - <${proofLink}>${
+            submission.isRecordingVerified ? "\n*Recording Verified*" : ""
+          }`,
+          isSoloPersonalBest: null,
+        });
+      }
+    }
+
+    // send out the updates
+    for (const discordMessageContent of discordMessageContents) {
       await sendDiscordMessage(channelMap.updateLogs, {
-        content: discordMessageContent,
+        content: discordMessageContent.content,
         components: [
           {
             type: 1,
@@ -1062,6 +1528,7 @@ export class SubmissionService extends PaginatedService {
                   eventEraId: submission["eventEra.id"], // required
                   eventEraMode: eventEraModeKenum.RELEVANT_ERAS.name,
                   participants: submission.participants, // required
+                  isSoloPersonalBest: discordMessageContent.isSoloPersonalBest,
                 }),
               },
             ],
@@ -1134,20 +1601,140 @@ export class SubmissionService extends PaginatedService {
     });
   }
 
+  // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
+  async syncSoloPBState(submissionId: string, eventId: string) {
+    const submissionLinks = await fetchTableRows({
+      select: [{ field: "character.id" }],
+      from: SubmissionCharacterParticipantLink.typename,
+      where: {
+        fields: [
+          {
+            field: "submission",
+            operator: "eq",
+            value: submissionId,
+          },
+        ],
+      },
+    });
+
+    // only need to check for participants = 1
+    if (submissionLinks.length !== 1) return;
+
+    const characterId = submissionLinks[0]["character.id"];
+
+    // get fastest approved submission by user given participants = 1 and event
+    const [fastestRecord, secondFastestRecord] = await fetchTableRows({
+      select: [{ field: "id" }],
+      from: this.typename,
+      where: {
+        fields: [
+          {
+            field: "event",
+            operator: "eq",
+            value: eventId,
+          },
+          {
+            field: "participants",
+            operator: "eq",
+            value: 1,
+          },
+          {
+            field: "status",
+            operator: "eq",
+            value: submissionStatusKenum.APPROVED.index,
+          },
+          {
+            field: "submissionCharacterParticipantLink/character.id",
+            operator: "eq",
+            value: characterId,
+          },
+        ],
+      },
+      orderBy: [
+        {
+          field: "score",
+          desc: false,
+        },
+      ],
+      limit: 2,
+    });
+
+    if (!fastestRecord) {
+      return;
+    }
+
+    // set all of the approved records for user, participants = 1, and eventId to false.
+    // only need to do this if there's more than 1 submission returned
+    if (secondFastestRecord) {
+      // need to lookup IDs since it is not possible to do update where "submissionCharacterParticipantLink/character.id"
+      const submissions = await fetchTableRows({
+        select: [{ field: "id" }],
+        from: this.typename,
+        where: {
+          fields: [
+            {
+              field: "event.id",
+              operator: "eq",
+              value: eventId,
+            },
+            {
+              field: "participants",
+              operator: "eq",
+              value: 1,
+            },
+            {
+              field: "status",
+              operator: "eq",
+              value: submissionStatusKenum.APPROVED.index,
+            },
+            {
+              field: "submissionCharacterParticipantLink/character.id",
+              operator: "eq",
+              value: characterId,
+            },
+          ],
+        },
+      });
+
+      await updateTableRow({
+        fields: {
+          isSoloPersonalBest: false,
+        },
+        table: this.typename,
+        where: {
+          fields: [
+            {
+              field: "id",
+              operator: "in",
+              value: submissions.map((submission) => submission.id),
+            },
+          ],
+        },
+      });
+    }
+
+    // set the fastest record isSoloPersonalBest to true
+    await updateTableRow({
+      fields: {
+        isSoloPersonalBest: true,
+      },
+      table: this.typename,
+      where: {
+        fields: [
+          {
+            field: "id",
+            operator: "eq",
+            value: fastestRecord.id,
+          },
+        ],
+      },
+    });
+  }
+
   async afterUpdateProcess(
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
-  ) {
-    /*
-    return File.updateFileParentKeys(
-      req.user!.id,
-      this.typename,
-      itemId,
-      [args.fields.files],
-      fieldPath
-    );
-    */
-  }
+  ) {}
 
   @permissionsCheck("delete")
   async deleteRecord({
@@ -1176,11 +1763,22 @@ export class SubmissionService extends PaginatedService {
     );
 
     // this is the RELEVANT_ERA rank
-    const ranking = await this.calculateRank({
+    const relevantEraRanking = await this.calculateRank({
       eventId: item["event.id"],
       participants: item.participants,
       eventEraId: null,
       isRelevantEventEra: true,
+      isSoloPersonalBest: null,
+      status: submissionStatusKenum.fromUnknown(item.status),
+      score: item.score,
+    });
+
+    const soloPBRanking = await this.calculateRank({
+      eventId: item["event.id"],
+      participants: item.participants,
+      eventEraId: null,
+      isRelevantEventEra: true,
+      isSoloPersonalBest: true,
       status: submissionStatusKenum.fromUnknown(item.status),
       score: item.score,
     });
@@ -1217,22 +1815,27 @@ export class SubmissionService extends PaginatedService {
       },
     });
 
-    // if the status was APPROVED on the deleted record, need to refresh any discordChannelOutput that had this record in it
+    // if the status was APPROVED on the deleted record, need to sync any leaderboard that contains it
     if (
       submissionStatusKenum.fromUnknown(item.status) ===
       submissionStatusKenum.APPROVED
     ) {
-      await this.handleRankingChange({
+      await this.syncDiscordLeaderboards({
         eventId: item["event.id"],
         participants: item.participants,
         eventEraId: item["eventEra.id"],
-        ranking,
-        fieldPath,
+        relevantEraRanking,
+        soloPBRanking,
       });
+
+      // also need to sync the isSoloPersonalBest state if it is a solo record
+      if (item.participants === 1) {
+        await this.syncSoloPBState(item.id, item["event.id"]);
+      }
     }
 
     // edit the discordMessageId to indicate it was deleted
-    await updateDiscordMessage(channelMap.subAlerts, item.discordChannelId, {
+    await updateDiscordMessage(channelMap.subAlerts, item.discordMessageId, {
       content: "Submission deleted",
     });
 

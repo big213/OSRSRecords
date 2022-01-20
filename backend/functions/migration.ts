@@ -80,6 +80,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("discord_message_id").nullable();
       table.string("evidence_key").nullable();
       table.boolean("is_record").notNullable().defaultTo(false);
+      table.boolean("is_solo_personal_best").notNullable().defaultTo(false);
       table.boolean("is_recording_verified").notNullable().defaultTo(false);
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();
@@ -126,6 +127,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("event_era").nullable();
       table.integer("event_era_mode").notNullable().defaultTo(1);
       table.integer("ranks_to_show").notNullable().defaultTo(1);
+      table.boolean("is_solo_personal_best").nullable();
       table.integer("sort").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
       table.dateTime("updated_at").nullable();

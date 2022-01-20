@@ -168,6 +168,14 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "is_record",
       },
     }),
+    isSoloPersonalBest: generateBooleanField({
+      allowNull: false,
+      defaultValue: false,
+      typeDefOptions: { addable: false, updateable: false },
+      sqlOptions: {
+        field: "is_solo_personal_best",
+      },
+    }),
     isRecordingVerified: generateBooleanField({
       allowNull: false,
       defaultValue: false,
@@ -202,6 +210,10 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
               type: Scalars.boolean,
               allowNull: true,
             }),
+            isSoloPersonalBest: new GiraffeqlInputFieldType({
+              type: Scalars.boolean,
+              allowNull: true,
+            }),
           },
         }),
       }),
@@ -216,6 +228,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
             ? null
             : parentValue.eventEra.id,
           isRelevantEventEra: validatedArgs?.isRelevantEventEra,
+          isSoloPersonalBest: validatedArgs?.isSoloPersonalBest,
           status: submissionStatusKenum.fromUnknown(parentValue.status),
           score: parentValue.score,
         });

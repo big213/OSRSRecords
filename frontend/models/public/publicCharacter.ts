@@ -3,6 +3,10 @@ import { Character } from '../base'
 export const PublicCharacter = {
   ...Character,
   routeName: 'i-view',
+  paginationOptions: {
+    ...Character.paginationOptions,
+    downloadOptions: undefined,
+  },
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,

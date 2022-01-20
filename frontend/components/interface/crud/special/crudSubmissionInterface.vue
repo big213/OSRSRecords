@@ -557,6 +557,12 @@ export default {
             (rawFilterObject) => rawFilterObject.field === 'eventEra.isRelevant'
           )
 
+          const isSoloPersonalBestFilter = this.allFilters.find(
+            (rawFilterObject) =>
+              rawFilterObject.field === 'isSoloPersonalBest' &&
+              rawFilterObject.value !== '__undefined'
+          )
+
           const rankResults = await executeGiraffeql(this, {
             getSubmission: {
               ranking: {
@@ -564,6 +570,7 @@ export default {
                   excludeParticipants: !hasParticipantsFilter,
                   excludeEventEra: !hasEventEraFilter,
                   isRelevantEventEra: isRelevantEventEraFilter?.value ?? null,
+                  isSoloPersonalBest: isSoloPersonalBestFilter?.value ?? null,
                 },
               },
               __args: {

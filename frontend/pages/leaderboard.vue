@@ -79,6 +79,10 @@ export default {
           eventEraId: this.$route.query.eventEraId,
           eventEraMode: this.$route.query.eventEraMode ?? 'RELEVANT_ERAS',
           participants: this.$route.query.participants,
+          isSoloPersonalBest:
+            this.$route.query.isSoloPersonalBest !== undefined
+              ? this.$route.query.isSoloPersonalBest === 'true'
+              : undefined,
         })
           .then((route) => {
             this.$router.push(route)
@@ -96,6 +100,10 @@ export default {
         eventEraId: this.$route.query.eventEraId,
         eventEraMode: this.$route.query.eventEraMode ?? 'RELEVANT_ERAS',
         participants: this.$route.query.participants,
+        isSoloPersonalBest:
+          this.$route.query.isSoloPersonalBest !== undefined
+            ? this.$route.query.isSoloPersonalBest === 'true'
+            : undefined,
       })
         .then((route) => {
           this.$router.push(route)

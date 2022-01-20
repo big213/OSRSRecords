@@ -34,6 +34,7 @@ export function generateLeaderboardRoute(leaderboardInputs: {
   eventEraId: string | null;
   eventEraMode: string | null;
   participants: number | null | "__undefined";
+  isSoloPersonalBest: boolean | null;
 }) {
   // if participants is null, translate to undefined
   const paramsStr: string = Object.entries(leaderboardInputs)
@@ -44,4 +45,9 @@ export function generateLeaderboardRoute(leaderboardInputs: {
   return (
     `${env.site.base_url}/leaderboard` + (paramsStr ? "?" + paramsStr : "")
   );
+}
+
+// checks if a url is some sort of video content
+export function isVideoUrl(url: string) {
+  return url.match(/(.gif$)|(youtube|streamable)/);
 }

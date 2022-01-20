@@ -70,6 +70,12 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       text: 'Ranks to Show',
       default: () => 1,
     },
+    isSoloPersonalBest: {
+      text: 'Show Solo PBs only',
+      inputType: 'switch',
+      default: () => false,
+      component: BooleanColumn,
+    },
     sort: {
       text: 'Sort Order',
       default: (_that) => 10,
@@ -160,6 +166,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'eventEraMode',
       'eventEra',
       'ranksToShow',
+      'isSoloPersonalBest',
     ],
   },
   importOptions: {
@@ -171,6 +178,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'eventEraMode',
       'eventEra.id',
       'ranksToShow',
+      'isSoloPersonalBest',
     ],
   },
   editOptions: {
@@ -182,6 +190,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'eventEraMode',
       'eventEra',
       'ranksToShow',
+      'isSoloPersonalBest',
     ],
   },
   viewOptions: {
@@ -193,6 +202,7 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'eventEraMode',
       'eventEraRecord',
       'ranksToShow',
+      'isSoloPersonalBest',
     ],
   },
   enterOptions: {},

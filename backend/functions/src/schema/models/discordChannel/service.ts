@@ -12,7 +12,11 @@ import {
   sendDiscordMessage,
   updateDiscordMessage,
 } from "../../helpers/discord";
-import { generateLeaderboardRoute, serializeTime } from "../../helpers/common";
+import {
+  generateLeaderboardRoute,
+  isVideoUrl,
+  serializeTime,
+} from "../../helpers/common";
 import { DiscordChannelOutput, Submission } from "../../services";
 import { permissionsCheck } from "../../core/helpers/permissions";
 
@@ -22,6 +26,7 @@ type outputObject = {
   eventEraMode: eventEraModeKenum;
   participants: number | null;
   ranksToShow: number;
+  isSoloPersonalBest: boolean | null;
   submissions: {
     submission: any;
     characters: any[];
@@ -140,6 +145,9 @@ export class DiscordChannelService extends PaginatedService {
         {
           field: "ranksToShow",
         },
+        {
+          field: "isSoloPersonalBest",
+        },
       ],
       from: DiscordChannelOutput.typename,
       where: {
@@ -173,6 +181,7 @@ export class DiscordChannelService extends PaginatedService {
         eventEraId: output["eventEra.id"],
         eventEraMode: eventEraModeKenum.fromUnknown(output.eventEraMode),
         participants: output.participants,
+        isSoloPersonalBest: output.isSoloPersonalBest,
         ranksToShow: output.ranksToShow,
         submissions: [],
       };
@@ -208,12 +217,21 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
+      if (output.isSoloPersonalBest !== null) {
+        additionalFilters.push({
+          field: "isSoloPersonalBest",
+          operator: "eq",
+          value: output.isSoloPersonalBest,
+        });
+      }
+
       const nthScore = await Submission.getNthFastestScore({
         n: output.ranksToShow,
         eventId: output["event.id"],
         eventEraMode: heading.eventEraMode,
         eventEraId: output["eventEra.id"],
         participants: output.participants,
+        isSoloPersonalBest: output.isSoloPersonalBest,
       });
 
       const scoreFilters: SqlWhereFieldObject[] = [];
@@ -325,7 +343,9 @@ export class DiscordChannelService extends PaginatedService {
           } ${serializeTime(
             submissionObject.submission.score
           )} - ${submissionObject.characters.join(", ")} - [Proof](${
-            submissionObject.submission.externalLinks[0]
+            submissionObject.submission.externalLinks.find(
+              (link) => !isVideoUrl(link)
+            ) ?? submissionObject.submission.externalLinks[0]
           })`;
         }
       );
@@ -347,6 +367,7 @@ export class DiscordChannelService extends PaginatedService {
           eventEraId: outputObject.eventEraId, // optional
           eventEraMode: outputObject.eventEraMode.name, // required
           participants: outputObject.participants ?? "__undefined", // required
+          isSoloPersonalBest: outputObject.isSoloPersonalBest,
         }),
         thumbnail: outputObject.event.avatar
           ? {

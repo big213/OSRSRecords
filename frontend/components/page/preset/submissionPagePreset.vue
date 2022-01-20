@@ -264,6 +264,7 @@ export default {
         'eventEra',
         'participants',
         'eventEra.isRelevant',
+        'isSoloPersonalBest',
       ]
 
       const filters = originalPageOptions?.filters
@@ -302,13 +303,43 @@ export default {
       }
 
       if (participantsInputObject.value) {
-        filters.push({
-          field: 'participants',
-          operator: 'eq',
-          value: isObject(participantsInputObject.value)
-            ? participantsInputObject.value.id
-            : participantsInputObject.value,
-        })
+        const participantsValue = isObject(participantsInputObject.value)
+          ? participantsInputObject.value.id
+          : participantsInputObject.value
+
+        if (participantsValue === '__solopb') {
+          filters.push(
+            ...[
+              {
+                field: 'participants',
+                operator: 'eq',
+                value: 1,
+              },
+              {
+                field: 'isSoloPersonalBest',
+                operator: 'eq',
+                value: true,
+              },
+            ]
+          )
+        } else {
+          filters.push(
+            ...[
+              {
+                field: 'participants',
+                operator: 'eq',
+                value: isObject(participantsInputObject.value)
+                  ? participantsInputObject.value.id
+                  : participantsInputObject.value,
+              },
+              {
+                field: 'isSoloPersonalBest',
+                operator: 'eq',
+                value: '__undefined',
+              },
+            ]
+          )
+        }
       }
 
       this.$router.push(
@@ -346,6 +377,23 @@ export default {
           this.setInputValue('eventEra', '__relevant')
         }
 
+        // changed: if participants filter === 1 and isSoloPersonalBest filter is true, translate this to "__solopb" option on participantsInputObject
+        const soloPbMode =
+          rawFilters.find(
+            (rawFilterObject) =>
+              rawFilterObject.field === 'participants' &&
+              rawFilterObject.value === 1
+          ) &&
+          rawFilters.find(
+            (rawFilterObject) =>
+              rawFilterObject.field === 'isSoloPersonalBest' &&
+              rawFilterObject.value === true
+          )
+
+        if (soloPbMode) {
+          this.setInputValue('participants', '__solopb')
+        }
+
         // changed: if there is an eventEra filter, set it
         const eventEraFilter = rawFilters.find(
           (rawFilterObject) => rawFilterObject.field === 'eventEra'
@@ -357,6 +405,9 @@ export default {
         const inputFieldsSet = new Set(this.filterInputsArray)
         promisesArray.push(
           ...rawFilters.map(async (rawFilterObject) => {
+            // changed: skip handling of participants if soloPbMode
+            if (soloPbMode && rawFilterObject.field === 'participants') return
+
             const matchingFilterObject = this.filterInputsArray.find(
               (crudFilterObject) =>
                 crudFilterObject.filterObject.field === rawFilterObject.field &&

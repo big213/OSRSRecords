@@ -889,7 +889,10 @@ export default {
               )
 
               if (matchingFilterObject) {
-                matchingFilterObject.inputObject.value = rawFilterObject.value
+                matchingFilterObject.inputObject.value =
+                  rawFilterObject.value === '__undefined'
+                    ? null
+                    : rawFilterObject.value
 
                 // populate inputObjects if we need to translate any IDs to objects. Do NOT populate the options
                 await populateInputObject(

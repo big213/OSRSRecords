@@ -147,7 +147,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     externalLinks: {
       text: 'Evidence Links',
-      hint: 'Image or video links backing up the submission.',
+      hint: 'Image or video links backing up the submission',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
@@ -259,6 +259,10 @@ export const Submission = <RecordInfo<'submission'>>{
       inputType: 'switch',
       component: BooleanColumn,
     },
+    isSoloPersonalBest: {
+      text: 'Is Solo PB',
+      component: BooleanColumn,
+    },
     world: {
       text: 'World',
       optional: true,
@@ -329,6 +333,11 @@ export const Submission = <RecordInfo<'submission'>>{
         field: 'participants',
         operator: 'eq',
         inputType: 'text',
+      },
+      {
+        field: 'isSoloPersonalBest',
+        operator: 'eq',
+        inputType: 'switch',
       },
       {
         field: 'submissionCharacterParticipantLink/character',
@@ -445,6 +454,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'privateComments',
       'publicComments',
       'discordId',
+      'isSoloPersonalBest',
     ],
   },
   enterOptions: {},

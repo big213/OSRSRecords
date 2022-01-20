@@ -28,7 +28,7 @@ export default {
         hid: 'description',
         name: 'description',
         content:
-          'Website for tracking PvM speedrun records in Old School Runescape',
+          'Website for tracking PvM speedrun records in Old School RuneScape',
       },
       {
         property: 'og:image',

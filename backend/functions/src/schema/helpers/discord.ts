@@ -19,7 +19,7 @@ export const channelMap = {
 };
 
 export async function sendDiscordRequest(
-  method: "get" | "post" | "put" | "delete",
+  method: "get" | "post" | "put" | "delete" | "patch",
   path: string,
   params: any
 ) {
@@ -27,7 +27,7 @@ export async function sendDiscordRequest(
     method,
     url: path,
     headers: authHeaders.headers,
-    params,
+    data: params,
   });
 
   return data;

@@ -462,7 +462,7 @@ export class NormalService extends BaseService {
 
       const isNullLastValue = parsedCursor.last_value === null;
 
-      const operator = primarySortByObject.desc ? "lt" : "gt";
+      const operator = primarySortByObject.desc ? "lte" : "gte";
 
       const whereAndObject: SqlWhereObject = {
         connective: "AND",
@@ -481,17 +481,16 @@ export class NormalService extends BaseService {
       };
 
       // id must be different from the last_id
-      /*
+
       whereAndObject.fields.push({
         field: "id",
         value: parsedCursor.last_id,
         operator: "neq",
       });
-      */
 
       if (isNullLastValue) {
         // if operator is > and is null last value, must allow not null
-        if (operator === "gt") {
+        if (operator === "gte") {
           whereOrObject.fields.push({
             field: primarySortByObject.field,
             value: null,
@@ -500,7 +499,7 @@ export class NormalService extends BaseService {
         }
       } else {
         // if operator is < and not null last value, must allow null
-        if (operator === "lt") {
+        if (operator === "lte") {
           whereOrObject.fields.push({
             field: primarySortByObject.field,
             value: null,
@@ -520,7 +519,7 @@ export class NormalService extends BaseService {
 
       const isNullLastValue = parsedCursor.last_value === null;
 
-      const operator = primarySortByObject.desc ? "gt" : "lt";
+      const operator = primarySortByObject.desc ? "gte" : "lte";
 
       const whereAndObject: SqlWhereObject = {
         connective: "AND",
@@ -539,17 +538,16 @@ export class NormalService extends BaseService {
       };
 
       // id must be neq than the last_id
-      /*
+
       whereAndObject.fields.push({
         field: "id",
         value: parsedCursor.last_id,
         operator: "neq",
       });
-      */
 
       if (isNullLastValue) {
         // if operator is > and is null last value, must allow not null
-        if (operator === "gt") {
+        if (operator === "gte") {
           whereOrObject.fields.push({
             field: primarySortByObject.field,
             value: null,
@@ -558,7 +556,7 @@ export class NormalService extends BaseService {
         }
       } else {
         // if operator is < and not null last value, must allow null
-        if (operator === "lt") {
+        if (operator === "lte") {
           whereOrObject.fields.push({
             field: primarySortByObject.field,
             value: null,
