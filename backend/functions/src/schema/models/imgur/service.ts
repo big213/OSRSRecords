@@ -12,9 +12,11 @@ const prodResource = axios.create({
 });
 
 export class ImgurService extends BaseService {
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    image: () => true,
+  };
 
-  @permissionsCheck("get")
+  @permissionsCheck("discord")
   async sendDiscordRequest({
     req,
     fieldPath,
@@ -36,7 +38,7 @@ export class ImgurService extends BaseService {
     );
   }
 
-  @permissionsCheck("get")
+  @permissionsCheck("image")
   async getImageData({
     req,
     fieldPath,
