@@ -1837,7 +1837,7 @@ export class SubmissionService extends PaginatedService {
     // edit the discordMessageId to indicate it was deleted
     await updateDiscordMessage(channelMap.subAlerts, item.discordMessageId, {
       content: "Submission deleted",
-    });
+    }).catch((e) => e);
 
     return requestedResults;
   }

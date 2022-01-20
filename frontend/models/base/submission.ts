@@ -101,7 +101,7 @@ export const Submission = <RecordInfo<'submission'>>{
           {
             key: 'characterId',
             inputType: 'server-combobox',
-            text: 'RSN',
+            text: 'RSN/Alias',
             inputOptions: {
               typename: 'character',
               cols: 6,
