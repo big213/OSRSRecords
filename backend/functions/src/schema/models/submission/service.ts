@@ -9,12 +9,13 @@ import { PaginatedService } from "../../core/services";
 import {
   sendDiscordMessage,
   channelMap,
-  generateSubmissionMessage,
   updateDiscordMessage,
   generateParticipantsText,
   getGuildMemberId,
   createDMChannel,
-  generateSubmissionDM,
+  generateViewSubmissionButtonComponent,
+  generateSubmissionStatusDropdownComponent,
+  submissionStatusMap,
 } from "../../helpers/discord";
 import {
   countTableRows,
@@ -41,7 +42,6 @@ import {
 } from "../../helpers/common";
 import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
-import e = require("firebase-functions/node_modules/@types/express");
 
 type UpdateLogPostSubmission = {
   submission: any;
@@ -432,7 +432,7 @@ export class SubmissionService extends PaginatedService {
     if (inferredStatus !== submissionStatusKenum.APPROVED) {
       const discordMessage = await sendDiscordMessage(
         channelMap.subAlerts,
-        generateSubmissionMessage(itemId, inferredStatus)
+        await this.generateSubAlertsMessage(itemId, inferredStatus)
       );
 
       // also, if the record was added as NOT approved, also need to DM the discordId, if any
@@ -447,7 +447,7 @@ export class SubmissionService extends PaginatedService {
 
           await sendDiscordMessage(
             dmChannelId,
-            generateSubmissionDM(itemId, inferredStatus)
+            await this.generateSubmissionDM(itemId, inferredStatus, true)
           );
         }
       }
@@ -612,7 +612,7 @@ export class SubmissionService extends PaginatedService {
         await updateDiscordMessage(
           channelMap.subAlerts,
           item.discordMessageId,
-          generateSubmissionMessage(
+          await this.generateSubAlertsMessage(
             item.id,
             submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
           )
@@ -631,9 +631,10 @@ export class SubmissionService extends PaginatedService {
 
           await sendDiscordMessage(
             dmChannelId,
-            generateSubmissionDM(
+            await this.generateSubmissionDM(
               item.id,
-              submissionStatusKenum.fromUnknown(validatedArgs.fields.status)
+              submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
+              false
             )
           );
         }
@@ -1731,6 +1732,124 @@ export class SubmissionService extends PaginatedService {
     });
   }
 
+  // generate some text summarizing a submission
+  async generateSubmissionText(submissionId: string) {
+    // get submission info
+    const [submission] = await fetchTableRows({
+      select: [
+        {
+          field: "id",
+        },
+        {
+          field: "event.name",
+        },
+        {
+          field: "participants",
+        },
+        {
+          field: "score",
+        },
+        {
+          field: "externalLinks",
+        },
+        {
+          field: "happenedOn",
+        },
+        {
+          field: "world",
+        },
+        {
+          field: "privateComments",
+        },
+        {
+          field: "publicComments",
+        },
+        {
+          field: "discordId",
+        },
+      ],
+      from: this.typename,
+      where: {
+        fields: [
+          {
+            field: "id",
+            value: submissionId,
+          },
+        ],
+      },
+    });
+
+    if (!submission) return null;
+
+    const characters = await this.getSubmissionCharacters(submissionId);
+
+    let guildMemberId = null;
+    if (submission.discordId) {
+      guildMemberId = await getGuildMemberId(
+        channelMap.guildId,
+        submission.discordId
+      );
+    }
+
+    return `Happened On: ${formatUnixTimestamp(
+      submission.happenedOn
+    )}\nEvent: ${submission["event.name"]} - ${generateParticipantsText(
+      submission.participants
+    )}\nTime: ${serializeTime(
+      submission.score
+    )}\nTeam Members: ${characters.join(
+      ", "
+    )}\nLinks: ${submission.externalLinks
+      .map((link) => "<" + link + ">")
+      .join("\n")}\nWorld: ${submission.world ?? "N/A"}\nPrivate Comments: ${
+      submission.privateComments ?? "N/A"
+    }\nPublic Comments: ${submission.publicComments ?? "N/A"}\nDiscord User: ${
+      guildMemberId ? "<@" + guildMemberId + ">" : "N/A"
+    }`;
+  }
+
+  async generateSubmissionDM(
+    submissionId: string,
+    selectedOption: submissionStatusKenum,
+    hasDescription: boolean = false
+  ) {
+    const submissionStatusObject = submissionStatusMap[selectedOption.name];
+    return {
+      content: null,
+      embeds: [
+        {
+          title: `Submission ID ${submissionId}\nStatus: ${submissionStatusObject.text}`,
+          color: submissionStatusObject.colorId,
+          ...(hasDescription && {
+            description: await this.generateSubmissionText(submissionId),
+          }),
+        },
+      ],
+      components: [generateViewSubmissionButtonComponent(submissionId, true)],
+    };
+  }
+
+  async generateSubAlertsMessage(
+    submissionId: string,
+    selectedOption: submissionStatusKenum
+  ) {
+    const submissionStatusObject = submissionStatusMap[selectedOption.name];
+    return {
+      content: null,
+      embeds: [
+        {
+          title: `Submission ID ${submissionId}`,
+          description: await this.generateSubmissionText(submissionId),
+          color: submissionStatusObject.colorId,
+        },
+      ],
+      components: [
+        generateViewSubmissionButtonComponent(submissionId, false),
+        generateSubmissionStatusDropdownComponent(submissionId, selectedOption),
+      ],
+    };
+  }
+
   async afterUpdateProcess(
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
@@ -1837,6 +1956,8 @@ export class SubmissionService extends PaginatedService {
     // edit the discordMessageId to indicate it was deleted
     await updateDiscordMessage(channelMap.subAlerts, item.discordMessageId, {
       content: "Submission deleted",
+      embeds: [],
+      components: [],
     }).catch((e) => e);
 
     return requestedResults;

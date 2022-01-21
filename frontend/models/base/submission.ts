@@ -182,7 +182,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     timeElapsed: {
       text: 'Time',
-      hint: 'Type in the numbers only, the numbers will be auto-formatted',
+      hint: 'Type in the numbers only, the numbers will be auto-formatted. Must be a multiple of 0.6 (1 game tick).',
       inputRules: [
         (value) => {
           const regEx = /^(\d+:)?([0-5]?\d:)?[0-5]?\d\.\d{1}$/
@@ -195,7 +195,7 @@ export const Submission = <RecordInfo<'submission'>>{
       ],
       serialize: serializeTime,
       parseValue: (value) => {
-        if (!value) return null
+        if (!value) throw new Error('Time field is required')
         if (typeof value !== 'string') throw new Error('Invalid value')
         const regEx = /^(\d+:)?([0-5]?\d:)?[0-5]?\d\.\d{1}$/
         if (!regEx.test(value)) throw new Error('Invalid value')
@@ -215,7 +215,13 @@ export const Submission = <RecordInfo<'submission'>>{
           ms += Number(firstParts[0]) * 1000
         }
         // round to tens
-        return 10 * Math.floor(ms / 10)
+        const roundedMs = 10 * Math.floor(ms / 10)
+
+        // confirm if the time is a multiple of 600
+        if (roundedMs % 600 !== 0)
+          throw new Error('Time field must be a multiple of 0.6 (1 game tick)')
+
+        return roundedMs
       },
     },
     happenedOn: {

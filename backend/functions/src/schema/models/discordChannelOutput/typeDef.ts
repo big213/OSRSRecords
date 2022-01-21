@@ -60,6 +60,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       },
       defaultValue: 1,
     }),
+    linesLimit: generateIntegerField({
+      allowNull: true,
+      sqlOptions: {
+        field: "lines_limit",
+      },
+    }),
     isSoloPersonalBest: generateBooleanField({
       allowNull: true,
       sqlOptions: {

@@ -127,6 +127,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.string("event_era").nullable();
       table.integer("event_era_mode").notNullable().defaultTo(1);
       table.integer("ranks_to_show").notNullable().defaultTo(1);
+      table.integer("lines_limit").nullable();
       table.boolean("is_solo_personal_best").nullable();
       table.integer("sort").notNullable();
       table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());

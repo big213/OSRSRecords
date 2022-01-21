@@ -200,15 +200,14 @@ export default {
             externalLinksInputObject.nestedInputsArray.find(
               (nestedInputObjectArray) => {
                 const value = nestedInputObjectArray[0].inputObject.value
-                console.log(value)
                 if (!value) return false
-                return value.match(/https:\/\/i.imgur.com\/(.*?)\..*/)
+                return value.match(/imgur.com\/(\w*)(\.\w*)?$/)
               }
             )[0]?.inputObject.value
 
           if (validImgurExternalLink) {
             const regexMatch = validImgurExternalLink.match(
-              /https:\/\/i.imgur.com\/(.*?)\..*/
+              /imgur.com\/(\w*)(\.\w*)?$/
             )
 
             if (regexMatch) {

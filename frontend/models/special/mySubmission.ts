@@ -7,8 +7,8 @@ export const MySubmission = {
     fields: [
       'event',
       'eventEra',
-      'participantsList',
       'timeElapsed',
+      'participantsList',
       'externalLinks',
       'happenedOn',
       'world',

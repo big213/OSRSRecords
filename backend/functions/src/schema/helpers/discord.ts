@@ -186,43 +186,6 @@ export function generateViewSubmissionButtonComponent(
   };
 }
 
-export function generateSubmissionMessage(
-  submissionId: string,
-  selectedOption: submissionStatusKenum
-) {
-  const submissionStatusObject = submissionStatusMap[selectedOption.name];
-  return {
-    content: null,
-    embeds: [
-      {
-        title: `Submission ID ${submissionId}`,
-        color: submissionStatusObject.colorId,
-      },
-    ],
-    components: [
-      generateViewSubmissionButtonComponent(submissionId, false),
-      generateSubmissionStatusDropdownComponent(submissionId, selectedOption),
-    ],
-  };
-}
-
-export function generateSubmissionDM(
-  submissionId: string,
-  selectedOption: submissionStatusKenum
-) {
-  const submissionStatusObject = submissionStatusMap[selectedOption.name];
-  return {
-    content: null,
-    embeds: [
-      {
-        title: `Submission ID ${submissionId}\nStatus: ${submissionStatusObject.text}`,
-        color: submissionStatusObject.colorId,
-      },
-    ],
-    components: [generateViewSubmissionButtonComponent(submissionId, true)],
-  };
-}
-
 const participantsTextMap = {
   "0": "Unknown",
   "1": "Solo",

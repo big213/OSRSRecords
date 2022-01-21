@@ -26,6 +26,7 @@ type outputObject = {
   eventEraMode: eventEraModeKenum;
   participants: number | null;
   ranksToShow: number;
+  linesLimit: number | null;
   isSoloPersonalBest: boolean | null;
   submissions: {
     submission: any;
@@ -146,6 +147,9 @@ export class DiscordChannelService extends PaginatedService {
           field: "ranksToShow",
         },
         {
+          field: "linesLimit",
+        },
+        {
           field: "isSoloPersonalBest",
         },
       ],
@@ -183,6 +187,7 @@ export class DiscordChannelService extends PaginatedService {
         participants: output.participants,
         isSoloPersonalBest: output.isSoloPersonalBest,
         ranksToShow: output.ranksToShow,
+        linesLimit: output.linesLimit,
         submissions: [],
       };
       outputArray.push(heading);
@@ -290,6 +295,7 @@ export class DiscordChannelService extends PaginatedService {
             desc: false,
           },
         ],
+        limit: output.linesLimit ?? undefined,
       });
 
       heading.submissions.push(
@@ -350,8 +356,13 @@ export class DiscordChannelService extends PaginatedService {
         }
       );
 
-      // if descriptionArray's last place is < outputObject.ranksToShow, fill in the remaining places
-      while (currentPlace < outputObject.ranksToShow) {
+      // if descriptionArray's last place is < outputObject.ranksToShow, fill in the remaining places. do not exceed linesLimit, if not null
+      while (
+        currentPlace < outputObject.ranksToShow &&
+        (!outputObject.linesLimit ||
+          (outputObject.linesLimit &&
+            descriptionArray.length < outputObject.linesLimit))
+      ) {
         currentPlace++;
         descriptionArray.push(
           `${placeEmojisMap[currentPlace] ?? "(" + currentPlace + ")"} N/A`
