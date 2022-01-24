@@ -187,23 +187,46 @@ export default {
         }
 
         // changed: set discordId field if first participant's discordId is populated
-        if (inputs.participantsList.length > 0) {
+        if (this.mode === 'add' && inputs.participantsList.length > 0) {
           inputs.discordId = inputs.participantsList[0].discordId
         }
 
-        // changed: if happenedOn field is empty, attempt to fetch it from the first externalLink, if it is an imgur link
-        if (!inputs.happenedOn) {
-          // check if the first externalLink follows the imgur pattern
-          const externalLinksInputObject = this.getInputObject('externalLinks')
+        // changed: if any externalLinks are badly formatted (i.e. not i.imgur.com/asdf.xyz), attempt to rectify this
+        await Promise.all(
+          inputs.externalLinks.map(async (link, index) => {
+            // if it matches https://imgur.com/asdf, convert to i.imgur
+            const firstMatch = link.match(/\/imgur.com\/(\w*)$/)
+            // if it matches https://imgur.com/a/asdf, convert to i.imgur with first album image
+            const secondMatch = link.match(/\/imgur.com\/a\/(\w*)$/)
+            if (firstMatch) {
+              const imageData = await executeGiraffeql(this, {
+                getImgurImage: {
+                  __args: firstMatch[1],
+                },
+              })
 
-          const validImgurExternalLink =
-            externalLinksInputObject.nestedInputsArray.find(
-              (nestedInputObjectArray) => {
-                const value = nestedInputObjectArray[0].inputObject.value
-                if (!value) return false
-                return value.match(/imgur.com\/(\w*)(\.\w*)?$/)
-              }
-            )[0]?.inputObject.value
+              inputs.externalLinks[index] = imageData.link
+            } else if (secondMatch) {
+              const albumData = await executeGiraffeql(this, {
+                getImgurAlbum: {
+                  __args: secondMatch[1],
+                },
+              })
+
+              if (albumData.images.length < 1)
+                throw new Error('Empty imgur album')
+
+              inputs.externalLinks[index] = albumData.images[0].link
+            }
+          })
+        )
+
+        // changed: if happenedOn field is empty, attempt to fetch it from a valid imgur link, if any
+        if (!inputs.happenedOn) {
+          // find the first exteralLink that follows the imgur pattern, if any
+          const validImgurExternalLink = inputs.externalLinks.find((link) =>
+            link.match(/imgur.com\/(\w*)(\.\w*)?$/)
+          )
 
           if (validImgurExternalLink) {
             const regexMatch = validImgurExternalLink.match(
@@ -212,7 +235,7 @@ export default {
 
             if (regexMatch) {
               const imageData = await executeGiraffeql(this, {
-                getImgurData: {
+                getImgurImage: {
                   __args: regexMatch[1],
                 },
               })

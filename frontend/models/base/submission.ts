@@ -94,7 +94,7 @@ export const Submission = <RecordInfo<'submission'>>{
         'participantsList.discordId',
         'participantsList.characterId',
       ],
-      hint: 'The person submitting the record should put their RSN/Discord ID as the first entry',
+      hint: 'The person submitting the record should put their RSN/Discord ID as the first entry. One RSN per row only.',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
@@ -413,8 +413,8 @@ export const Submission = <RecordInfo<'submission'>>{
       'event',
       'eventEra',
       'timeElapsed',
-      'happenedOn',
       'externalLinks',
+      'happenedOn',
       'participantsList',
       'world',
       // 'files',

@@ -326,7 +326,7 @@ export class SubmissionService extends PaginatedService {
 
     // changed: check if happenedOn is between beginDate and endDate for eventEra
     const eventEraRecord = await EventEra.lookupRecord(
-      ["beginDate", "endDate"],
+      ["beginDate", "endDate", "event.id"],
       { id: validatedArgs.eventEra },
       fieldPath
     );
@@ -344,6 +344,14 @@ export class SubmissionService extends PaginatedService {
     ) {
       throw new GiraffeqlBaseError({
         message: `HappenedOn cannot be after the eventEra's end date`,
+        fieldPath,
+      });
+    }
+
+    // changed: confirm if eventEra.event is same as event
+    if (eventEraRecord["event.id"] !== validatedArgs.event) {
+      throw new GiraffeqlBaseError({
+        message: `eventEra must correspond to the event`,
         fieldPath,
       });
     }
@@ -380,7 +388,7 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
-    // if the record was added as approved, also need to run syncSubmissionIsRecord
+    // if the record was added as approved, also need to run syncSubmissionIsRecord and syncSoloPBState
     // HOWEVER, will NOT be triggering broadcastUpdateLogs and syncDiscordLeaderboards. admin can flick the status if they want to trigger these events
     if (inferredStatus === submissionStatusKenum.APPROVED) {
       await this.syncSubmissionIsRecord(
@@ -1795,11 +1803,9 @@ export class SubmissionService extends PaginatedService {
       submission.happenedOn
     )}\nEvent: ${submission["event.name"]} - ${generateParticipantsText(
       submission.participants
-    )}\nTime: ${serializeTime(
-      submission.score
-    )}\nTeam Members: ${characters.join(
-      ", "
-    )}\nLinks: ${submission.externalLinks
+    )}\nTime: ${serializeTime(submission.score)}\nTeam Members: (${
+      submission.participants
+    }) ${characters.join(", ")}\nLinks: ${submission.externalLinks
       .map((link) => "<" + link + ">")
       .join("\n")}\nWorld: ${submission.world ?? "N/A"}\nPrivate Comments: ${
       submission.privateComments ?? "N/A"

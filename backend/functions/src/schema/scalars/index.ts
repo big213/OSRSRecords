@@ -29,6 +29,8 @@ export { regex } from "./regex";
 export { json } from "./json";
 export { jsonString } from "./jsonString";
 
+export { rsn } from "./rsn";
+
 // generated scalars
 export const submissionStatus = new GiraffeqlScalarType(
   generateKenumScalarDefinition("submissionStatus", submissionStatusKenum)

@@ -27,7 +27,8 @@ export async function sendDiscordRequest(
     method,
     url: path,
     headers: authHeaders.headers,
-    data: params,
+    params: method === "get" ? params : null,
+    data: method !== "get" ? params : null,
   });
 
   return data;

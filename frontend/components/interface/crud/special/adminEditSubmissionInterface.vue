@@ -9,11 +9,10 @@
       <v-container v-else class="px-0">
         <v-row>
           <v-col v-if="mode === 'add'" cols="12" class="py-0">
-            <v-text-field
+            <v-textarea
               v-model="teamMembersInput"
               label="Time + Team Members (Express Input)"
-              @change="handleTeamMembersInputChange"
-            ></v-text-field>
+            ></v-textarea>
           </v-col>
           <v-col
             v-for="(inputObject, i) in actualVisibleInputsArray"
@@ -152,14 +151,34 @@ export default {
       let timeStr
       let charactersStr
 
-      const regexMatch = val.match(/^(\d|:|\.)*(\s*)-?(\s)*/)
+      // split the string by space and find anything with a link in it
+      const linksArray = val.split(' ').filter((part) => part.match(/^https:/))
+
+      const remainingStr = val
+        .split(' ')
+        .filter((part) => !part.match(/^https:/))
+        .join(' ')
+
+      // does the remaining string match this pattern? if so, parse out the 2nd capture group
+      const specialRegexMatch = remainingStr.match(
+        /^((?:\d|:|\.)*)(?:.*)\s*-\s*(.*)/
+      )
+
       // if the string starts with some time-related digits, split it out and use that
-      if (regexMatch) {
-        timeStr = regexMatch[0].replace(/\s|-/g, '')
-        charactersStr = val.replace(regexMatch[0], '')
+      const regexMatch = remainingStr.match(/^((?:\d|:|\.)*)\s*-?\s*(.*)/)
+
+      if (specialRegexMatch) {
+        timeStr = specialRegexMatch[1]
+        charactersStr = specialRegexMatch[2]
+      } else if (regexMatch) {
+        timeStr = regexMatch[1]
+        charactersStr = regexMatch[2]
       } else {
-        charactersStr = val
+        charactersStr = remainingStr
       }
+
+      // remove links from characterStr
+      charactersStr = charactersStr.split('https:')[0]
 
       // set the timeElapsed to timeStr if it exists
       if (timeStr) {
@@ -196,6 +215,17 @@ export default {
         addNestedInputObject(participantsListInputObject, {
           discordId: null,
           characterId: charName,
+        })
+      })
+
+      // add any links
+      const externalLinksInputObject = this.getInputObject('externalLinks')
+      // clear any existing nested inputs
+      externalLinksInputObject.nestedInputsArray = []
+
+      linksArray.forEach((link) => {
+        addNestedInputObject(externalLinksInputObject, {
+          main: link,
         })
       })
     },
@@ -246,6 +276,14 @@ export default {
     async submit() {
       this.loading.editRecord = true
       try {
+        // changed: if the teamMembersInput is not empty, try to use it
+        if (this.teamMembersInput) {
+          // process first line only
+          const lineToProcess = this.teamMembersInput.split('\n')[0]
+
+          this.handleTeamMembersInputChange(lineToProcess)
+        }
+
         const inputs = {}
 
         for (const inputObject of this.inputsArray) {
@@ -259,19 +297,42 @@ export default {
           inputs.discordId = inputs.participantsList[0].discordId
         }
 
-        // changed: if happenedOn field is empty, attempt to fetch it from the first externalLink, if it is an imgur link
+        // changed: if any externalLinks are badly formatted (i.e. not i.imgur.com/asdf.xyz), attempt to rectify this
+        await Promise.all(
+          inputs.externalLinks.map(async (link, index) => {
+            // if it matches https://imgur.com/asdf, convert to i.imgur
+            const firstMatch = link.match(/\/imgur.com\/(\w*)$/)
+            // if it matches https://imgur.com/a/asdf, convert to i.imgur with first album image
+            const secondMatch = link.match(/\/imgur.com\/a\/(\w*)$/)
+            if (firstMatch) {
+              const imageData = await executeGiraffeql(this, {
+                getImgurImage: {
+                  __args: firstMatch[1],
+                },
+              })
+
+              inputs.externalLinks[index] = imageData.link
+            } else if (secondMatch) {
+              const albumData = await executeGiraffeql(this, {
+                getImgurAlbum: {
+                  __args: secondMatch[1],
+                },
+              })
+
+              if (albumData.images.length < 1)
+                throw new Error('Empty imgur album')
+
+              inputs.externalLinks[index] = albumData.images[0].link
+            }
+          })
+        )
+
+        // changed: if happenedOn field is empty, attempt to fetch it from a valid imgur link, if any
         if (!inputs.happenedOn) {
           // find the first exteralLink that follows the imgur pattern, if any
-          const externalLinksInputObject = this.getInputObject('externalLinks')
-
-          const validImgurExternalLink =
-            externalLinksInputObject.nestedInputsArray.find(
-              (nestedInputObjectArray) => {
-                const value = nestedInputObjectArray[0].inputObject.value
-                if (!value) return false
-                return value.match(/imgur.com\/(\w*)(\.\w*)?$/)
-              }
-            )[0]?.inputObject.value
+          const validImgurExternalLink = inputs.externalLinks.find((link) =>
+            link.match(/imgur.com\/(\w*)(\.\w*)?$/)
+          )
 
           if (validImgurExternalLink) {
             const regexMatch = validImgurExternalLink.match(
@@ -280,7 +341,7 @@ export default {
 
             if (regexMatch) {
               const imageData = await executeGiraffeql(this, {
-                getImgurData: {
+                getImgurImage: {
                   __args: regexMatch[1],
                 },
               })
@@ -345,6 +406,12 @@ export default {
           variant: 'success',
         })
 
+        // changed: trim the first line from the input
+        this.teamMembersInput = this.teamMembersInput
+          .split('\n')
+          .slice(1)
+          .join('\n')
+
         // this.handleSubmitSuccess(data)
         // changed:
         this.$emit('handleSubmit', data)
@@ -352,6 +419,19 @@ export default {
         // reset inputs
         // this.resetInputs()
       } catch (err) {
+        // changed: custom error handling if the error is a duplicate evidence key error
+        if (
+          err.response &&
+          err.response.data.error.message.startsWith(
+            'An existing approved submission with this evidenceKey-event'
+          )
+        ) {
+          // changed: trim the first line from the input
+          this.teamMembersInput = this.teamMembersInput
+            .split('\n')
+            .slice(1)
+            .join('\n')
+        }
         handleError(this, err)
       }
       this.loading.editRecord = false

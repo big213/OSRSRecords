@@ -10,6 +10,7 @@ import {
   generateTypenameField,
   generateJoinableField,
 } from "../../core/helpers/typeDef";
+import { Scalars } from "../..";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: Character.typename,
@@ -19,6 +20,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     ...generateTypenameField(Character),
     name: generateStringField({
       allowNull: false,
+      type: Scalars.rsn,
     }),
     standardizedName: generateStringField({
       allowNull: false,

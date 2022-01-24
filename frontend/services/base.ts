@@ -613,6 +613,7 @@ export function addNestedInputObject(
           clearable: true,
           closeable: false,
           optional: nestedFieldInfo.optional,
+          inputRules: nestedFieldInfo.inputRules,
           label: nestedFieldInfo.text ?? nestedFieldInfo.key,
           inputType: nestedFieldInfo.inputType,
           inputOptions: nestedFieldInfo.inputOptions,

@@ -14,6 +14,7 @@ app.use(express.raw());
 
 app.post("*", verifyKeyMiddleware(env.discord.public_key), async (req, res) => {
   try {
+    // validation of roles/users is not required as this can only be called from a channel which admins have access to, and requests are necessarily from Discord (validated thru middleware)
     const message = req.body;
     if (message.type === InteractionType.APPLICATION_COMMAND) {
       res.send({

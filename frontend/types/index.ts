@@ -219,6 +219,7 @@ type InputOptions = {
     inputOptions?: InputOptions
     optional?: boolean
     hint?: string
+    inputRules?: any[]
     getOptions?: (that) => Promise<any[]>
   }[]
 }

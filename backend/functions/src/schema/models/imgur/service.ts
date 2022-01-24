@@ -6,6 +6,7 @@ import { env } from "../../../config";
 import { EventEra, Submission } from "../../services";
 import { updateTableRow } from "../../core/helpers/sql";
 import { sendDiscordRequest } from "../../helpers/discord";
+import * as fs from "fs";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -48,6 +49,34 @@ export class ImgurService extends BaseService {
   }: ServiceFunctionInputs) {
     const validatedArgs = <any>args;
     const { data } = await prodResource.get("/image/" + validatedArgs, {
+      headers: {
+        Authorization: "Client-ID " + env.imgur.client_id,
+      },
+    });
+
+    // fetch all links from a channel
+    /*
+    const allLinksSet = await this.fetchAllLinksFromChannel(
+      "619593082790346787"
+    );
+
+    const allLinksStr = [...allLinksSet].join("\n");
+    fs.writeFileSync("src/abc.txt", allLinksStr);
+    */
+
+    return data.data;
+  }
+
+  @permissionsCheck("image")
+  async getAlbumData({
+    req,
+    fieldPath,
+    args,
+    query,
+    isAdmin = false,
+  }: ServiceFunctionInputs) {
+    const validatedArgs = <any>args;
+    const { data } = await prodResource.get("/album/" + validatedArgs, {
       headers: {
         Authorization: "Client-ID " + env.imgur.client_id,
       },
@@ -96,6 +125,59 @@ export class ImgurService extends BaseService {
         submission.eventId
       );
     }
+  }
+
+  async fetchAllLinksFromChannel(channelId: string) {
+    const allLinksSet = new Set();
+
+    let lastMessageId = null;
+    let isFirstIteration = true;
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    while (isFirstIteration || lastMessageId !== null) {
+      const data = await sendDiscordRequest(
+        "get",
+        `/channels/${channelId}/messages`,
+        lastMessageId
+          ? {
+              before: lastMessageId,
+            }
+          : null
+      );
+
+      data.forEach((message) => {
+        // get urls from content
+        if (message.content) {
+          const urlsMatch = message.content.match(/https:\/\/[^\s]*/g);
+          if (urlsMatch) urlsMatch.forEach((url) => allLinksSet.add(url));
+        }
+
+        // get urls from embeds
+        if (message.embeds) {
+          message.embeds.forEach((embed) => {
+            allLinksSet.add(embed.thumbnail.url);
+          });
+        }
+      });
+
+      // if no results returned, set lastMessageId to null
+      if (data.length < 1) {
+        lastMessageId = null;
+      } else {
+        // else set it to the id of the last item returned
+        lastMessageId = data[data.length - 1].id;
+      }
+
+      isFirstIteration = false;
+
+      // need to wait 1000ms to prevent rate limiting
+      await sleep(1000);
+    }
+
+    return allLinksSet;
   }
 
   async syncEvidenceKey() {
