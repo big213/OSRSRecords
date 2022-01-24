@@ -407,11 +407,13 @@ export default {
           variant: 'success',
         })
 
-        // changed: trim the first line from the input
-        this.teamMembersInput = this.teamMembersInput
-          .split('\n')
-          .slice(1)
-          .join('\n')
+        // changed: trim the first line from the input if there is any
+        if (this.teamMembersInput) {
+          this.teamMembersInput = this.teamMembersInput
+            .split('\n')
+            .slice(1)
+            .join('\n')
+        }
 
         // this.handleSubmitSuccess(data)
         // changed:
