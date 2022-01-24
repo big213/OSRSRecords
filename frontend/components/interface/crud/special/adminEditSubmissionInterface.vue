@@ -351,8 +351,9 @@ export default {
           }
         }
 
+        // changed: set the eventEra based on the happenedOn date
         const eventEraInputObject = this.getInputObject('eventEra')
-        // set the eventEra based on the happenedOn date
+
         const matchingEventEra = eventEraInputObject.options.find(
           (eventEra) => {
             return (

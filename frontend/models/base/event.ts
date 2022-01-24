@@ -10,7 +10,7 @@ import {
   generateJoinableField,
   generatePreviewableRecordField,
 } from '~/services/recordInfo'
-import { PublicEventEra } from '../public/publicEventEra'
+import { EventEra } from './eventEra'
 
 export const Event = <RecordInfo<'event'>>{
   typename: 'event',
@@ -203,7 +203,7 @@ export const Event = <RecordInfo<'event'>>{
   shareOptions: {},
   expandTypes: [
     {
-      recordInfo: PublicEventEra,
+      recordInfo: EventEra,
       lockedFilters: (_that, item) => {
         return [
           {

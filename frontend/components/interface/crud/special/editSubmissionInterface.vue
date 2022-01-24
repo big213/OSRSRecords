@@ -245,6 +245,25 @@ export default {
           }
         }
 
+        // changed: set the eventEra based on the happenedOn date
+        const eventEraInputObject = this.getInputObject('eventEra')
+
+        const matchingEventEra = eventEraInputObject.options.find(
+          (eventEra) => {
+            return (
+              inputs.happenedOn >= eventEra.beginDate &&
+              (eventEra.endDate === null ||
+                inputs.happenedOn <= eventEra.endDate)
+            )
+          }
+        )
+
+        if (!matchingEventEra) {
+          throw new Error('No matching eventEra for the happenedOn date')
+        }
+
+        inputs['eventEra.id'] = matchingEventEra.id
+
         // add/copy mode
         let query
         if (this.mode === 'add' || this.mode === 'copy') {
