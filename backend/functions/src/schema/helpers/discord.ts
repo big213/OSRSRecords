@@ -47,6 +47,19 @@ export async function sendDiscordMessage(
   return data;
 }
 
+export async function crosspostDiscordMessage(
+  channelId: string,
+  messageId: string
+) {
+  const { data } = await discordApi.post(
+    `/channels/${channelId}/messages/${messageId}/crosspost`,
+    null,
+    authHeaders
+  );
+
+  return data;
+}
+
 export async function updateDiscordMessage(
   channelId: string,
   messageId: string,

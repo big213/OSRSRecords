@@ -37,7 +37,7 @@
 
 <script>
 import { executeGiraffeql } from '~/services/giraffeql'
-import { copyToClipboard } from '~/services/base'
+import { copyToClipboard, getBuildVersion } from '~/services/base'
 import firebase from '~/services/fireinit'
 import 'firebase/auth'
 
@@ -52,9 +52,7 @@ export default {
   },
 
   mounted() {
-    this.currentVersion = process.env.VER
-      ? process.env.VER.split('/').pop()
-      : 'DEV'
+    this.currentVersion = getBuildVersion()
     executeGiraffeql(this, {
       getRepositoryLatestVersion: true,
     }).then((res) => {

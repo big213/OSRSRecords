@@ -147,7 +147,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     externalLinks: {
       text: 'Evidence Links',
-      hint: 'Image or video links backing up the submission',
+      hint: 'Image or video links backing up the submission. At least 1 gif/video preferred.',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
@@ -159,11 +159,12 @@ export const Submission = <RecordInfo<'submission'>>{
           },
         ],
       },
-      default: () => [null],
+      default: () => [null, null],
       parseValue: (val) => {
         if (!Array.isArray(val)) throw new Error('Array expected')
 
-        return val.map((ele) => ele.main)
+        // filter out falsey values
+        return val.filter((ele) => ele).map((ele) => ele.main)
       },
       serialize: (val) => {
         if (!Array.isArray(val)) return []
@@ -228,7 +229,7 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Happened On',
       inputType: 'datepicker',
       optional: true,
-      hint: 'If you used at least one https://i.imgur.com/abcdefg.xyz link in the evidence, you can leave this blank',
+      hint: 'If you used at least one imgur link in the evidence links, you can leave this blank',
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
       component: DateStringColumn,
@@ -259,6 +260,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     discordId: {
       text: 'Discord ID',
+      hint: 'We will use this to contact you if there are any issues with the submission. Example: username#1234',
     },
     isCurrent: {
       text: 'Is Current',

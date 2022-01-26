@@ -34,7 +34,7 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
     },
   },
   paginationOptions: {
-    hasSearch: false,
+    hasSearch: true,
     filterOptions: [],
     sortOptions: [
       {

@@ -292,8 +292,12 @@ export default {
           )
         }
 
-        // changed: only on add mode, set discordId field if first participant's discordId is populated
-        if (this.mode === 'add' && inputs.participantsList.length > 0) {
+        // changed: set discordId field if first participant's discordId is populated and the discordId field is not populated
+        if (
+          this.mode === 'add' &&
+          inputs.participantsList.length > 0 &&
+          !inputs.discordId
+        ) {
           inputs.discordId = inputs.participantsList[0].discordId
         }
 

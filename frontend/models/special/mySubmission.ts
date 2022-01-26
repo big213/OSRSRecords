@@ -15,6 +15,7 @@ export const MySubmission = {
       // 'files',
       'privateComments',
       'publicComments',
+      'discordId',
       // 'status',
     ],
     component: EditSubmissionInterface,

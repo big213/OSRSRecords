@@ -795,10 +795,15 @@ export default {
     },
 
     async loadMore() {
-      this.reloadGeneration++
+      // save snapshot of currentReloadGeneration
+      const currentReloadGeneration = this.reloadGeneration
+
       this.loading.loadMore = true
       try {
         const results = await this.fetchData()
+
+        // if reloadGeneration is behind the latest one, do not load the results into this.records, as the loadData request has been superseded
+        if (currentReloadGeneration < this.reloadGeneration) return
 
         this.records.push(...results.edges.map((ele) => ele.node))
 
@@ -845,10 +850,10 @@ export default {
       this.loading.syncData = true
       if (showLoader) this.loading.loadData = true
       try {
-        // if reloadGeneration is behind the latest one, end execution early, as the loadData request has been superseded
-        if (currentReloadGeneration < this.reloadGeneration) return
-
         const results = await this.fetchData()
+
+        // if reloadGeneration is behind the latest one, do not load the results into this.records, as the loadData request has been superseded
+        if (currentReloadGeneration < this.reloadGeneration) return
 
         this.records = results.edges.map((ele) => ele.node)
 
@@ -935,7 +940,7 @@ export default {
     } = {}) {
       if (clearRecords) {
         this.records = []
-        this.totalRecords = 0
+        this.totalRecords = null
       }
 
       if (initFilters) {

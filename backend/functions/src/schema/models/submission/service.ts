@@ -16,6 +16,7 @@ import {
   generateViewSubmissionButtonComponent,
   generateSubmissionStatusDropdownComponent,
   submissionStatusMap,
+  crosspostDiscordMessage,
 } from "../../helpers/discord";
 import {
   countTableRows,
@@ -1522,7 +1523,7 @@ export class SubmissionService extends PaginatedService {
 
     // send out the updates
     for (const discordMessageContent of discordMessageContents) {
-      await sendDiscordMessage(channelMap.updateLogs, {
+      const discordMessage = await sendDiscordMessage(channelMap.updateLogs, {
         content: discordMessageContent.content,
         components: [
           {
@@ -1544,6 +1545,9 @@ export class SubmissionService extends PaginatedService {
           },
         ],
       });
+
+      // publish each broadcasted message as well
+      await crosspostDiscordMessage(channelMap.updateLogs, discordMessage.id);
     }
   }
 

@@ -316,6 +316,10 @@ export function downloadCSV(
   }
 }
 
+export function getBuildVersion() {
+  return process.env.VER ? process.env.VER.split('/').pop() : 'DEV'
+}
+
 export function handleError(that, err) {
   if (that) {
     // error thrown by server
@@ -331,6 +335,7 @@ export function handleError(that, err) {
           {
             ...err.response.data.error,
             payload: err.response.config.data,
+            build: getBuildVersion(),
           },
           null,
           2
@@ -345,6 +350,7 @@ export function handleError(that, err) {
         copyableMessage: JSON.stringify(
           {
             message: err.message,
+            build: getBuildVersion(),
             stack: err.stack,
           },
           null,
