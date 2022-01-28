@@ -1814,7 +1814,7 @@ export class SubmissionService extends PaginatedService {
       .join("\n")}\nWorld: ${submission.world ?? "N/A"}\nPrivate Comments: ${
       submission.privateComments ?? "N/A"
     }\nPublic Comments: ${submission.publicComments ?? "N/A"}\nDiscord User: ${
-      guildMemberId ? "<@" + guildMemberId + ">" : "N/A"
+      guildMemberId ? `<@${guildMemberId}> (${submission.discordId})` : "N/A"
     }`;
   }
 

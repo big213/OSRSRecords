@@ -198,6 +198,8 @@ export default {
         // changed: if any externalLinks are badly formatted (i.e. not i.imgur.com/asdf.xyz), attempt to rectify this
         await Promise.all(
           inputs.externalLinks.map(async (link, index) => {
+            if (!link) return
+
             // if it matches https://imgur.com/asdf, convert to i.imgur
             const firstMatch = link.match(/\/imgur.com\/(\w*)$/)
             // if it matches https://imgur.com/a/asdf, convert to i.imgur with first album image
@@ -228,8 +230,8 @@ export default {
         // changed: if happenedOn field is empty, attempt to fetch it from a valid imgur link, if any
         if (!inputs.happenedOn) {
           // find the first exteralLink that follows the imgur pattern, if any
-          const validImgurExternalLink = inputs.externalLinks.find((link) =>
-            link.match(/imgur.com\/(\w*)(\.\w*)?$/)
+          const validImgurExternalLink = inputs.externalLinks.find(
+            (link) => link && link.match(/imgur.com\/(\w*)(\.\w*)?$/)
           )
 
           if (validImgurExternalLink) {

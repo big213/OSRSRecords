@@ -164,7 +164,7 @@ export const Submission = <RecordInfo<'submission'>>{
         if (!Array.isArray(val)) throw new Error('Array expected')
 
         // filter out falsey values
-        return val.filter((ele) => ele).map((ele) => ele.main)
+        return val.map((ele) => ele.main).filter((ele) => ele)
       },
       serialize: (val) => {
         if (!Array.isArray(val)) return []
