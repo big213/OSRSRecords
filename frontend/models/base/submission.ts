@@ -448,6 +448,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'publicComments',
       'reviewerComments',
       'isRecordingVerified',
+      'status',
       'discordId',
     ],
     component: AdminEditSubmissionInterface,

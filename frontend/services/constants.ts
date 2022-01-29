@@ -17,14 +17,12 @@ export const submissionStatusArray = [
     text: 'Approved',
     color: 'green',
   },
-  /*
   {
     index: 4,
     name: 'INFORMATION_REQUESTED',
     text: 'Information Requested',
     color: 'purple',
   },
-  */
   {
     index: 5,
     name: 'REJECTED',

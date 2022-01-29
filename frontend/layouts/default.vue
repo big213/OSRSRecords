@@ -360,7 +360,7 @@ export default {
               {
                 field: 'status',
                 operator: 'in',
-                value: ['UNDER_REVIEW', 'SUBMITTED'],
+                value: ['UNDER_REVIEW', 'SUBMITTED', 'INFORMATION_REQUESTED'],
               },
             ],
             sort: {

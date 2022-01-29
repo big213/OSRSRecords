@@ -130,14 +130,12 @@ export const submissionStatusArray = [
     emoji: "🟩",
     colorId: decimalColors.GREEN,
   },
-  /*
   {
     text: "Information Requested",
     value: "INFORMATION_REQUESTED",
     emoji: "🟪",
     colorId: decimalColors.PURPLE,
   },
-  */
   {
     text: "Rejected",
     value: "REJECTED",
@@ -193,7 +191,7 @@ export function generateViewSubmissionButtonComponent(
         label: "View Submission",
         style: 5,
         url: `${env.site.base_url}/${
-          isPublic ? "i" : "a"
+          isPublic ? "m" : "a"
         }/view?id=${submissionId}&expand=0&type=submission`,
       },
     ],

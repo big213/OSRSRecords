@@ -3,6 +3,7 @@ import EditSubmissionInterface from '~/components/interface/crud/special/editSub
 
 export const MySubmission = {
   ...Submission,
+  routeName: 'm-view',
   addOptions: {
     fields: [
       'event',
@@ -19,5 +20,24 @@ export const MySubmission = {
       // 'status',
     ],
     component: EditSubmissionInterface,
+  },
+  editOptions: undefined,
+  deleteOptions: undefined,
+  viewOptions: {
+    fields: [
+      'eventRecordWithParticipants',
+      'eventEraRecord',
+      'participantsLinksListDetail',
+      'score',
+      'happenedOn',
+      'statusReadonly',
+      // 'isRecordingVerified',
+      'world',
+      'externalLinks',
+      'privateComments',
+      'publicComments',
+      'reviewerComments',
+      'discordId',
+    ],
   },
 }

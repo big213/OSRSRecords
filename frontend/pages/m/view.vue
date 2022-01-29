@@ -16,8 +16,11 @@
 
 <script>
 import ViewRecordPage from '~/components/page/viewRecordPage.vue'
+import { MySubmission } from '~/models/special'
 
-const modelsTypeMap = {}
+const modelsTypeMap = {
+  submission: MySubmission,
+}
 
 export default {
   components: {

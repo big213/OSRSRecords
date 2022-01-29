@@ -1919,8 +1919,9 @@ export class SubmissionService extends PaginatedService {
           ...(hasDescription && {
             description: await this.generateSubmissionText(submissionId),
           }),
-          // if selectedOption is REJECTED, also append comments from reviewer, if any
-          ...(selectedOption === submissionStatusKenum.REJECTED && {
+          // if selectedOption is REJECTED OR INFORMATION_REQUESTED, also append comments from reviewer, if any
+          ...((selectedOption === submissionStatusKenum.REJECTED ||
+            selectedOption === submissionStatusKenum.INFORMATION_REQUESTED) && {
             description: await this.generateSubmissionReviewerCommentsText(
               submissionId
             ),

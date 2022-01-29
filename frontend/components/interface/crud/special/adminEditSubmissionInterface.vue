@@ -421,9 +421,12 @@ export default {
             .join('\n')
         }
 
-        // this.handleSubmitSuccess(data)
-        // changed:
-        this.$emit('handleSubmit', data)
+        // changed: if adding, don't close the dialog. else, close it
+        if (this.mode === 'add') {
+          this.$emit('handleSubmit', data)
+        } else {
+          this.handleSubmitSuccess(data)
+        }
 
         // reset inputs
         // this.resetInputs()
