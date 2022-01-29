@@ -1900,7 +1900,7 @@ export class SubmissionService extends PaginatedService {
       submission.reviewerComments ?? "N/A"
     }\nDiscord User: ${
       (guildMemberId ? `<@${guildMemberId}>` : "N/A") +
-      (submission.discordId ? `(${submission.discordId})` : "")
+      (submission.discordId ? ` (${submission.discordId})` : "")
     }`;
   }
 
