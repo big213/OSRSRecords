@@ -115,12 +115,17 @@ export class SubmissionService extends PaginatedService {
     /*
     - Only allow creation of submission if the status is empty or "SUBMITTED"
     - AND if isRecordingVerified is false or not specified
+    - AND if reviewerComments is not null or not specified
     */
     create: ({ args }) => {
       if (args.status && args.status !== "SUBMITTED") return false;
 
       if ("isRecordingVerified" in args && args.isRecordingVerified !== false)
         return false;
+
+      if ("reviewerComments" in args && args.reviewerComments !== null) {
+        return false;
+      }
 
       if (!args.status || args.status === "SUBMITTED") return true;
       return true;
@@ -501,6 +506,7 @@ export class SubmissionService extends PaginatedService {
         "discordMessageId",
         "externalLinks",
         "discordId",
+        "participantsList",
       ],
       validatedArgs.item,
       fieldPath
@@ -542,6 +548,8 @@ export class SubmissionService extends PaginatedService {
       );
     }
 
+    // note: currently NOT validating if happenedOn corresponds to eventEra OR if participantsList.length corresponds to event, as this should only be accessible by reviewers who should know what they are doing
+
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
 
@@ -550,6 +558,9 @@ export class SubmissionService extends PaginatedService {
       id: item.id,
       updateFields: {
         ...validatedArgs.fields,
+        participants: validatedArgs.fields.participantsList
+          ? validatedArgs.fields.participantsList.length
+          : undefined, // computed
         score: validatedArgs.fields.timeElapsed ?? undefined,
         evidenceKey: validatedArgs.fields.externalLinks
           ? validatedArgs.fields.externalLinks[0]
@@ -559,6 +570,43 @@ export class SubmissionService extends PaginatedService {
       req,
       fieldPath,
     });
+
+    // changed: todo: if participantsList was changed in any way, need to also delete all submissionParticipantLinks and re-sync them
+    if (validatedArgs.fields.participantsList) {
+      if (
+        JSON.stringify(validatedArgs.fields.participantsList) !==
+        JSON.stringify(item.participantsList)
+      ) {
+        await deleteTableRow({
+          table: SubmissionCharacterParticipantLink.typename,
+          where: {
+            fields: [
+              {
+                field: "submission",
+                value: item.id,
+              },
+            ],
+          },
+        });
+
+        for (const participant of validatedArgs.fields.participantsList) {
+          await createObjectType({
+            typename: SubmissionCharacterParticipantLink.typename,
+            addFields: {
+              id: await SubmissionCharacterParticipantLink.generateRecordId(
+                fieldPath
+              ),
+              submission: item.id,
+              character: participant.characterId,
+              title: participant.discordId,
+              createdBy: req.user?.id, // nullable
+            },
+            req,
+            fieldPath,
+          });
+        }
+      }
+    }
 
     // changed: sync the isRecord state
     await this.syncSubmissionIsRecord(
@@ -1744,6 +1792,36 @@ export class SubmissionService extends PaginatedService {
     });
   }
 
+  // generate some text summarizing a submission's reviewer comments only
+  async generateSubmissionReviewerCommentsText(submissionId: string) {
+    // get submission info
+    const [submission] = await fetchTableRows({
+      select: [
+        {
+          field: "id",
+        },
+        {
+          field: "reviewerComments",
+        },
+      ],
+      from: this.typename,
+      where: {
+        fields: [
+          {
+            field: "id",
+            value: submissionId,
+          },
+        ],
+      },
+    });
+
+    if (!submission) return null;
+
+    return submission.reviewerComments
+      ? `Reviewer Comments: ${submission.reviewerComments}`
+      : null;
+  }
+
   // generate some text summarizing a submission
   async generateSubmissionText(submissionId: string) {
     // get submission info
@@ -1775,6 +1853,9 @@ export class SubmissionService extends PaginatedService {
         },
         {
           field: "publicComments",
+        },
+        {
+          field: "reviewerComments",
         },
         {
           field: "discordId",
@@ -1813,8 +1894,13 @@ export class SubmissionService extends PaginatedService {
       .map((link) => "<" + link + ">")
       .join("\n")}\nWorld: ${submission.world ?? "N/A"}\nPrivate Comments: ${
       submission.privateComments ?? "N/A"
-    }\nPublic Comments: ${submission.publicComments ?? "N/A"}\nDiscord User: ${
-      guildMemberId ? `<@${guildMemberId}> (${submission.discordId})` : "N/A"
+    }\nPublic Comments: ${
+      submission.publicComments ?? "N/A"
+    }\nReviewer Comments: ${
+      submission.reviewerComments ?? "N/A"
+    }\nDiscord User: ${
+      (guildMemberId ? `<@${guildMemberId}>` : "N/A") +
+      (submission.discordId ? `(${submission.discordId})` : "")
     }`;
   }
 
@@ -1832,6 +1918,12 @@ export class SubmissionService extends PaginatedService {
           color: submissionStatusObject.colorId,
           ...(hasDescription && {
             description: await this.generateSubmissionText(submissionId),
+          }),
+          // if selectedOption is REJECTED, also append comments from reviewer, if any
+          ...(selectedOption === submissionStatusKenum.REJECTED && {
+            description: await this.generateSubmissionReviewerCommentsText(
+              submissionId
+            ),
           }),
         },
       ],

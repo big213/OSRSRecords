@@ -627,7 +627,8 @@
                   </v-col>
                   <v-col
                     v-for="(nestedInputObject, j) in nestedInputArray"
-                    :cols="nestedInputObject.inputObject.cols || 12"
+                    cols="12"
+                    :sm="nestedInputObject.inputObject.cols || 12"
                     class="py-0"
                     :key="j"
                   >

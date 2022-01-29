@@ -81,6 +81,7 @@ export default {
       loading: {
         editRecord: false,
         loadRecord: false,
+        initInputs: false,
         loadDropdowns: false,
       },
     }
@@ -88,7 +89,7 @@ export default {
 
   computed: {
     isLoading() {
-      return this.loading.loadRecord || this.loading.loadDropdowns
+      return Object.values(this.loading).some((state) => state)
     },
 
     capitalizedType() {
@@ -504,7 +505,68 @@ export default {
       })
     },
 
-    async reset() {
+    async initializeInputs() {
+      // set loading state until all inputs are done loading
+      this.loading.initInputs = true
+      this.inputsArray = await Promise.all(
+        this.recordInfo.addOptions.fields.map(async (fieldKey) => {
+          const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
+
+          const inputObject = {
+            fieldKey,
+            primaryField: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
+            fieldInfo,
+            recordInfo: this.recordInfo,
+            inputType: fieldInfo.inputType,
+            label: fieldInfo.text ?? fieldKey,
+            hint: fieldInfo.hint,
+            clearable: true,
+            closeable: false,
+            optional: fieldInfo.optional,
+            inputRules: fieldInfo.inputRules,
+            inputOptions: fieldInfo.inputOptions,
+            value: null,
+            inputValue: null,
+            getOptions: fieldInfo.getOptions,
+            options: [],
+            readonly: false,
+            loading: false,
+            focused: false,
+            cols: fieldInfo.inputOptions?.cols,
+            generation: 0,
+            parentInput: null,
+            nestedInputsArray: [],
+          }
+
+          // is the field in selectedItem? if so, use that and set field to readonly
+          if (fieldKey in this.selectedItem) {
+            inputObject.value = this.selectedItem[fieldKey]
+            inputObject.readonly = true
+          } else {
+            inputObject.value = fieldInfo.default
+              ? await fieldInfo.default(this)
+              : null
+          }
+
+          // if it is an array, populate the nestedInputsArray
+          if (inputObject.inputType === 'value-array') {
+            if (Array.isArray(inputObject.value)) {
+              inputObject.value.forEach((ele) =>
+                addNestedInputObject(inputObject, ele)
+              )
+            }
+          }
+
+          // populate inputObjects if we need to translate any IDs to objects, and also populate any options
+          await Promise.all(populateInputObject(this, inputObject))
+
+          return inputObject
+        })
+      )
+      this.loading.initInputs = false
+    },
+
+    reset() {
       // duplicate misc inputs, if any
       this.miscInputs = JSON.parse(JSON.stringify(this.originalMiscInputs))
 
@@ -518,61 +580,7 @@ export default {
 
       // initialize inputs
       if (this.mode === 'add') {
-        this.inputsArray = await Promise.all(
-          this.recordInfo.addOptions.fields.map(async (fieldKey) => {
-            const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
-
-            const inputObject = {
-              fieldKey,
-              primaryField: fieldInfo.fields ? fieldInfo.fields[0] : fieldKey,
-              fieldInfo,
-              recordInfo: this.recordInfo,
-              inputType: fieldInfo.inputType,
-              label: fieldInfo.text ?? fieldKey,
-              hint: fieldInfo.hint,
-              clearable: true,
-              closeable: false,
-              optional: fieldInfo.optional,
-              inputRules: fieldInfo.inputRules,
-              inputOptions: fieldInfo.inputOptions,
-              value: null,
-              inputValue: null,
-              getOptions: fieldInfo.getOptions,
-              options: [],
-              readonly: false,
-              loading: false,
-              focused: false,
-              cols: fieldInfo.inputOptions?.cols,
-              generation: 0,
-              parentInput: null,
-              nestedInputsArray: [],
-            }
-
-            // is the field in selectedItem? if so, use that and set field to readonly
-            if (fieldKey in this.selectedItem) {
-              inputObject.value = this.selectedItem[fieldKey]
-              inputObject.readonly = true
-            } else {
-              inputObject.value = fieldInfo.default
-                ? await fieldInfo.default(this)
-                : null
-            }
-
-            // if it is an array, populate the nestedInputsArray
-            if (inputObject.inputType === 'value-array') {
-              if (Array.isArray(inputObject.value)) {
-                inputObject.value.forEach((ele) =>
-                  addNestedInputObject(inputObject, ele)
-                )
-              }
-            }
-
-            // populate inputObjects if we need to translate any IDs to objects, and also populate any options
-            await populateInputObject(this, inputObject)
-
-            return inputObject
-          })
-        )
+        this.initializeInputs()
       } else {
         this.loadRecord()
       }

@@ -136,6 +136,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "public_comments",
       },
     }),
+    reviewerComments: generateTextField({
+      allowNull: true,
+      sqlOptions: {
+        field: "reviewer_comments",
+      },
+    }),
     discordMessageId: generateStringField({
       allowNull: true,
       sqlOptions: {

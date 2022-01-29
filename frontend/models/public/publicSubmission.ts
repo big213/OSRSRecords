@@ -65,6 +65,7 @@ export const PublicSubmission = {
       'externalLinks',
       //'privateComments',
       'publicComments',
+      'reviewerComments',
     ],
   },
   addOptions: undefined,
