@@ -1,5 +1,5 @@
 import type { RecordInfo } from '~/types'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import { DiscordChannelOutput } from './discordChannelOutput'
 import { refreshDiscordOutput } from '../actions'
 

@@ -1,8 +1,8 @@
 import { getUserRoles } from '~/services/dropdown'
 import type { RecordInfo } from '~/types'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
-import BooleanColumn from '~/components/table/common/booleanColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
+import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
+import BooleanColumn from '~/components/table/booleanColumn.vue'
 
 export const User = <RecordInfo<'user'>>{
   typename: 'user',

@@ -1,7 +1,7 @@
 import type { RecordInfo } from '~/types'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import FilesizeColumn from '~/components/table/common/filesizeColumn.vue'
-import FileColumn from '~/components/table/common/fileColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
+import FilesizeColumn from '~/components/table/filesizeColumn.vue'
+import FileColumn from '~/components/table/fileColumn.vue'
 
 export const File = <RecordInfo<'file'>>{
   typename: 'file',

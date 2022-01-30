@@ -1,8 +1,8 @@
-import * as randomstring from "randomstring";
 import { PaginatedService } from "../../core/services";
 import * as Resolver from "../../core/helpers/resolver";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { ServiceFunctionInputs, AccessControlMap } from "../../../types";
+import { nanoid } from "nanoid";
 
 export class ApiKeyService extends PaginatedService {
   defaultTypename = "apiKey";
@@ -113,7 +113,7 @@ export class ApiKeyService extends PaginatedService {
       addFields: {
         id: await this.generateRecordId(fieldPath),
         ...validatedArgs,
-        code: randomstring.generate(20),
+        code: nanoid(),
         createdBy: req.user!.id,
       },
       req,

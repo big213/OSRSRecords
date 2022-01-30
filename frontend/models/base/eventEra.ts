@@ -3,11 +3,11 @@ import {
   generateDateLocaleString,
   generateParseDateTimeStringFn,
 } from '~/services/base'
-import TimeStringColumn from '~/components/table/common/timeStringColumn.vue'
-import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import BooleanColumn from '~/components/table/common/booleanColumn.vue'
+import TimeStringColumn from '~/components/table/timeStringColumn.vue'
+import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
+import AvatarColumn from '~/components/table/avatarColumn.vue'
+import BooleanColumn from '~/components/table/booleanColumn.vue'
 import { getEvents } from '~/services/dropdown'
 import {
   generateJoinableField,

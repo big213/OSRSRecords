@@ -10,7 +10,6 @@ import {
   SqlWhereObject,
 } from "../helpers/sql";
 import { permissionsCheck } from "../helpers/permissions";
-import { handleJqlSubscription } from "../helpers/subscription";
 
 import * as Resolver from "../helpers/resolver";
 
@@ -155,6 +154,7 @@ export class NormalService extends BaseService {
   }
 
   @permissionsCheck("get")
+  // not currently working
   async subscribeToSingleItem(
     operationName: string,
     {
@@ -192,6 +192,7 @@ export class NormalService extends BaseService {
       id: validatedArgs.id,
     };
 
+    /*
     const channel = await handleJqlSubscription(
       req,
       operationName,
@@ -202,9 +203,11 @@ export class NormalService extends BaseService {
     return {
       channel_name: channel,
     };
+    */
   }
 
   @permissionsCheck("getMultiple")
+  // not currently working
   async subscribeToMultipleItem(
     operationName: string,
     {
@@ -236,6 +239,7 @@ export class NormalService extends BaseService {
       createdBy: validatedArgs.createdBy,
     };
 
+    /*
     const channel = await handleJqlSubscription(
       req,
       operationName,
@@ -246,6 +250,7 @@ export class NormalService extends BaseService {
     return {
       channel_name: channel,
     };
+    */
   }
 
   @permissionsCheck("get")

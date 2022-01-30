@@ -1,7 +1,7 @@
 import type { RecordInfo } from '~/types'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import { getEventEraModes, getEventsByGroup } from '~/services/dropdown'
-import BooleanColumn from '~/components/table/common/booleanColumn.vue'
+import BooleanColumn from '~/components/table/booleanColumn.vue'
 import {
   generateJoinableField,
   generatePreviewableRecordField,

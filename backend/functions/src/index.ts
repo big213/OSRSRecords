@@ -7,8 +7,6 @@ import { initializeGiraffeql } from "giraffeql";
 import "./schema";
 import { env, giraffeqlOptions } from "./config";
 
-import { initializePusher } from "./utils/pusher";
-import { handlePusherAuth } from "./helpers/pusher";
 import { validateToken, validateApiKey } from "./helpers/auth";
 import { CustomSchemaGenerator } from "./helpers/schema";
 
@@ -65,9 +63,6 @@ app.options("*", function (req, res, next) {
   res.sendStatus(200);
 });
 
-// initialize pusher
-env.pusher && initializePusher(env.pusher);
-
 initializeGiraffeql(app, giraffeqlOptions);
 
 app.get("/schema.ts", function (req, res, next) {
@@ -83,5 +78,3 @@ export const api = functions.https.onRequest(app);
 export { serveImage } from "./misc/serveImage";
 
 export { handleDiscordInteraction } from "./misc/handleDiscordInteraction";
-
-app.post("/pusher/auth", handlePusherAuth);

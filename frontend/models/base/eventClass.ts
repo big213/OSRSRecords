@@ -1,8 +1,8 @@
 import type { RecordInfo } from '~/types'
-import NameAvatarColumn from '~/components/table/common/nameAvatarColumn.vue'
-import TimeagoColumn from '~/components/table/common/timeagoColumn.vue'
-import AvatarColumn from '~/components/table/common/avatarColumn.vue'
-import UrlColumn from '~/components/table/common/urlColumn.vue'
+import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
+import TimeagoColumn from '~/components/table/timeagoColumn.vue'
+import AvatarColumn from '~/components/table/avatarColumn.vue'
+import UrlColumn from '~/components/table/urlColumn.vue'
 import { Event } from './event'
 import {
   generateJoinableField,
