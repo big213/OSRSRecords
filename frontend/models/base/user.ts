@@ -78,27 +78,22 @@ export const User = <RecordInfo<'user'>>{
     headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: false,
       },
       {
         field: 'email',
-        sortable: false,
         width: '150px',
       },
       {
         field: 'role',
-        sortable: true,
         width: '150px',
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {},

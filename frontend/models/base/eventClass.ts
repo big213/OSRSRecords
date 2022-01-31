@@ -91,17 +91,14 @@ export const EventClass = <RecordInfo<'eventClass'>>{
     headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: true,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {

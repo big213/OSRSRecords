@@ -132,7 +132,6 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: false,
       },
       {
         field: 'isCurrent',
@@ -141,12 +140,10 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {

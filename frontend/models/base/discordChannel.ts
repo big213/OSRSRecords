@@ -45,17 +45,14 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
     headerOptions: [
       {
         field: 'name',
-        sortable: false,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {

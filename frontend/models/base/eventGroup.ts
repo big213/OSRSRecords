@@ -92,17 +92,14 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
       },
       {
         field: 'nameWithAvatar',
-        sortable: false,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {},

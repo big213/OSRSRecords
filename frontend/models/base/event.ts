@@ -117,22 +117,18 @@ export const Event = <RecordInfo<'event'>>{
     headerOptions: [
       {
         field: 'nameWithAvatar',
-        sortable: true,
       },
       {
         field: 'difficulty',
         width: '150px',
-        sortable: false,
       },
       {
         field: 'createdAt',
         width: '150px',
-        sortable: true,
       },
       {
         field: 'updatedAt',
         width: '150px',
-        sortable: true,
       },
     ],
     downloadOptions: {
