@@ -457,12 +457,16 @@ export class SubmissionService extends PaginatedService {
         );
 
         if (foundDiscordUserId) {
-          const dmChannelId = await createDMChannel(foundDiscordUserId);
+          try {
+            const dmChannelId = await createDMChannel(foundDiscordUserId);
 
-          await sendDiscordMessage(
-            dmChannelId,
-            await this.generateSubmissionDM(itemId, inferredStatus, true)
-          );
+            await sendDiscordMessage(
+              dmChannelId,
+              await this.generateSubmissionDM(itemId, inferredStatus, true)
+            );
+          } catch {
+            // do nothing, fail silently
+          }
         }
       }
 
@@ -684,16 +688,20 @@ export class SubmissionService extends PaginatedService {
         );
 
         if (foundDiscordUserId) {
-          const dmChannelId = await createDMChannel(foundDiscordUserId);
+          try {
+            const dmChannelId = await createDMChannel(foundDiscordUserId);
 
-          await sendDiscordMessage(
-            dmChannelId,
-            await this.generateSubmissionDM(
-              item.id,
-              submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
-              false
-            )
-          );
+            await sendDiscordMessage(
+              dmChannelId,
+              await this.generateSubmissionDM(
+                item.id,
+                submissionStatusKenum.fromUnknown(validatedArgs.fields.status),
+                false
+              )
+            );
+          } catch {
+            // do nothing, fail silently
+          }
         }
       }
     }
