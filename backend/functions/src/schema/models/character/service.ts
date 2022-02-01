@@ -1,7 +1,13 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
+import {
+  deleteTableRow,
+  fetchTableRows,
+  updateTableRow,
+} from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
+import { Submission, SubmissionCharacterParticipantLink } from "../../services";
 
 export class CharacterService extends PaginatedService {
   defaultTypename = "character";
@@ -27,6 +33,106 @@ export class CharacterService extends PaginatedService {
     getMultiple: () => true,
     create: () => true,
   };
+
+  @permissionsCheck("remap")
+  async remapCharacter({
+    req,
+    fieldPath,
+    args,
+    query,
+    isAdmin = false,
+    data = {},
+  }: ServiceFunctionInputs) {
+    const fromCharacter = await this.lookupRecord(["id"], args.from, fieldPath);
+
+    const toCharacter = await this.lookupRecord(["id"], args.to, fieldPath);
+
+    // get all submissions that have the from characterId
+    const submissions = await fetchTableRows({
+      select: [
+        {
+          field: "id",
+        },
+        {
+          field: "participantsList",
+        },
+      ],
+      from: Submission.typename,
+      where: {
+        fields: [
+          {
+            field: "submissionCharacterParticipantLink/character.id",
+            value: fromCharacter.id,
+          },
+        ],
+      },
+    });
+
+    // update the submissions, replacing the from characterId
+    for (const submission of submissions) {
+      // loop through the participantsList array, replacing the from characterId with the to characterId
+      submission.participantsList.forEach((participantObject) => {
+        if (participantObject.characterId === fromCharacter.id) {
+          participantObject.characterId = toCharacter.id;
+        }
+      });
+
+      await updateTableRow({
+        fields: {
+          participantsList: submission.participantsList,
+        },
+        table: Submission.typename,
+        where: {
+          fields: [
+            {
+              field: "id",
+              value: submission.id,
+            },
+          ],
+        },
+      });
+    }
+
+    // update all references to from to to in submissionCharacterParticipantLink
+    await updateTableRow({
+      fields: {
+        character: toCharacter.id,
+      },
+      table: SubmissionCharacterParticipantLink.typename,
+      where: {
+        fields: [
+          {
+            field: "character",
+            value: fromCharacter.id,
+          },
+        ],
+      },
+    });
+
+    // deletes the from character
+    await deleteTableRow({
+      table: this.typename,
+      where: {
+        fields: [
+          {
+            field: "id",
+            value: fromCharacter.id,
+          },
+        ],
+      },
+    });
+
+    return this.isEmptyQuery(query)
+      ? {}
+      : await this.getRecord({
+          req,
+          args: { id: toCharacter.id },
+          query,
+          fieldPath,
+          isAdmin,
+          data,
+        });
+  }
 
   @permissionsCheck("create")
   async createRecord({

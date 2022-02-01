@@ -387,6 +387,11 @@ export default {
             },
           }),
         },
+        {
+          icon: 'mdi-swap-horizontal',
+          title: 'Remap Character',
+          to: '/remap-character',
+        },
       ],
       accountItems: [
         { title: 'My Profile', to: '/my-profile', exact: false },
