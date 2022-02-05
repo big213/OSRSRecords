@@ -26,7 +26,7 @@ export default {
       return this.$store.getters['auth/user']
         ? [
             {
-              field: 'user.id',
+              field: 'user',
               operator: 'eq',
               value: this.$store.getters['auth/user'].id,
             },

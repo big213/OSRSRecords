@@ -96,7 +96,7 @@ export default {
     handleFileUpload(file) {
       if (!file) return
       const reader = new FileReader()
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         try {
           const data = convertCSVToJSON(event.target.result)
 

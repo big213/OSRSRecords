@@ -56,8 +56,8 @@ export default {
             value: null,
             inputValue: null,
             clearable: false,
-            inputOptions: Submission.fields['event'].inputOptions,
-            getOptions: Submission.fields['event'].getOptions,
+            inputOptions: Submission.fields.event.inputOptions,
+            getOptions: Submission.fields.event.getOptions,
             options: [],
             loading: false,
             focused: false,
@@ -79,7 +79,7 @@ export default {
             value: null,
             inputValue: null,
             clearable: false,
-            inputOptions: Submission.fields['eventEra'].inputOptions,
+            inputOptions: Submission.fields.eventEra.inputOptions,
             options: [],
             loading: false,
             focused: false,
@@ -243,7 +243,7 @@ export default {
       }
     },
 
-    async applyPreset(field, item) {
+    async applyPreset(field, _item) {
       // if setting event, reset options on eventEra and automatically set it to the current one
       const eventEraInputObject = this.getInputObject('eventEra')
       const participantsInputObject = this.getInputObject('participants')
@@ -404,7 +404,7 @@ export default {
 
         const inputFieldsSet = new Set(this.filterInputsArray)
         promisesArray.push(
-          ...rawFilters.map(async (rawFilterObject) => {
+          ...rawFilters.map((rawFilterObject) => {
             // changed: skip handling of participants if soloPbMode
             if (soloPbMode && rawFilterObject.field === 'participants') return
 
