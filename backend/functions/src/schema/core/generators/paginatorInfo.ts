@@ -1,7 +1,7 @@
 import { BaseService, NormalService } from "../services";
 
 import * as Scalars from "../../scalars";
-import { atob } from "../helpers/shared";
+import { atob, extractLastValueColumns } from "../helpers/shared";
 import type { ObjectTypeDefinition } from "giraffeql";
 import { generateTypenameField } from "../helpers/typeDef";
 import { PaginatorData } from "../../../types";
@@ -22,13 +22,8 @@ export function generatePaginatorInfoTypeDef(
           const paginatorData = <PaginatorData>data;
 
           // remove any pagination params in order to fetch the total count
-          const {
-            first,
-            after,
-            before,
-            last,
-            ...validArgs
-          } = paginatorData.rootArgs;
+          const { first, after, before, last, ...validArgs } =
+            paginatorData.rootArgs;
           return service.countRecords({
             req,
             fieldPath,
@@ -54,10 +49,13 @@ export function generatePaginatorInfoTypeDef(
 
           if (paginatorData.records.length < 1) return null;
 
+          // aggregate $last_value_N into last_values array
+          const lastValues = extractLastValueColumns(paginatorData.records[0]);
+
           return atob(
             JSON.stringify({
-              last_id: paginatorData.records[0].last_id,
-              last_value: paginatorData.records[0].last_value,
+              lastId: paginatorData.records[0].$last_id,
+              lastValues,
             })
           );
         },
@@ -69,13 +67,17 @@ export function generatePaginatorInfoTypeDef(
           const paginatorData = <PaginatorData>data;
           if (paginatorData.records.length < 1) return null;
 
+          // aggregate $last_value_N into last_values array
+          const lastValues = extractLastValueColumns(
+            paginatorData.records[paginatorData.records.length - 1]
+          );
+
           return atob(
             JSON.stringify({
-              last_id:
-                paginatorData.records[paginatorData.records.length - 1].last_id,
-              last_value:
+              lastId:
                 paginatorData.records[paginatorData.records.length - 1]
-                  .last_value,
+                  .$last_id,
+              lastValues,
             })
           );
         },

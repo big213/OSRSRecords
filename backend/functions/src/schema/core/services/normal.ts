@@ -430,7 +430,7 @@ export class NormalService extends BaseService {
       });
     }
 
-    //handle search fields
+    // handle search fields
     if (validatedArgs.search) {
       const whereSubObject: SqlWhereObject = {
         connective: "OR",
@@ -448,156 +448,86 @@ export class NormalService extends BaseService {
       whereObject.fields.push(whereSubObject);
     }
 
-    let isBeforeQuery = false;
+    // process sort fields
+    const orderBy: SqlOrderByObject[] = [];
+    const rawSelect: SqlSelectQueryObject[] = [{ field: "id", as: "$last_id" }];
 
-    // set the primary sort params, which must be handled specially. falls back to "id" asc.
-    // the sortBy field should be pre-validated through giraffeql validation
-    const primarySortByObject =
-      Array.isArray(validatedArgs.sortBy) && validatedArgs.sortBy.length
-        ? validatedArgs.sortBy[0]
-        : {
-            field: "id",
-            desc: false,
-          };
-
-    // process the "after" constraint, if provided
-    if (validatedArgs.after) {
-      // parse cursor
-      const parsedCursor = JSON.parse(btoa(validatedArgs.after));
-
-      const isNullLastValue = parsedCursor.last_value === null;
-
-      const operator = primarySortByObject.desc ? "lte" : "gte";
-
-      const whereAndObject: SqlWhereObject = {
-        connective: "AND",
-        fields: [
-          {
-            field: primarySortByObject.field,
-            value: parsedCursor.last_value,
-            operator: isNullLastValue ? "eq" : operator,
-          },
-        ],
-      };
-
-      const whereOrObject: SqlWhereObject = {
-        connective: "OR",
-        fields: [whereAndObject],
-      };
-
-      // id must be different from the last_id
-
-      whereAndObject.fields.push({
-        field: "id",
-        value: parsedCursor.last_id,
-        operator: "neq",
-      });
-
-      if (isNullLastValue) {
-        // if operator is > and is null last value, must allow not null
-        if (operator === "gte") {
-          whereOrObject.fields.push({
-            field: primarySortByObject.field,
-            value: null,
-            operator: "neq",
-          });
-        }
-      } else {
-        // if operator is < and not null last value, must allow null
-        if (operator === "lte") {
-          whereOrObject.fields.push({
-            field: primarySortByObject.field,
-            value: null,
-            operator: "eq",
-          });
-        }
-      }
-
-      whereObject.fields.push(whereOrObject);
+    // add secondary, etc. sort parameters
+    if (Array.isArray(validatedArgs.sortBy)) {
+      orderBy.push(...validatedArgs.sortBy);
     }
 
-    // handle the before constraints, basically the reverse of the args.after case
-    if (validatedArgs.before) {
-      isBeforeQuery = true;
+    // for each sort param, add it to the rawSelect
+    orderBy.forEach((orderByObject, index) => {
+      rawSelect.push({
+        field: orderByObject.field,
+        as: `$last_value_${index}`,
+      });
+    });
+
+    // always add id asc sort as final sort param
+    orderBy.push({
+      field: "id",
+      desc: false,
+    });
+
+    // process the "after" or "before" constraint, if provided
+    // only one should have been provided
+    if (validatedArgs.after || validatedArgs.before) {
       // parse cursor
-      const parsedCursor = JSON.parse(btoa(validatedArgs.before));
-
-      const isNullLastValue = parsedCursor.last_value === null;
-
-      const operator = primarySortByObject.desc ? "gte" : "lte";
-
-      const whereAndObject: SqlWhereObject = {
-        connective: "AND",
-        fields: [
-          {
-            field: primarySortByObject.field,
-            value: parsedCursor.last_value,
-            operator: isNullLastValue ? "eq" : operator,
-          },
-        ],
-      };
+      const parsedCursor = JSON.parse(
+        btoa(validatedArgs.after || validatedArgs.before)
+      );
 
       const whereOrObject: SqlWhereObject = {
         connective: "OR",
-        fields: [whereAndObject],
+        fields: [],
       };
 
-      // id must be neq than the last_id
+      // for each orderBy statement, need to generate the required where constraints
+      orderBy.forEach((orderByObject, index) => {
+        const operator = (
+          validatedArgs.before ? !orderByObject.desc : orderByObject.desc
+        )
+          ? "lt"
+          : "gt";
 
-      whereAndObject.fields.push({
-        field: "id",
-        value: parsedCursor.last_id,
-        operator: "neq",
-      });
+        const lastValue = parsedCursor.lastValues[index];
 
-      if (isNullLastValue) {
-        // if operator is > and is null last value, must allow not null
-        if (operator === "gte") {
-          whereOrObject.fields.push({
-            field: primarySortByObject.field,
-            value: null,
-            operator: "neq",
-          });
-        }
-      } else {
-        // if operator is < and not null last value, must allow null
-        if (operator === "lte") {
-          whereOrObject.fields.push({
-            field: primarySortByObject.field,
-            value: null,
+        // if null last value, skip
+        if (lastValue === null) return;
+
+        const whereAndObject: SqlWhereObject = {
+          connective: "AND",
+          fields: [
+            {
+              field: orderByObject.field,
+              operator,
+              value:
+                orderByObject.field === "id" ? parsedCursor.lastId : lastValue,
+            },
+          ],
+        };
+
+        // build additional cascading whereAndObjects
+        orderBy.slice(0, index).forEach((orderByObject, index) => {
+          const lastValue = parsedCursor.lastValues[index];
+          whereAndObject.fields.push({
+            field: orderByObject.field,
             operator: "eq",
+            value:
+              orderByObject.field === "id" ? parsedCursor.lastId : lastValue,
           });
-        }
-      }
+        });
+
+        whereOrObject.fields.push(whereAndObject);
+      });
 
       whereObject.fields.push(whereOrObject);
     }
 
     // set limit to args.first or args.last, one of which must be provided
     const limit = Number(validatedArgs.first ?? validatedArgs.last);
-
-    // process sort fields
-    const orderBy: SqlOrderByObject[] = [];
-    const rawSelect: SqlSelectQueryObject[] = [{ field: "id", as: "last_id" }];
-
-    if (primarySortByObject.field) {
-      rawSelect.push({
-        field: primarySortByObject.field,
-        as: "last_value",
-      });
-
-      orderBy.push({
-        field: primarySortByObject.field,
-        desc: isBeforeQuery
-          ? !primarySortByObject.desc
-          : primarySortByObject.desc,
-      });
-
-      // add secondary, etc. sort parameters
-      if (Array.isArray(validatedArgs.sortBy)) {
-        orderBy.push(...validatedArgs.sortBy.slice(1));
-      }
-    }
 
     const sqlParams: Omit<SqlSelectQuery, "from" | "select"> = {
       where: whereObject,
@@ -640,10 +570,10 @@ export class NormalService extends BaseService {
     });
 
     return validatedArgs.reverse
-      ? isBeforeQuery
+      ? validatedArgs.before
         ? results
         : results.reverse()
-      : isBeforeQuery
+      : validatedArgs.before
       ? results.reverse()
       : results;
   }

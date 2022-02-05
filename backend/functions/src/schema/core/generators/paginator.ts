@@ -8,6 +8,7 @@ import {
 import { generateTypenameField } from "../helpers/typeDef";
 import type { ObjectTypeDefinition } from "giraffeql";
 import { PaginatorData } from "../../../types";
+import { extractLastValueColumns } from "../helpers/shared";
 
 export function generatePaginatorTypeDef(
   service: PaginatedService,
@@ -46,14 +47,18 @@ export function generatePaginatorTypeDef(
 
           return Promise.all(
             paginatorData.records.map((item, index) => {
-              // separate the last_id and last_value keys, if any
-              const { last_id, last_value, ...remainingItem } = item;
+              // separate the last_id key, if any
+              const { $last_id: lastId, ...remainingItem } = item;
+
+              // aggregate $last_value_N into last_values array
+              const lastValues = extractLastValueColumns(remainingItem, true);
+
               return Edge.getRecord({
                 req,
                 fieldPath,
                 args,
                 query,
-                data: { item: remainingItem, index, last_id, last_value },
+                data: { item: remainingItem, index, lastId, lastValues },
               });
             })
           );

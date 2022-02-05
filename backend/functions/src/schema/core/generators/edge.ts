@@ -26,8 +26,8 @@ export function generateEdgeTypeDef(
         resolver: ({ data }) => {
           return atob(
             JSON.stringify({
-              last_id: data.last_id,
-              last_value: data.last_value,
+              lastId: data.lastId,
+              lastValues: data.lastValues,
             })
           );
         },

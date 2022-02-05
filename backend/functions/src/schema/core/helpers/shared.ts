@@ -137,3 +137,20 @@ export function generateId(size = 8) {
 
   return generateIdFn();
 }
+
+// extracts last_value_N values from an object and returns an array
+export function extractLastValueColumns(
+  obj: StringKeyObject,
+  deleteProps = false
+) {
+  const lastValues: any[] = [];
+
+  let lastValueIndex = 0;
+  while (`$last_value_${lastValueIndex}` in obj) {
+    lastValues.push(obj[`$last_value_${lastValueIndex}`]);
+    if (deleteProps) delete obj[`$last_value_${lastValueIndex}`];
+    lastValueIndex++;
+  }
+
+  return lastValues;
+}

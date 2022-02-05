@@ -5,7 +5,11 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import { EventEra, Submission } from "../../services";
 import { updateTableRow } from "../../core/helpers/sql";
-import { sendDiscordRequest } from "../../helpers/discord";
+import {
+  channelMap,
+  getGuildMemberId,
+  sendDiscordRequest,
+} from "../../helpers/discord";
 import * as fs from "fs";
 
 const prodResource = axios.create({

@@ -543,6 +543,9 @@ export default {
 
         this.records = results.edges.map((ele) => ele.node)
 
+        this.totalRecords = results.paginatorInfo.total
+        this.endCursor = results.paginatorInfo.endCursor
+
         // changed: if any rows AND in isRankMode, fetch and set the ranking of the first row
         if (this.records.length > 0 && this.isRankMode) {
           const hasParticipantsFilter = !!this.allFilters.find(
@@ -582,9 +585,6 @@ export default {
 
           this.populateRankings()
         }
-
-        this.totalRecords = results.paginatorInfo.total
-        this.endCursor = results.paginatorInfo.endCursor
       } catch (err) {
         handleError(this, err)
       }

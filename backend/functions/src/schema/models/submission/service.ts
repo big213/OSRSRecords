@@ -17,6 +17,7 @@ import {
   generateSubmissionStatusDropdownComponent,
   submissionStatusMap,
   crosspostDiscordMessage,
+  discordUserIdMap,
 } from "../../helpers/discord";
 import {
   countTableRows,
@@ -516,6 +517,9 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
+    // set discordId to the updated one (fall back to existing one)
+    const discordId = validatedArgs.fields.discordId ?? item.discordId;
+
     // changed: if more than status is being updated, the status must be !APPROVED
     if (
       !objectOnlyHasFields(validatedArgs.fields, ["status"]) &&
@@ -681,10 +685,10 @@ export class SubmissionService extends PaginatedService {
       }
 
       // also need to DM the discordId about the status change, if any
-      if (item.discordId) {
+      if (discordId) {
         const foundDiscordUserId = await getGuildMemberId(
           channelMap.guildId,
-          item.discordId
+          discordId
         );
 
         if (foundDiscordUserId) {
@@ -1826,7 +1830,7 @@ export class SubmissionService extends PaginatedService {
     if (!submission) return null;
 
     return submission.reviewerComments
-      ? `Reviewer Comments: ${submission.reviewerComments}`
+      ? `Reviewer Comments: ${submission.reviewerComments}\n\n**Please DM <@${discordUserIdMap.reviewer}> with any updated information for this submission. Do not respond to this bot, we won't be able to see it.**`
       : null;
   }
 

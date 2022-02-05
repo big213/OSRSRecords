@@ -404,64 +404,39 @@ function applyWhere(
           break;
         case "gt":
           if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
+            // convert "> NULL" to IS NOT NULL
+            whereSubstatement += " IS NOT NULL";
           } else {
+            // being gt a non-null value is generally understood to not include nulls. however, since > does not include nulls in pg anyway, we don't need to include it
+            // whereSubstatement = `(${whereSubstatement} > ? AND ${whereSubstatement} IS NOT NULL)`;
             whereSubstatement += " > ?";
-            bindings.push(whereSubObject.value);
-          }
-          break;
-        case "gtornull":
-          if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
-          } else {
-            whereSubstatement = `(${whereSubstatement} > ? OR ${whereSubstatement} IS NULL)`;
             bindings.push(whereSubObject.value);
           }
           break;
         case "gte":
           if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
+            // gte null is generally understood to always be true
+            whereSubstatement = "TRUE";
           } else {
             whereSubstatement += " >= ?";
             bindings.push(whereSubObject.value);
           }
           break;
-        case "gteornull":
-          if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
-          } else {
-            whereSubstatement = `(${whereSubstatement} >= ? OR ${whereSubstatement} IS NULL)`;
-            bindings.push(whereSubObject.value);
-          }
-          break;
         case "lt":
           if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
+            // convert "< NULL" to FALSE.
+            whereSubstatement = "FALSE";
           } else {
-            whereSubstatement += " < ?";
-            bindings.push(whereSubObject.value);
-          }
-          break;
-        case "ltornull":
-          if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
-          } else {
+            // being lt a non-null value is generally understood to include nulls
             whereSubstatement = `(${whereSubstatement} < ? OR ${whereSubstatement} IS NULL)`;
             bindings.push(whereSubObject.value);
           }
           break;
         case "lte":
           if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
+            whereSubstatement += " IS NULL";
           } else {
-            whereSubstatement += " <= ?";
-            bindings.push(whereSubObject.value);
-          }
-          break;
-        case "lteornull":
-          if (whereSubObject.value === null) {
-            throw new Error("Can't use this operator with null");
-          } else {
+            // generally understood that lte a non-null value would include nulls
             whereSubstatement = `(${whereSubstatement} <= ? OR ${whereSubstatement} IS NULL)`;
             bindings.push(whereSubObject.value);
           }
@@ -470,7 +445,7 @@ function applyWhere(
           if (Array.isArray(whereSubObject.value)) {
             // if array is empty, is equivalent of FALSE
             if (whereSubObject.value.length < 1) {
-              whereSubstatement = " FALSE";
+              whereSubstatement = "FALSE";
               throw new Error(
                 "Must provide non-empty array for (n)in operators"
               );

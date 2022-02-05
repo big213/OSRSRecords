@@ -18,6 +18,11 @@ export const channelMap = {
   guildId: env.discord.guild_id,
 };
 
+// must be the complete user id, e.g. "10000000000000"
+export const discordUserIdMap = {
+  reviewer: env.discord.reviewer_user_id,
+};
+
 export async function sendDiscordRequest(
   method: "get" | "post" | "put" | "delete" | "patch",
   path: string,
