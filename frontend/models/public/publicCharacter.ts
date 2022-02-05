@@ -35,7 +35,7 @@ export const PublicCharacter = {
             },
             {
               field: 'score',
-              width: '200px',
+              width: '100px',
               align: 'right',
             },
             {
