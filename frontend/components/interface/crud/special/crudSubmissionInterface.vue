@@ -541,13 +541,11 @@ export default {
         // if reloadGeneration is behind the latest one, do not load the results into this.records, as the loadData request has been superseded
         if (currentReloadGeneration < this.reloadGeneration) return
 
-        this.records = results.edges.map((ele) => ele.node)
-
-        this.totalRecords = results.paginatorInfo.total
-        this.endCursor = results.paginatorInfo.endCursor
-
         // changed: if any rows AND in isRankMode, fetch and set the ranking of the first row
-        if (this.records.length > 0 && this.isRankMode) {
+        if (results.edges.length > 0 && this.isRankMode) {
+          // temporarily store records, as we need to modify it before it appears in the table results
+          const records = results.edges.map((ele) => ele.node)
+
           const hasParticipantsFilter = !!this.allFilters.find(
             (rawFilterObject) => rawFilterObject.field === 'participants'
           )
@@ -577,14 +575,22 @@ export default {
                 },
               },
               __args: {
-                id: this.records[0].id,
+                id: records[0].id,
               },
             },
           })
-          this.$set(this.records[0], 'ranking', rankResults.ranking)
+          this.$set(records[0], 'ranking', rankResults.ranking)
+
+          // sync records only at this point, after rank is done loading
+          this.records = records
 
           this.populateRankings()
+        } else {
+          this.records = results.edges.map((ele) => ele.node)
         }
+
+        this.totalRecords = results.paginatorInfo.total
+        this.endCursor = results.paginatorInfo.endCursor
       } catch (err) {
         handleError(this, err)
       }
