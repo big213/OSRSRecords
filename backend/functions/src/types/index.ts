@@ -1,16 +1,8 @@
 import type { Request } from "express";
-import { ObjectTypeDefinitionField } from "giraffeql";
 import Knex = require("knex");
 import { userPermissionEnum, userRoleKenum } from "../schema/enums";
 
 export type StringKeyObject = Record<string, unknown>;
-
-export type PusherEnv = {
-  readonly app_id: string;
-  readonly key: string;
-  readonly secret: string;
-  readonly cluster: string;
-};
 
 export type SpecialJoinFunction = (
   knexObject: Knex.QueryBuilder,
