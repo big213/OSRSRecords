@@ -158,7 +158,9 @@ export default {
         return {
           text:
             sortObject.text ??
-            `${fieldInfo.text ?? field} (${sortObject.desc ? 'Desc' : 'Asc'})`,
+            `${fieldInfo.text ?? sortObject.field} (${
+              sortObject.desc ? 'Desc' : 'Asc'
+            })`,
           field: sortObject.field,
           desc: sortObject.desc,
         }
@@ -540,56 +542,62 @@ export default {
       return getNestedProperty(item, headerItem.value)
     },
 
-    generateQuery(fields, firstFieldOnly = false) {
+    processQuery(fields, firstFieldOnly = false) {
+      // create a map field -> serializeFn for fast serialization
+      const serializeMap = new Map()
+
       return {
-        ...collapseObject(
-          fields.reduce(
-            (total, field) => {
-              const fieldInfo = lookupFieldInfo(this.recordInfo, field)
+        serializeMap,
+        query: {
+          ...collapseObject(
+            fields.reduce(
+              (total, field) => {
+                const fieldInfo = lookupFieldInfo(this.recordInfo, field)
 
-              const fieldsToAdd = new Set()
+                const fieldsToAdd = new Set()
 
-              // in export mode, generally will only be fetching the first field
-              if (fieldInfo.fields) {
-                if (firstFieldOnly) {
-                  fieldsToAdd.add(fieldInfo.fields[0])
+                // in export mode, generally will only be fetching the first field
+                if (fieldInfo.fields) {
+                  if (firstFieldOnly) {
+                    fieldsToAdd.add(fieldInfo.fields[0])
+                  } else {
+                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  }
                 } else {
-                  fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+                  fieldsToAdd.add(field)
                 }
-              } else {
-                fieldsToAdd.add(field)
-              }
 
-              // process fields
-              fieldsToAdd.forEach((field) => {
-                total[field] = true
+                // process fields
+                fieldsToAdd.forEach((field) => {
+                  total[field] = true
 
-                // add a serializer if there is one for the field
-                const currentFieldInfo = this.recordInfo.fields[field]
-                if (currentFieldInfo) {
-                  if (currentFieldInfo.serialize) {
-                    serializeMap.set(field, currentFieldInfo.serialize)
+                  // add a serializer if there is one for the field
+                  const currentFieldInfo = this.recordInfo.fields[field]
+                  if (currentFieldInfo) {
+                    if (currentFieldInfo.serialize) {
+                      serializeMap.set(field, currentFieldInfo.serialize)
+                    }
+
+                    // if field has args, process them
+                    if (currentFieldInfo.args) {
+                      total[currentFieldInfo.args.path + '.__args'] =
+                        currentFieldInfo.args.getArgs(this)
+                    }
                   }
+                })
 
-                  // if field has args, process them
-                  if (currentFieldInfo.args) {
-                    total[currentFieldInfo.args.path + '.__args'] =
-                      currentFieldInfo.args.getArgs(this)
-                  }
+                // if main fieldInfo has args, process them
+                if (fieldInfo.args) {
+                  total[fieldInfo.args.path + '.__args'] =
+                    fieldInfo.args.getArgs(this)
                 }
-              })
 
-              // if main fieldInfo has args, process them
-              if (fieldInfo.args) {
-                total[fieldInfo.args.path + '.__args'] =
-                  fieldInfo.args.getArgs(this)
-              }
-
-              return total
-            },
-            { id: true, __typename: true } // always add id and typename
-          )
-        ),
+                return total
+              },
+              { id: true, __typename: true } // always add id and typename
+            )
+          ),
+        },
       }
     },
 
@@ -656,9 +664,6 @@ export default {
     async exportData() {
       this.loading.exportData = true
       try {
-        // create a map field -> serializeFn for fast serialization
-        const serializeMap = new Map()
-
         // use custom download fields if provided
         const customFields =
           this.recordInfo.paginationOptions.downloadOptions.fields
@@ -674,11 +679,13 @@ export default {
 
         if (fields.length < 1) throw new Error('No fields to export')
 
+        const { query, serializeMap } = this.processQuery(fields)
+
         // fetch data
         const results = await collectPaginatorData(
           this,
           'get' + this.capitalizedType + 'Paginator',
-          this.generateQuery(fields),
+          query,
           this.generatePaginatorArgs(false)
         )
 
@@ -816,17 +823,16 @@ export default {
     },
 
     async fetchData() {
-      // create a map field -> serializeFn for fast serialization
-      const serializeMap = new Map()
-
       const fields = this.recordInfo.paginationOptions.headerOptions
         .map((headerInfo) => headerInfo.field)
         .concat(this.recordInfo.requiredFields ?? [])
 
+      const { query, serializeMap } = this.processQuery(fields)
+
       const results = await getPaginatorData(
         this,
         'get' + this.capitalizedType + 'Paginator',
-        this.generateQuery(fields),
+        query,
         this.generatePaginatorArgs(true)
       )
 
@@ -929,12 +935,12 @@ export default {
 
     async reset({
       initFilters = false,
-      resetFilters = false,
-      resetSort = false,
-      resetCursor = false,
-      resetExpanded = true,
-      reloadData = true,
-      resetPolling = true,
+      // resetFilters = false,
+      // resetSort = false,
+      // resetCursor = false,
+      // resetExpanded = true,
+      // reloadData = true,
+      // resetPolling = true,
       showLoader = true,
       clearRecords = true,
     } = {}) {

@@ -1,5 +1,6 @@
-import { PublicSubmission } from './publicSubmission'
 import { Character } from '../base'
+import { PublicSubmission } from './publicSubmission'
+
 export const PublicCharacter = {
   ...Character,
   routeName: 'i-view',

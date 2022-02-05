@@ -464,11 +464,9 @@
 import crudMixin from '~/mixins/crud'
 import { executeGiraffeql } from '~/services/giraffeql'
 import {
-  collapseObject,
   handleError,
   getPaginatorData,
   serializeNestedProperty,
-  lookupFieldInfo,
 } from '~/services/base'
 
 // changed
@@ -625,22 +623,19 @@ export default {
     },
 
     async fetchData() {
-      // create a map field -> serializeFn for fast serialization
-      const serializeMap = new Map()
-
       const fields = this.recordInfo.paginationOptions.headerOptions
         .map((headerInfo) => headerInfo.field)
         .concat(this.recordInfo.requiredFields ?? [])
 
       // changed: exclude 'ranking' field from query in isRankMode
+      const { query, serializeMap } = this.processQuery(
+        this.isRankMode ? fields.filter((field) => field !== 'ranking') : fields
+      )
+
       const results = await getPaginatorData(
         this,
         'get' + this.capitalizedType + 'Paginator',
-        this.generateQuery(
-          this.isRankMode
-            ? fields.filter((field) => field !== 'ranking')
-            : fields
-        ),
+        query,
         this.generatePaginatorArgs(true)
       )
 
