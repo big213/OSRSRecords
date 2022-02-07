@@ -467,6 +467,7 @@ import {
   handleError,
   getPaginatorData,
   serializeNestedProperty,
+  processQuery,
 } from '~/services/base'
 
 // changed
@@ -628,8 +629,12 @@ export default {
         .concat(this.recordInfo.requiredFields ?? [])
 
       // changed: exclude 'ranking' field from query in isRankMode
-      const { query, serializeMap } = this.processQuery(
-        this.isRankMode ? fields.filter((field) => field !== 'ranking') : fields
+      const { query, serializeMap } = processQuery(
+        this,
+        this.recordInfo,
+        this.isRankMode
+          ? fields.filter((field) => field !== 'relevantEraRanking')
+          : fields
       )
 
       const results = await getPaginatorData(

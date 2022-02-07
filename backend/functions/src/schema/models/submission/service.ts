@@ -92,6 +92,7 @@ export class SubmissionService extends PaginatedService {
     "eventEra.id": {},
     "eventEra.isRelevant": {},
     isSoloPersonalBest: {},
+    isRelevantRecord: {},
     participants: {},
     status: {},
     "submissionCharacterParticipantLink/character.id": {},
@@ -395,14 +396,10 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
-    // if the record was added as approved, also need to run syncSubmissionIsRecord and syncSoloPBState
+    // if the record was added as approved, also need to run syncSubmissionIsRelevantRecord and syncSoloPBState
     // HOWEVER, will NOT be triggering broadcastUpdateLogs and syncDiscordLeaderboards. admin can flick the status if they want to trigger these events
     if (inferredStatus === submissionStatusKenum.APPROVED) {
-      await this.syncSubmissionIsRecord(
-        args.event,
-        args.participantsList.length,
-        args.eventEra
-      );
+      await this.syncIsRelevantRecord(args.event, args.participantsList.length);
 
       // also need to sync the isSoloPersonalBest state if it is a solo record
       if (validatedArgs.participantsList.length === 1) {
@@ -616,13 +613,6 @@ export class SubmissionService extends PaginatedService {
       }
     }
 
-    // changed: sync the isRecord state
-    await this.syncSubmissionIsRecord(
-      item["event.id"],
-      item.participants,
-      item["eventEra.id"]
-    );
-
     // also need to sync the isSoloPersonalBest if it is a solo record
     if (item.participants === 1) {
       await this.syncSoloPBState(item.id, item["event.id"]);
@@ -655,6 +645,9 @@ export class SubmissionService extends PaginatedService {
           newStatus !== submissionStatusKenum.APPROVED) ||
         newStatus === submissionStatusKenum.APPROVED
       ) {
+        // also need to sync the isRelevantRecord state
+        await this.syncIsRelevantRecord(item["event.id"], item.participants);
+
         await this.syncDiscordLeaderboards({
           eventId: item["event.id"],
           participants: item.participants,
@@ -1611,69 +1604,6 @@ export class SubmissionService extends PaginatedService {
     }
   }
 
-  async syncSubmissionIsRecord(
-    eventId: string,
-    participants: number,
-    eventEraId: string
-  ) {
-    const [fastestRecord] = await fetchTableRows({
-      select: [{ field: "id" }],
-      from: this.typename,
-      where: {
-        fields: [
-          {
-            field: "event.id",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            operator: "eq",
-            value: participants,
-          },
-          {
-            field: "status",
-            operator: "eq",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-          {
-            field: "eventEra.id",
-            operator: "eq",
-            value: eventEraId,
-          },
-        ],
-      },
-      orderBy: [
-        {
-          field: "score",
-          desc: false,
-        },
-      ],
-      limit: 1,
-    });
-
-    if (!fastestRecord) {
-      return;
-    }
-
-    // set the fastest record isRecord to true
-    await updateTableRow({
-      fields: {
-        isRecord: true,
-      },
-      table: this.typename,
-      where: {
-        fields: [
-          {
-            field: "id",
-            operator: "eq",
-            value: fastestRecord.id,
-          },
-        ],
-      },
-    });
-  }
-
   // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
   async syncSoloPBState(submissionId: string, eventId: string) {
     const submissionLinks = await fetchTableRows({
@@ -1965,6 +1895,89 @@ export class SubmissionService extends PaginatedService {
     };
   }
 
+  async syncIsRelevantRecord(eventId: string, participants: number) {
+    // reset all isRecord flags for the event.
+    await updateTableRow({
+      fields: {
+        isRelevantRecord: false,
+      },
+      table: this.typename,
+      where: {
+        fields: [
+          {
+            field: "event",
+            value: eventId,
+          },
+          {
+            field: "participants",
+            value: participants,
+          },
+        ],
+      },
+    });
+
+    // lookup all approved submissions in relevantEra, sorting by happenedOn
+    const submissions = await fetchTableRows({
+      select: [
+        {
+          field: "id",
+        },
+        {
+          field: "score",
+        },
+      ],
+      from: this.typename,
+      where: {
+        fields: [
+          { field: "event", value: eventId },
+          {
+            field: "participants",
+            value: participants,
+          },
+          {
+            field: "status",
+            value: submissionStatusKenum.APPROVED.index,
+          },
+          {
+            field: "eventEra.isRelevant",
+            operator: "eq",
+            value: true,
+          },
+        ],
+      },
+      orderBy: [
+        {
+          field: "happenedOn",
+          desc: false,
+        },
+      ],
+    });
+
+    // go through each submission and if it is a relevantRecord, flag it
+    let currentRecord: number = Infinity;
+
+    for (const submission of submissions) {
+      // is it better than the current record? if so, flag it and set that as new record
+      if (submission.score < currentRecord) {
+        currentRecord = submission.score;
+        await updateTableRow({
+          fields: {
+            isRelevantRecord: true,
+          },
+          table: this.typename,
+          where: {
+            fields: [
+              {
+                field: "id",
+                value: submission.id,
+              },
+            ],
+          },
+        });
+      }
+    }
+  }
+
   async afterUpdateProcess(
     { req, fieldPath, args }: ServiceFunctionInputs,
     itemId: string
@@ -1989,6 +2002,7 @@ export class SubmissionService extends PaginatedService {
         "event.id",
         "eventEra.id",
         "participants",
+        "isRelevantRecord",
         "score",
         "discordMessageId",
       ],
@@ -2065,6 +2079,11 @@ export class SubmissionService extends PaginatedService {
       // also need to sync the isSoloPersonalBest state if it is a solo record
       if (item.participants === 1) {
         await this.syncSoloPBState(item.id, item["event.id"]);
+      }
+
+      // also need to sync the isRelevantRecord state if it was a relevant record
+      if (item.isRelevantRecord) {
+        await this.syncIsRelevantRecord(item["event.id"], item.participants);
       }
     }
 

@@ -60,6 +60,7 @@ import {
   capitalizeString,
   serializeNestedProperty,
   lookupFieldInfo,
+  processQuery,
 } from '~/services/base'
 import CircularLoader from '~/components/common/circularLoader.vue'
 
@@ -162,53 +163,16 @@ export default {
     async loadRecord() {
       this.loading.loadRecord = true
       try {
-        // create a map field -> serializeFn for fast serialization
-        const serializeMap = new Map()
-
         const fields = this.recordInfo.viewOptions.fields
+
+        const { query, serializeMap } = processQuery(
+          this,
+          this.recordInfo,
+          fields
+        )
         const data = await executeGiraffeql(this, {
           ['get' + this.capitalizedType]: {
-            __typename: true,
-            ...collapseObject(
-              fields.reduce(
-                (total, fieldKey) => {
-                  const fieldInfo = lookupFieldInfo(this.recordInfo, fieldKey)
-
-                  // if field is hidden, exclude
-                  if (fieldInfo.hidden) return total
-
-                  const fieldsToAdd = new Set()
-
-                  // add all fields
-                  if (fieldInfo.fields) {
-                    fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
-                  } else {
-                    fieldsToAdd.add(fieldKey)
-                  }
-
-                  // process fields
-                  fieldsToAdd.forEach((field) => {
-                    total[field] = true
-
-                    // add a serializer if there is one for the field
-                    const currentFieldInfo = this.recordInfo.fields[field]
-                    if (currentFieldInfo) {
-                      if (currentFieldInfo.serialize) {
-                        serializeMap.set(field, currentFieldInfo.serialize)
-                      }
-
-                      // if field has args, process them
-                      if (currentFieldInfo.args) {
-                        total[currentFieldInfo.args.path + '.__args'] =
-                          currentFieldInfo.args.getArgs(this)
-                      }
-                    }
-                  })
-                  return total
-                },
-                { id: true, __typename: true }
-              )
-            ),
+            ...query,
             __args: {
               id: this.selectedItem.id,
             },

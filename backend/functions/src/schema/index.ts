@@ -50,6 +50,7 @@ import DiscordChannel from "./models/discordChannel/rootResolver";
 import DiscordChannelOutput from "./models/discordChannelOutput/rootResolver";
 import EventEra from "./models/eventEra/rootResolver";
 import Imgur from "./models/imgur/rootResolver";
+import Admin from "./models/admin/rootResolver";
 /** END RootResolver Import */
 
 import SubmissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/rootResolver";
@@ -68,6 +69,7 @@ allServices.DiscordChannel.setRootResolvers(DiscordChannel);
 allServices.DiscordChannelOutput.setRootResolvers(DiscordChannelOutput);
 allServices.EventEra.setRootResolvers(EventEra);
 allServices.Imgur.setRootResolvers(Imgur);
+allServices.Admin.setRootResolvers(Admin);
 /** END RootResolver Set */
 
 allServices.SubmissionCharacterParticipantLink.setRootResolvers(

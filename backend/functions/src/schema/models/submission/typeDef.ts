@@ -166,12 +166,12 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "evidence_key",
       },
     }),
-    isRecord: generateBooleanField({
+    isRelevantRecord: generateBooleanField({
       allowNull: false,
       defaultValue: false,
       typeDefOptions: { addable: false, updateable: false },
       sqlOptions: {
-        field: "is_record",
+        field: "is_relevant_record",
       },
     }),
     isSoloPersonalBest: generateBooleanField({
@@ -246,15 +246,15 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "The previous record given the event.id, participants, and eventEra.id, if any",
       allowNull: true,
       requiredSqlFields: [
-        "isRecord",
+        "isRelevantRecord",
         "happenedOn",
         "event.id",
         "participants",
         "eventEra.id",
       ],
       async resolver({ req, parentValue, fieldPath, query }) {
-        // is !isRecord, return null
-        if (!parentValue.isRecord) return null;
+        // is !isRelevantRecord, return null
+        if (!parentValue.isRelevantRecord) return null;
 
         // check when the previous record for the event.id, participants, status === 'approved', eventEra.id is
         const results = await getObjectType({
@@ -286,7 +286,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
                   value: parentValue.eventEra.id,
                 },
                 {
-                  field: "isRecord",
+                  field: "isRelevantRecord",
                   operator: "eq",
                   value: true,
                 },

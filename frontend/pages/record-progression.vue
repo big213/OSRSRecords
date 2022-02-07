@@ -1,13 +1,17 @@
 <template>
   <div v-if="$route.query.pageOptions">
-    <SubmissionPagePreset :event-clearable="false"></SubmissionPagePreset>
+    <SubmissionPagePreset
+      :event-clearable="false"
+      show-relevant-era-only
+      :show-participants-any="false"
+    ></SubmissionPagePreset>
     <CrudRecordPage
       :record-info="recordInfo"
       :locked-filters="lockedFilters"
       :hidden-filters="hiddenFilters"
       :head="head"
       :title="title"
-      icon="mdi-podium"
+      icon="mdi-star"
     ></CrudRecordPage>
   </div>
   <v-container v-else fluid fill-height justify-center>
@@ -16,7 +20,8 @@
 </template>
 
 <script>
-import { generateLeaderboardRoute } from '~/services/common'
+import { generateLeaderboardPageOptions } from '~/services/common'
+import { generateCrudRecordInterfaceRoute } from '~/services/base'
 import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
 import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { PublicSubmission } from '~/models/public'
@@ -31,22 +36,11 @@ export default {
     return {
       recordInfo: {
         ...PublicSubmission,
-        fields: {
-          ...PublicSubmission.fields,
-          relevantEraRanking: {
-            ...PublicSubmission.fields.relevantEraRanking,
-            text: 'Ranking',
-          },
-        },
         paginationOptions: {
           ...PublicSubmission.paginationOptions,
           sortOptions: [
             {
-              field: 'score',
-              desc: false,
-            },
-            {
-              field: 'score',
+              field: 'happenedOn',
               desc: true,
             },
           ],
@@ -54,7 +48,7 @@ export default {
       },
       hiddenFilters: ['status'],
       head: {
-        title: 'Leaderboard',
+        title: 'Record Progression',
       },
       lockedFilters: [
         {
@@ -62,11 +56,13 @@ export default {
           operator: 'eq',
           value: 'APPROVED',
         },
+        {
+          field: 'isRelevantRecord',
+          operator: 'eq',
+          value: true,
+        },
       ],
-      title: 'Leaderboard',
-      loading: {
-        redirect: false,
-      },
+      title: 'Record Progression',
     }
   },
 
@@ -89,9 +85,17 @@ export default {
     '$route.query.pageOptions'(val) {
       // if no pageOptions, automatically redirect
       if (!val) {
-        generateLeaderboardRoute(this, this.currentParams)
-          .then((route) => {
-            this.$router.push(route)
+        generateLeaderboardPageOptions(this, this.currentParams)
+          .then((pageOptions) => {
+            this.$router.push(
+              generateCrudRecordInterfaceRoute(this.$route.path, {
+                ...pageOptions,
+                sort: {
+                  field: 'happenedOn',
+                  desc: true,
+                },
+              })
+            )
           })
           .catch((e) => e)
       }
@@ -101,9 +105,17 @@ export default {
   mounted() {
     // if no pageOptions, automatically redirect
     if (!this.$route.query.pageOptions) {
-      generateLeaderboardRoute(this, this.currentParams)
-        .then((route) => {
-          this.$router.push(route)
+      generateLeaderboardPageOptions(this, this.currentParams)
+        .then((pageOptions) => {
+          this.$router.push(
+            generateCrudRecordInterfaceRoute(this.$route.path, {
+              ...pageOptions,
+              sort: {
+                field: 'happenedOn',
+                desc: true,
+              },
+            })
+          )
         })
         .catch((e) => e)
     }

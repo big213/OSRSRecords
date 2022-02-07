@@ -3,8 +3,8 @@
     <SubmissionStatusChip
       :indexOrName="currentValue"
       small
-      v-bind="attrs"
-      v-on="on"
+      v-bind="$attrs"
+      v-on="$listeners"
     ></SubmissionStatusChip>
   </div>
 </template>

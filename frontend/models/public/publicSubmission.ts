@@ -10,7 +10,7 @@ export const PublicSubmission = {
     ...Submission.paginationOptions,
     headerOptions: [
       {
-        field: 'ranking',
+        field: 'relevantEraRanking',
         width: '100px',
         align: 'right',
       },
@@ -59,7 +59,7 @@ export const PublicSubmission = {
       'statusReadonly',
       // 'isRecordingVerified',
       'world',
-      'ranking',
+      'relevantEraRanking',
       'previousRecordHappenedOn',
       // 'files',
       'externalLinks',

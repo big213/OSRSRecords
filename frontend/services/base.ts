@@ -633,3 +633,67 @@ export function addNestedInputObject(
     })
   )
 }
+
+export function processQuery(
+  that,
+  recordInfo,
+  fields: string[],
+  firstFieldOnly = false
+) {
+  // create a map field -> serializeFn for fast serialization
+  const serializeMap = new Map()
+
+  return {
+    serializeMap,
+    query: {
+      ...collapseObject(
+        fields.reduce(
+          (total, field) => {
+            const fieldInfo = lookupFieldInfo(recordInfo, field)
+
+            const fieldsToAdd: Set<string> = new Set()
+
+            // in export mode, generally will only be fetching the first field
+            if (fieldInfo.fields) {
+              if (firstFieldOnly) {
+                fieldsToAdd.add(fieldInfo.fields[0])
+              } else {
+                fieldInfo.fields.forEach((field) => fieldsToAdd.add(field))
+              }
+            } else {
+              fieldsToAdd.add(field)
+            }
+
+            // process fields
+            fieldsToAdd.forEach((field) => {
+              total[field] = true
+
+              // add a serializer if there is one for the field
+              const currentFieldInfo = recordInfo.fields[field]
+              if (currentFieldInfo) {
+                if (currentFieldInfo.serialize) {
+                  serializeMap.set(field, currentFieldInfo.serialize)
+                }
+
+                // if field has args, process them
+                if (currentFieldInfo.args) {
+                  total[currentFieldInfo.args.path + '.__args'] =
+                    currentFieldInfo.args.getArgs(that)
+                }
+              }
+            })
+
+            // if main fieldInfo has args, process them
+            if (fieldInfo.args) {
+              total[fieldInfo.args.path + '.__args'] =
+                fieldInfo.args.getArgs(that)
+            }
+
+            return total
+          },
+          { id: true, __typename: true } // always add id and typename
+        )
+      ),
+    },
+  }
+}

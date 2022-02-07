@@ -19,6 +19,7 @@ import { DiscordChannelService } from "./models/discordChannel/service";
 import { DiscordChannelOutputService } from "./models/discordChannelOutput/service";
 import { EventEraService } from "./models/eventEra/service";
 import { ImgurService } from "./models/imgur/service";
+import { AdminService } from "./models/admin/service";
 /** END Service Import */
 
 import { SubmissionCharacterParticipantLinkService } from "./links/submissionCharacterParticipantLink/service";
@@ -37,6 +38,7 @@ export const DiscordChannel = new DiscordChannelService();
 export const DiscordChannelOutput = new DiscordChannelOutputService();
 export const EventEra = new EventEraService();
 export const Imgur = new ImgurService();
+export const Admin = new AdminService();
 /** END Service Set */
 
 export const SubmissionCharacterParticipantLink =

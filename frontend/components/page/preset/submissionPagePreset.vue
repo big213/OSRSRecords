@@ -125,6 +125,16 @@ export default {
       type: Boolean,
       default: false,
     },
+    // only show the relevant eras for the eventEra dropdown
+    showRelevantEraOnly: {
+      type: Boolean,
+      default: false,
+    },
+    // show the "any" option for participants dropdown?
+    showParticipantsAny: {
+      type: Boolean,
+      default: true,
+    },
   },
   computed: {
     inputsArray() {
@@ -181,28 +191,37 @@ export default {
 
       eventEraInputObject.loading = true
       eventEraInputObject.options = []
-      // also add an "any" option
-      eventEraInputObject.options = await getEventEras(this, false, [
-        {
-          'event.id': {
-            eq: eventInputObject.value.id,
-          },
-        },
-      ]).then((res) =>
-        res.concat([
+
+      // is isRelevantEraOnly mode, only add that option
+      if (this.showRelevantEraOnly) {
+        eventEraInputObject.options.push({
+          id: '__relevant',
+          name: 'Relevant Eras',
+        })
+      } else {
+        // also add an "any" option
+        eventEraInputObject.options = await getEventEras(this, false, [
           {
-            divider: true,
+            'event.id': {
+              eq: eventInputObject.value.id,
+            },
           },
-          {
-            id: '__relevant',
-            name: 'Relevant Eras',
-          },
-          {
-            id: '__undefined',
-            name: 'All Eras',
-          },
-        ])
-      )
+        ]).then((res) =>
+          res.concat([
+            {
+              divider: true,
+            },
+            {
+              id: '__relevant',
+              name: 'Relevant Eras',
+            },
+            {
+              id: '__undefined',
+              name: 'All Eras',
+            },
+          ])
+        )
+      }
 
       eventEraInputObject.loading = false
 
@@ -212,17 +231,19 @@ export default {
       )
 
       // also add an "any" option
-      participantsInputObject.options.push(
-        ...[
-          {
-            divider: true,
-          },
-          {
-            id: '__undefined',
-            name: 'Any',
-          },
-        ]
-      )
+      if (this.showParticipantsAny) {
+        participantsInputObject.options.push(
+          ...[
+            {
+              divider: true,
+            },
+            {
+              id: '__undefined',
+              name: 'Any',
+            },
+          ]
+        )
+      }
 
       // set to "__relevant" by default if eventEra is null
       if (!eventEraInputObject.value) {

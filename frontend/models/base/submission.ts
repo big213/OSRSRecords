@@ -270,6 +270,10 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Is Solo PB',
       component: BooleanColumn,
     },
+    isRelevantRecord: {
+      text: 'Is Relevant Record',
+      component: BooleanColumn,
+    },
     world: {
       text: 'World',
       optional: true,
@@ -298,9 +302,22 @@ export const Submission = <RecordInfo<'submission'>>{
       hint: 'Comments by the reviewer',
       inputType: 'textarea',
     },
-    ranking: {
+    eraRanking: {
       text: 'Era Ranking',
       component: RankingColumn,
+    },
+    relevantEraRanking: {
+      text: 'Relevant Era Ranking',
+      fields: ['ranking'],
+      component: RankingColumn,
+      args: {
+        getArgs: (that) => {
+          return {
+            isRelevantEventEra: true,
+          }
+        },
+        path: 'ranking',
+      },
     },
     submittedBy: {
       text: 'Submitted By',
@@ -462,7 +479,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'status',
       'isRecordingVerified',
       'world',
-      'ranking',
+      'relevantEraRanking',
       'previousRecordHappenedOn',
       // 'files',
       'externalLinks',
@@ -471,6 +488,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'reviewerComments',
       'discordId',
       'isSoloPersonalBest',
+      'isRelevantRecord',
     ],
   },
   enterOptions: {},
