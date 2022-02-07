@@ -61,7 +61,7 @@
         </v-list-item>
       </v-list>
       <v-divider></v-divider>
-      <v-list v-if="user" dense color="accent">
+      <v-list dense color="accent">
         <v-subheader>Stats</v-subheader>
         <v-list-item
           v-for="(item, i) in statItems"
