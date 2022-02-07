@@ -6,17 +6,13 @@ import { env } from "../../../config";
 import { Event, EventEra, Submission } from "../../services";
 import { fetchTableRows, updateTableRow } from "../../core/helpers/sql";
 import { sendDiscordRequest } from "../../helpers/discord";
-import * as fs from "fs";
-import { submissionStatusKenum } from "../../enums";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
 });
 
 export class AdminService extends BaseService {
-  accessControl: AccessControlMap = {
-    image: () => true,
-  };
+  accessControl: AccessControlMap = {};
 
   @permissionsCheck("discord")
   async sendDiscordRequest({

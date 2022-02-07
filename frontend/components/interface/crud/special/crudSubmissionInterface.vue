@@ -495,13 +495,36 @@ export default {
       }
       return rankMode
     },
+
+    // changed
+    isRelevantRecordMode() {
+      let isMode = false
+      if (this.currentSort?.field === 'happenedOn') {
+        isMode =
+          requiredFilters.every((field) => {
+            return this.allFilters.find(
+              (rawFilterObject) => rawFilterObject.field === field
+            )
+          }) &&
+          this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'isRelevantRecord'
+          )?.value === true &&
+          this.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'status'
+          )?.value === 'APPROVED'
+      }
+
+      return isMode
+    },
   },
 
   methods: {
     // added
     populateRankings() {
+      if (this.records.length < 1) return
+
       // changed: go through all of the entries and populate the ranking field based on the first entry's ranking
-      if (this.isRankMode && this.records.length > 0) {
+      if (this.isRankMode) {
         const firstResultRanking = this.records[0].ranking
 
         let placeDiff = 0
@@ -527,6 +550,29 @@ export default {
           }
         })
       }
+    },
+
+    // added
+    populateDaysRecordStoodFields() {
+      if (this.records.length < 1) return
+
+      // go through the records and populate the isRelevantRecord AND supersedingRecord.happenedOn fields
+      const records = this.currentSort.desc
+        ? this.records.slice().reverse()
+        : this.records
+
+      records.forEach((record, index) => {
+        if (record.supersedingRecord) return
+
+        this.$set(record, 'isRelevantRecord', true)
+        this.$set(
+          record,
+          'supersedingRecord',
+          records[index + 1]
+            ? { happenedOn: records[index + 1].happenedOn }
+            : null
+        )
+      })
     },
 
     // changed: also need to fetch ranking of the first row, then populate the rankings
@@ -586,6 +632,10 @@ export default {
           this.populateRankings()
         } else {
           this.records = results.edges.map((ele) => ele.node)
+
+          if (this.isRelevantRecordMode) {
+            this.populateDaysRecordStoodFields()
+          }
         }
 
         this.totalRecords = results.paginatorInfo.total
@@ -611,8 +661,13 @@ export default {
         this.records.push(...results.edges.map((ele) => ele.node))
 
         // changed: if any rows AND in isRankMode, populate the ranking field based on the first row
-        if (this.records.length > 0 && this.isRankMode) {
+        if (this.isRankMode) {
           this.populateRankings()
+        }
+
+        // changed: if any rows AND in isRelevantRecordMode, populate the necessary fields for daysRecordStood field
+        if (this.isRelevantRecordMode) {
+          this.populateDaysRecordStoodFields()
         }
 
         this.totalRecords = results.paginatorInfo.total
@@ -634,6 +689,8 @@ export default {
         this.recordInfo,
         this.isRankMode
           ? fields.filter((field) => field !== 'relevantEraRanking')
+          : this.isRelevantRecordMode
+          ? fields.filter((field) => field !== 'daysRecordStood')
           : fields
       )
 

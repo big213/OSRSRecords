@@ -172,3 +172,8 @@ export function generateParticipantsOptions(
 
   return returnOptions
 }
+
+// unixTimestamp in seconds
+export function daysDiff(unixTimestampFrom: number, unixTimestampTo: number) {
+  return Math.floor((unixTimestampTo - unixTimestampFrom) / (60 * 60 * 24))
+}

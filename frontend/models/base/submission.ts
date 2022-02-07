@@ -12,6 +12,7 @@ import CrudSubmissionInterface from '~/components/interface/crud/special/crudSub
 import { generateParseDateTimeStringFn } from '~/services/base'
 import UrlColumn from '~/components/table/urlColumn.vue'
 import RankingColumn from '~/components/table/special/rankingColumn.vue'
+import ReignColumn from '~/components/table/special/reignColumn.vue'
 import ParticipantsColumn from '~/components/table/special/participantsColumn.vue'
 import ParticipantsPreviewColumn from '~/components/table/special/participantsPreviewColumn.vue'
 import { getEventsByGroup, getSubmissionStatuses } from '~/services/dropdown'
@@ -234,10 +235,25 @@ export const Submission = <RecordInfo<'submission'>>{
       component: DateStringColumn,
     },
     previousRecordHappenedOn: {
-      text: 'Previous Record Time',
+      text: 'Previous Record Date',
       fields: ['previousRecord.happenedOn'],
       pathPrefix: 'previousRecord.happenedOn',
       component: DateStringColumn,
+    },
+    supersedingRecordHappenedOn: {
+      text: 'Superseding Record Date',
+      fields: ['supersedingRecord.happenedOn'],
+      pathPrefix: 'supersedingRecord.happenedOn',
+      component: DateStringColumn,
+    },
+    daysRecordStood: {
+      text: 'Reign',
+      fields: [
+        'supersedingRecord.happenedOn',
+        'happenedOn',
+        'isRelevantRecord',
+      ],
+      component: ReignColumn,
     },
     status: {
       text: 'Status',
@@ -314,6 +330,7 @@ export const Submission = <RecordInfo<'submission'>>{
         getArgs: (that) => {
           return {
             isRelevantEventEra: true,
+            excludeEventEra: true,
           }
         },
         path: 'ranking',
@@ -480,7 +497,9 @@ export const Submission = <RecordInfo<'submission'>>{
       'isRecordingVerified',
       'world',
       'relevantEraRanking',
-      'previousRecordHappenedOn',
+      'daysRecordStood',
+      // 'supersedingRecordHappenedOn',
+      // 'previousRecordHappenedOn',
       // 'files',
       'externalLinks',
       'privateComments',

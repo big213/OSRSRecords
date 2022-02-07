@@ -240,6 +240,75 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         });
       },
     },
+    supersedingRecord: {
+      type: Submission.typeDefLookup,
+      description:
+        "If this was a record, this points to the superseding record, if any",
+      allowNull: true,
+      requiredSqlFields: [
+        "isRelevantRecord",
+        "happenedOn",
+        "event.id",
+        "participants",
+      ],
+      async resolver({ req, parentValue, fieldPath, query }) {
+        // is !isRelevantRecord, return null
+        if (!parentValue.isRelevantRecord) return null;
+
+        // check when the next record for the event.id, participants, status === 'approved', eventEra.id is
+        const results = await getObjectType({
+          typename: Submission.typename,
+          req,
+          fieldPath,
+          externalQuery: query,
+          sqlParams: {
+            where: {
+              fields: [
+                {
+                  field: "event.id",
+                  operator: "eq",
+                  value: parentValue.event.id,
+                },
+                {
+                  field: "participants",
+                  operator: "eq",
+                  value: parentValue.participants,
+                },
+                {
+                  field: "status",
+                  operator: "eq",
+                  value: submissionStatusKenum.APPROVED.index,
+                },
+                {
+                  field: "eventEra.isRelevant",
+                  operator: "eq",
+                  value: true,
+                },
+                {
+                  field: "happenedOn",
+                  operator: "gt",
+                  value: parentValue.happenedOn,
+                },
+                {
+                  field: "isRelevantRecord",
+                  operator: "eq",
+                  value: true,
+                },
+              ],
+            },
+            orderBy: [
+              {
+                field: "happenedOn",
+                desc: false,
+              },
+            ],
+            limit: 1,
+          },
+        });
+
+        return results[0] ?? null;
+      },
+    },
     previousRecord: {
       type: Submission.typeDefLookup,
       description:
@@ -250,7 +319,6 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         "happenedOn",
         "event.id",
         "participants",
-        "eventEra.id",
       ],
       async resolver({ req, parentValue, fieldPath, query }) {
         // is !isRelevantRecord, return null
@@ -295,17 +363,24 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
                   operator: "lt",
                   value: parentValue.happenedOn,
                 },
+                {
+                  field: "isRelevantRecord",
+                  operator: "eq",
+                  value: true,
+                },
               ],
             },
+            orderBy: [
+              {
+                field: "happenedOn",
+                desc: true,
+              },
+            ],
             limit: 1,
           },
         });
 
-        if (results.length < 1) {
-          return null;
-        }
-
-        return results[0];
+        return results[0] ?? null;
       },
     },
     ...generateCreatedAtField(),
