@@ -306,10 +306,10 @@ export default {
           inputs.externalLinks.map(async (link, index) => {
             if (!link) return
 
-            // if it matches https://imgur.com/asdf, convert to i.imgur
-            const firstMatch = link.match(/\/imgur.com\/(\w*)$/)
-            // if it matches https://imgur.com/a/asdf, convert to i.imgur with first album image
-            const secondMatch = link.match(/\/imgur.com\/a\/(\w*)$/)
+            // if it matches https://imgur.com/asdf(.xyz), convert to i.imgur
+            const firstMatch = link.match(/\/imgur.com\/(\w*)(\..*)?$/)
+            // if it matches https://imgur.com/a/asdf(.xyz), convert to i.imgur with first album image
+            const secondMatch = link.match(/\/imgur.com\/a\/(\w*)(\..*)?$/)
             if (firstMatch) {
               const imageData = await executeGiraffeql(this, {
                 getImgurImage: {

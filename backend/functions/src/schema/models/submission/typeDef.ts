@@ -31,6 +31,7 @@ import {
 import { Scalars } from "../..";
 import { submissionStatusKenum } from "../../enums";
 import { getObjectType } from "../../core/helpers/resolver";
+import { isVideoUrl } from "../../helpers/common";
 
 export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
   name: Submission.typename,
@@ -157,6 +158,30 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         if (!Array.isArray(parentValue.externalLinks)) return null;
 
         return parentValue.externalLinks[0] ?? null;
+      },
+    },
+    firstImageLink: {
+      type: Scalars.url,
+      allowNull: true,
+      requiredSqlFields: ["externalLinks"],
+      async resolver({ parentValue }) {
+        if (!Array.isArray(parentValue.externalLinks)) return null;
+
+        return (
+          parentValue.externalLinks.find((link) => !isVideoUrl(link)) ?? null
+        );
+      },
+    },
+    firstVideoLink: {
+      type: Scalars.url,
+      allowNull: true,
+      requiredSqlFields: ["externalLinks"],
+      async resolver({ parentValue }) {
+        if (!Array.isArray(parentValue.externalLinks)) return null;
+
+        return (
+          parentValue.externalLinks.find((link) => isVideoUrl(link)) ?? null
+        );
       },
     },
     evidenceKey: generateStringField({

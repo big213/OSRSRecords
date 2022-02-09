@@ -39,47 +39,13 @@ export default {
         paginationOptions: {
           ...PublicSubmission.paginationOptions,
           headerOptions: [
-            {
-              field: 'relevantEraRanking',
-              width: '100px',
-              align: 'right',
-            },
-            {
-              field: 'eventEraRecord',
-              width: '150px',
-              hideIf: (that) => {
-                // hide this column if the eventEra raw filter is specified and it is not '__undefined'
-                const eventEraFilter = that.allFilters.find(
-                  (rawFilterObject) => rawFilterObject.field === 'eventEra'
-                )
-                return eventEraFilter && eventEraFilter.value !== '__undefined'
-              },
-            },
-            {
-              field: 'eventRecordWithParticipants',
-              width: '250px',
-            },
-            {
-              field: 'participantsLinksList',
-            },
-            {
-              field: 'score',
-              width: '100px',
-              align: 'right',
-            },
-            {
-              field: 'mainExternalLink',
-              width: '150px',
-            },
+            ...PublicSubmission.paginationOptions.headerOptions.slice(0, 6),
             {
               field: 'daysRecordStood',
               width: '100px',
               align: 'right',
             },
-            {
-              field: 'happenedOn',
-              width: '120px',
-            },
+            PublicSubmission.paginationOptions.headerOptions[6],
           ],
           sortOptions: [
             {

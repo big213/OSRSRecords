@@ -11,6 +11,7 @@ import AdminEditSubmissionInterface from '~/components/interface/crud/special/ad
 import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
 import { generateParseDateTimeStringFn } from '~/services/base'
 import UrlColumn from '~/components/table/urlColumn.vue'
+import EvidenceColumn from '~/components/table/special/evidenceColumn.vue'
 import RankingColumn from '~/components/table/special/rankingColumn.vue'
 import ReignColumn from '~/components/table/special/reignColumn.vue'
 import ParticipantsColumn from '~/components/table/special/participantsColumn.vue'
@@ -173,9 +174,10 @@ export const Submission = <RecordInfo<'submission'>>{
       },
       component: UrlColumn,
     },
-    mainExternalLink: {
-      text: 'Evidence Link',
-      component: UrlColumn,
+    mainEvidenceLinks: {
+      text: 'Evidence',
+      fields: ['firstImageLink', 'firstVideoLink'],
+      component: EvidenceColumn,
     },
     score: {
       text: 'Result',
@@ -232,7 +234,7 @@ export const Submission = <RecordInfo<'submission'>>{
       hint: 'If you used at least one imgur link in the evidence links, you can leave this blank',
       // YYYY-MM-DD to unix timestamp
       parseValue: generateParseDateTimeStringFn('startOfDay'),
-      component: DateStringColumn,
+      component: TimeagoColumn,
     },
     previousRecordHappenedOn: {
       text: 'Previous Record Date',

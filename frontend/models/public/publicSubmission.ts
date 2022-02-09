@@ -28,6 +28,13 @@ export const PublicSubmission = {
       {
         field: 'eventRecordWithParticipants',
         width: '250px',
+        hideIf: (that) => {
+          // hide this column if the event raw filter is specified and it is not '__undefined'
+          const eventFilter = that.allFilters.find(
+            (rawFilterObject) => rawFilterObject.field === 'event'
+          )
+          return eventFilter && eventFilter.value !== '__undefined'
+        },
       },
       {
         field: 'participantsLinksList',
@@ -38,8 +45,8 @@ export const PublicSubmission = {
         align: 'right',
       },
       {
-        field: 'mainExternalLink',
-        width: '150px',
+        field: 'mainEvidenceLinks',
+        width: '50px',
       },
       {
         field: 'happenedOn',

@@ -6,7 +6,6 @@
       :clipped="clipped"
       fixed
       app
-      color="transparent"
     >
       <nuxt-link to="/" class="hidden-md-and-up">
         <v-img
@@ -50,7 +49,6 @@
           :key="i"
           :to="item.to"
           router
-          exact
         >
           <v-list-item-action>
             <v-icon>{{ item.icon }}</v-icon>
@@ -68,7 +66,6 @@
           :key="i"
           :to="item.to"
           router
-          exact
         >
           <v-list-item-action>
             <v-icon>{{ item.icon }}</v-icon>
@@ -126,7 +123,7 @@
 
       <AdminNavRoutes v-if="isAdmin" color="accent"></AdminNavRoutes>
     </v-navigation-drawer>
-    <v-app-bar :clipped-left="clipped" fixed app color="transparent">
+    <v-app-bar :clipped-left="clipped" fixed app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <nuxt-link to="/" class="hidden-sm-and-down">
         <v-img

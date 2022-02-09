@@ -10,7 +10,7 @@
         :key="index"
         cols="12"
         :lg="crudFilterObject.inputObject.cols || 3"
-        class="pb-0 inputs-bg"
+        class="pb-0"
       >
         <GenericInput
           :item="crudFilterObject.inputObject"
