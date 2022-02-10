@@ -21,10 +21,10 @@ export async function validateToken(auth: string): Promise<ContextUser> {
     // check if firebase_uid exists
     // fetch role from database
     const userResults = await sqlHelper.fetchTableRows({
-      select: [{ field: "id" }, { field: "role" }, { field: "permissions" }],
-      from: User.typename,
+      select: ["id", "role", "permissions"],
+      table: User.typename,
       where: {
-        fields: [{ field: "firebaseUid", value: decodedToken.uid }],
+        firebaseUid: decodedToken.uid,
       },
     });
 
@@ -58,16 +58,16 @@ export async function validateToken(auth: string): Promise<ContextUser> {
           createdBy: addUserResults[0].id,
         },
         where: {
-          fields: [{ field: "id", value: addUserResults[0].id }],
+          id: addUserResults[0].id,
         },
       });
 
       // fetch the user
       const createdUserResults = await sqlHelper.fetchTableRows({
-        select: [{ field: "id" }, { field: "role" }, { field: "permissions" }],
-        from: User.typename,
+        select: ["id", "role", "permissions"],
+        table: User.typename,
         where: {
-          fields: [{ field: "id", value: addUserResults[0].id }],
+          id: addUserResults[0].id,
         },
       });
 
@@ -117,14 +117,10 @@ export async function validateApiKey(auth: string): Promise<ContextUser> {
   try {
     // lookup user by API key
     const apiKeyResults = await sqlHelper.fetchTableRows({
-      select: [
-        { field: "createdBy.id" },
-        { field: "createdBy.role" },
-        { field: "createdBy.permissions" },
-      ],
-      from: ApiKey.typename,
+      select: ["createdBy.id", "createdBy.role", "createdBy.permissions"],
+      table: ApiKey.typename,
       where: {
-        fields: [{ field: "code", value: auth }],
+        code: auth,
       },
     });
 

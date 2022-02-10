@@ -53,19 +53,17 @@ export class FileService extends PaginatedService {
             parentKey: `${typename}_${itemId}`,
           },
           table: this.typename,
-          where: {
-            fields: [
-              {
-                field: "createdBy",
-                value: userId,
-              },
-              {
-                field: "id",
-                operator: "in",
-                value: [...fileIdsArray],
-              },
-            ],
-          },
+          where: [
+            {
+              field: "createdBy",
+              value: userId,
+            },
+            {
+              field: "id",
+              operator: "in",
+              value: [...fileIdsArray],
+            },
+          ],
         },
         fieldPath
       );

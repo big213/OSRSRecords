@@ -19,7 +19,7 @@ import {
   KnexExtendFunction,
   SqlSelectQuery,
   SqlSelectQueryObject,
-  SqlWhereObject,
+  SqlWhereInput,
 } from "./sql";
 import { CustomResolverFunction } from "../../../types";
 
@@ -176,7 +176,9 @@ export async function updateObjectType({
       {
         table: typename,
         fields: sqlFields,
-        where: { fields: [{ field: "id", value: id }] },
+        where: {
+          id,
+        },
       },
       fieldPath
     );
@@ -244,7 +246,9 @@ export async function deleteObjectType({
     await deleteTableRow(
       {
         table: typename,
-        where: { fields: [{ field: "id", value: id }] },
+        where: {
+          id,
+        },
       },
       fieldPath
     );
@@ -275,7 +279,7 @@ export async function getObjectType({
   req: Request;
   fieldPath: string[];
   externalQuery: unknown;
-  sqlParams?: Omit<SqlSelectQuery, "from" | "select">;
+  sqlParams?: Omit<SqlSelectQuery, "table" | "select">;
   rawSelect?: SqlSelectQueryObject[];
   data?: any;
   externalTypeDef?: GiraffeqlObjectType;
@@ -324,7 +328,7 @@ export async function getObjectType({
       });
     const sqlQuery = {
       select: validatedSqlSelectArray.concat(rawSelect),
-      from: typename,
+      table: typename,
       ...sqlParams,
     };
 
@@ -363,13 +367,13 @@ export async function getObjectType({
 export function countObjectType(
   typename: string,
   fieldPath: string[],
-  whereObject: SqlWhereObject,
+  whereInput: SqlWhereInput,
   distinct?: boolean
 ): Promise<number> {
   return countTableRows(
     {
-      from: typename,
-      where: whereObject,
+      table: typename,
+      where: whereInput,
       distinct,
     },
     fieldPath

@@ -652,9 +652,7 @@ export function generateDataloadableField(
           fieldPath,
           externalQuery: query,
           sqlParams: {
-            where: {
-              fields: [{ field: "id", operator: "in", value: data.idArray }],
-            },
+            where: [{ field: "id", operator: "in", value: data.idArray }],
           },
           data,
         });
@@ -746,7 +744,7 @@ export function generatePivotResolverObject({
 }: {
   pivotService: PaginatedService;
   filterByField: string;
-  sqlParams?: Omit<SqlSelectQuery, "from" | "select" | "where">;
+  sqlParams?: Omit<SqlSelectQuery, "table" | "select" | "where">;
 }) {
   return {
     type: pivotService.typeDefLookup,
@@ -763,13 +761,7 @@ export function generatePivotResolverObject({
         externalQuery: query,
         sqlParams: {
           where: {
-            fields: [
-              {
-                field: filterByField,
-                operator: "eq",
-                value: parentValue.id,
-              },
-            ],
+            [filterByField]: parentValue.id,
           },
           ...sqlParams,
         },

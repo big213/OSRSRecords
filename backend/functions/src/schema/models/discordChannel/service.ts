@@ -108,12 +108,7 @@ export class DiscordChannelService extends PaginatedService {
         },
         table: this.typename,
         where: {
-          fields: [
-            {
-              field: "id",
-              value: discordChannelId,
-            },
-          ],
+          id: discordChannelId,
         },
       });
 
@@ -122,46 +117,20 @@ export class DiscordChannelService extends PaginatedService {
 
     const discordChannelOutputs = await fetchTableRows({
       select: [
-        {
-          field: "event.id",
-        },
-        {
-          field: "event.name",
-        },
-        {
-          field: "event.avatarOverride",
-        },
-        {
-          field: "event.eventClass.avatar",
-        },
-        {
-          field: "participants",
-        },
-        {
-          field: "eventEra.id",
-        },
-        {
-          field: "eventEraMode",
-        },
-        {
-          field: "ranksToShow",
-        },
-        {
-          field: "linesLimit",
-        },
-        {
-          field: "isSoloPersonalBest",
-        },
+        "event.id",
+        "event.name",
+        "event.avatarOverride",
+        "event.eventClass.avatar",
+        "participants",
+        "eventEra.id",
+        "eventEraMode",
+        "ranksToShow",
+        "linesLimit",
+        "isSoloPersonalBest",
       ],
-      from: DiscordChannelOutput.typename,
+      table: DiscordChannelOutput.typename,
       where: {
-        fields: [
-          {
-            field: "discordChannel.id",
-            operator: "eq",
-            value: discordChannelId,
-          },
-        ],
+        "discordChannel.id": discordChannelId,
       },
       orderBy: [
         {
@@ -251,40 +220,22 @@ export class DiscordChannelService extends PaginatedService {
       }
 
       const submissions = await fetchTableRows({
-        select: [
+        select: ["id", "event.name", "participants", "score", "externalLinks"],
+        table: Submission.typename,
+        where: [
           {
-            field: "id",
+            field: "event.id",
+            operator: "eq",
+            value: output["event.id"],
           },
           {
-            field: "event.name",
+            field: "status",
+            operator: "eq",
+            value: submissionStatusKenum.APPROVED.index,
           },
-          {
-            field: "participants",
-          },
-          {
-            field: "score",
-          },
-          {
-            field: "externalLinks",
-          },
+          ...scoreFilters,
+          ...additionalFilters,
         ],
-        from: Submission.typename,
-        where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: output["event.id"],
-            },
-            {
-              field: "status",
-              operator: "eq",
-              value: submissionStatusKenum.APPROVED.index,
-            },
-            ...scoreFilters,
-            ...additionalFilters,
-          ],
-        },
         orderBy: [
           {
             field: "score",

@@ -65,35 +65,20 @@ export class AdminService extends BaseService {
   async syncAllIsRelevantRecord() {
     // get all events
     const events = await fetchTableRows({
-      select: [
-        {
-          field: "id",
-        },
-      ],
-      from: Event.typename,
-      where: {
-        fields: [],
-      },
+      select: ["id"],
+      table: Event.typename,
+      where: {},
     });
 
     // for each event, reset all isRecord flags, look up all submissions
     for (const event of events) {
       // get all valid # of participants for the event
       const submissionParticipants = await fetchTableRows({
-        select: [
-          {
-            field: "participants",
-          },
-        ],
-        from: Submission.typename,
+        select: ["participants"],
+        table: Submission.typename,
         distinctOn: ["participants"],
         where: {
-          fields: [
-            {
-              field: "event",
-              value: event.id,
-            },
-          ],
+          event: event.id,
         },
       });
 
@@ -111,12 +96,7 @@ export class AdminService extends BaseService {
     const submissions = await Submission.lookupMultipleRecord(
       ["id", "event.id", "participantsList"],
       {
-        fields: [
-          {
-            field: "participants",
-            value: 1,
-          },
-        ],
+        participants: 1,
       },
       []
     );
@@ -222,12 +202,7 @@ export class AdminService extends BaseService {
           },
           table: Submission.typename,
           where: {
-            fields: [
-              {
-                field: "id",
-                value: submission.id,
-              },
-            ],
+            id: submission.id,
           },
         });
       }
@@ -269,12 +244,7 @@ export class AdminService extends BaseService {
       const eventEras = await EventEra.lookupMultipleRecord(
         ["id", "beginDate", "endDate"],
         {
-          fields: [
-            {
-              field: "event",
-              value: submission["event.id"],
-            },
-          ],
+          event: submission["event.id"],
         },
         []
       );
@@ -297,12 +267,7 @@ export class AdminService extends BaseService {
         },
         table: Submission.typename,
         where: {
-          fields: [
-            {
-              field: "id",
-              value: submission.id,
-            },
-          ],
+          id: submission.id,
         },
       });
     }
@@ -312,15 +277,13 @@ export class AdminService extends BaseService {
     // go through all submissions, sync the happenedOn with the imgur metadata
     const submissions = await Submission.lookupMultipleRecord(
       ["id", "externalLinks"],
-      {
-        fields: [
-          {
-            field: "createdAt",
-            operator: "lt",
-            value: 1641357843,
-          },
-        ],
-      },
+      [
+        {
+          field: "createdAt",
+          operator: "lt",
+          value: 1641357843,
+        },
+      ],
       []
     );
 
@@ -345,12 +308,7 @@ export class AdminService extends BaseService {
             },
             table: Submission.typename,
             where: {
-              fields: [
-                {
-                  field: "id",
-                  value: submission.id,
-                },
-              ],
+              id: submission.id,
             },
           });
         }

@@ -25,10 +25,25 @@ function isSqlWhereObject(
   return (obj as SqlWhereObject).fields !== undefined;
 }
 
+// technically this could fail if there happens to be a simple object with "fields" as an array, but this seems unlikely
+function isSqlSimpleWhereObject(
+  ele: SqlWhereInput
+): ele is SqlSimpleWhereObject {
+  return !Array.isArray(ele);
+}
+
 export type SqlWhereObject = {
   connective?: string;
   fields: (SqlWhereObject | SqlWhereFieldObject)[];
 };
+
+export type SqlSimpleWhereObject = {
+  [x: string]: unknown;
+};
+
+export type SqlWhereInput =
+  | SqlSimpleWhereObject
+  | (SqlWhereObject | SqlWhereFieldObject)[];
 
 export type SqlOrderByObject = {
   field: string;
@@ -63,9 +78,9 @@ export type SqlWhereFieldOperator =
   | "lteornull";
 
 export type SqlSelectQuery = {
-  select: SqlSelectQueryObject[];
-  from: string;
-  where: SqlWhereObject;
+  select: (SqlSelectQueryObject | string)[];
+  table: string;
+  where: SqlWhereInput;
   groupBy?: string[];
   orderBy?: SqlOrderByObject[];
   offset?: number;
@@ -77,8 +92,8 @@ export type SqlSelectQuery = {
 
 export type SqlCountQuery = {
   field?: string; // defaults to "id"
-  from: string;
-  where: SqlWhereObject;
+  table: string;
+  where: SqlWhereInput;
   limit?: number;
   distinct?: boolean;
   specialParams?: any;
@@ -86,8 +101,8 @@ export type SqlCountQuery = {
 
 export type SqlSumQuery = {
   field: string;
-  from: string;
-  where: SqlWhereObject;
+  table: string;
+  where: SqlWhereInput;
   limit?: number;
   distinct?: boolean;
   specialParams?: any;
@@ -108,13 +123,13 @@ export type SqlUpdateQuery = {
   fields: {
     [x: string]: any;
   };
-  where: SqlWhereObject;
+  where: SqlWhereInput;
   extendFn?: KnexExtendFunction;
 };
 
 export type SqlDeleteQuery = {
   table: string;
-  where: SqlWhereObject;
+  where: SqlWhereInput;
   extendFn?: KnexExtendFunction;
 };
 
@@ -577,17 +592,35 @@ function applyJoins(
   }
 }
 
+function standardizeWhereObject(
+  whereObject: SqlSimpleWhereObject | (SqlWhereObject | SqlWhereFieldObject)[]
+) {
+  return {
+    fields: isSqlSimpleWhereObject(whereObject)
+      ? Object.entries(whereObject).reduce((total, [field, value]) => {
+          total.push({
+            field,
+            value,
+          });
+          return total;
+        }, <Array<SqlWhereFieldObject>>[])
+      : whereObject,
+  };
+}
+
 export async function fetchTableRows(
   sqlQuery: SqlSelectQuery,
   fieldPath?: string[]
 ) {
   try {
-    const tableAlias = sqlQuery.from + "0";
+    const tableAlias = sqlQuery.table + "0";
 
     const relevantFields: Set<string> = new Set();
 
     // gather all of the "known fields" in select, where, groupBy,
-    sqlQuery.select.forEach((ele) => relevantFields.add(ele.field));
+    sqlQuery.select.forEach((ele) => {
+      relevantFields.add(typeof ele === "string" ? ele : ele.field);
+    });
 
     if (sqlQuery.groupBy)
       sqlQuery.groupBy.forEach((field) => relevantFields.add(field));
@@ -595,50 +628,36 @@ export async function fetchTableRows(
     if (sqlQuery.orderBy)
       sqlQuery.orderBy.forEach((ele) => relevantFields.add(ele.field));
 
-    extractFields(sqlQuery.where).forEach((field) => relevantFields.add(field));
+    const standardizedWhereObject = standardizeWhereObject(sqlQuery.where);
+
+    extractFields(standardizedWhereObject).forEach((field) =>
+      relevantFields.add(field)
+    );
 
     const { fieldInfoMap, requiredJoins, tableIndexMap } = processFields(
       relevantFields,
-      sqlQuery.from
+      sqlQuery.table
     );
 
-    const knexObject = knex.from({ [tableAlias]: sqlQuery.from });
+    const knexObject = knex.from({ [tableAlias]: sqlQuery.table });
 
     // apply the joins
     applyJoins(knexObject, requiredJoins, tableAlias, sqlQuery.specialParams);
-
-    // go through fields, find ones with specialJoin
-    /*     fieldInfoMap.forEach((fieldInfo) => {
-      const specialJoin = fieldInfo.fieldDef.sqlOptions?.specialJoin;
-      if (specialJoin) {
-        // if there is a specialJoin, get a suitable table alias
-        const joinTableAlias = acquireTableAlias(
-          tableIndexMap,
-          specialJoin.foreignTable
-        );
-        specialJoin.joinFunction(
-          knexObject,
-          tableAlias,
-          joinTableAlias,
-          sqlQuery.specialParams
-        );
-        // correct the alias
-        fieldInfo.alias = joinTableAlias + "." + fieldInfo.finalField;
-        fieldInfo.tableAlias = joinTableAlias;
-      }
-    }); */
 
     // build and apply select object
     const knexSelectObject = {};
 
     sqlQuery.select.forEach((ele) => {
-      const fieldInfo = fieldInfoMap.get(ele.field)!;
+      const fieldInfo = fieldInfoMap.get(
+        typeof ele === "string" ? ele : ele.field
+      )!;
       // does it have a getter?
       const getter = fieldInfo.fieldDef.sqlOptions?.getter;
 
-      knexSelectObject[ele.as ?? ele.field] = getter
-        ? knex.raw(getter(fieldInfo.tableAlias, fieldInfo.finalField))
-        : fieldInfo.alias;
+      knexSelectObject[typeof ele === "string" ? ele : ele.as ?? ele.field] =
+        getter
+          ? knex.raw(getter(fieldInfo.tableAlias, fieldInfo.finalField))
+          : fieldInfo.alias;
     });
 
     knexObject.select(knexSelectObject);
@@ -667,8 +686,8 @@ export async function fetchTableRows(
     }
 
     // apply where
-    if (sqlQuery.where.fields.length > 0) {
-      applyWhere(knexObject, sqlQuery.where, fieldInfoMap);
+    if (standardizedWhereObject.fields.length > 0) {
+      applyWhere(knexObject, standardizedWhereObject, fieldInfoMap);
     }
 
     // apply limit
@@ -699,25 +718,29 @@ export async function countTableRows(
   fieldPath?: string[]
 ) {
   try {
-    const tableAlias = sqlQuery.from + "0";
+    const tableAlias = sqlQuery.table + "0";
 
     const relevantFields: Set<string> = new Set();
 
-    extractFields(sqlQuery.where).forEach((field) => relevantFields.add(field));
+    const standardizedWhereObject = standardizeWhereObject(sqlQuery.where);
+
+    extractFields(standardizedWhereObject).forEach((field) =>
+      relevantFields.add(field)
+    );
 
     const { fieldInfoMap, requiredJoins, tableIndexMap } = processFields(
       relevantFields,
-      sqlQuery.from
+      sqlQuery.table
     );
 
-    const knexObject = knex.from({ [tableAlias]: sqlQuery.from });
+    const knexObject = knex.from({ [tableAlias]: sqlQuery.table });
 
     // apply the joins
     applyJoins(knexObject, requiredJoins, tableAlias, sqlQuery.specialParams);
 
     // apply where
-    if (sqlQuery.where.fields.length > 0) {
-      applyWhere(knexObject, sqlQuery.where, fieldInfoMap);
+    if (standardizedWhereObject.fields.length > 0) {
+      applyWhere(knexObject, standardizedWhereObject, fieldInfoMap);
     }
 
     // apply limit
@@ -742,25 +765,29 @@ export async function sumTableRows(
   fieldPath?: string[]
 ) {
   try {
-    const tableAlias = sqlQuery.from + "0";
+    const tableAlias = sqlQuery.table + "0";
 
     const relevantFields: Set<string> = new Set();
 
-    extractFields(sqlQuery.where).forEach((field) => relevantFields.add(field));
+    const standardizedWhereObject = standardizeWhereObject(sqlQuery.where);
+
+    extractFields(standardizedWhereObject).forEach((field) =>
+      relevantFields.add(field)
+    );
 
     const { fieldInfoMap, requiredJoins, tableIndexMap } = processFields(
       relevantFields,
-      sqlQuery.from
+      sqlQuery.table
     );
 
-    const knexObject = knex.from({ [tableAlias]: sqlQuery.from });
+    const knexObject = knex.from({ [tableAlias]: sqlQuery.table });
 
     // apply the joins
     applyJoins(knexObject, requiredJoins, tableAlias, sqlQuery.specialParams);
 
     // apply where
-    if (sqlQuery.where.fields.length > 0) {
-      applyWhere(knexObject, sqlQuery.where, fieldInfoMap);
+    if (standardizedWhereObject.fields.length > 0) {
+      applyWhere(knexObject, standardizedWhereObject, fieldInfoMap);
     }
 
     // apply limit
@@ -819,7 +846,11 @@ export async function updateTableRow(
 
     const relevantFields: Set<string> = new Set();
 
-    extractFields(sqlQuery.where).forEach((field) => relevantFields.add(field));
+    const standardizedWhereObject = standardizeWhereObject(sqlQuery.where);
+
+    extractFields(standardizedWhereObject).forEach((field) =>
+      relevantFields.add(field)
+    );
 
     const { fieldInfoMap, requiredJoins, tableIndexMap } = processFields(
       relevantFields,
@@ -849,8 +880,8 @@ export async function updateTableRow(
     applyJoins(knexObject, requiredJoins, tableAlias);
 
     // apply where
-    if (sqlQuery.where.fields.length > 0) {
-      applyWhere(knexObject, sqlQuery.where, fieldInfoMap);
+    if (standardizedWhereObject.fields.length > 0) {
+      applyWhere(knexObject, standardizedWhereObject, fieldInfoMap);
     }
 
     sqlQuery.extendFn && sqlQuery.extendFn(knexObject);
@@ -870,7 +901,11 @@ export async function deleteTableRow(
 
     const relevantFields: Set<string> = new Set();
 
-    extractFields(sqlQuery.where).forEach((field) => relevantFields.add(field));
+    const standardizedWhereObject = standardizeWhereObject(sqlQuery.where);
+
+    extractFields(standardizedWhereObject).forEach((field) =>
+      relevantFields.add(field)
+    );
 
     const { fieldInfoMap, requiredJoins, tableIndexMap } = processFields(
       relevantFields,
@@ -883,8 +918,8 @@ export async function deleteTableRow(
     applyJoins(knexObject, requiredJoins, tableAlias);
 
     // apply where
-    if (sqlQuery.where.fields.length > 0) {
-      applyWhere(knexObject, sqlQuery.where, fieldInfoMap);
+    if (standardizedWhereObject.fields.length > 0) {
+      applyWhere(knexObject, standardizedWhereObject, fieldInfoMap);
     }
 
     sqlQuery.extendFn && sqlQuery.extendFn(knexObject);

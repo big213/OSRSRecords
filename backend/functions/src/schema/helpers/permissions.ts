@@ -50,7 +50,7 @@ export function generateUserRoleGuard(
         select: [{ field: "role" }],
         from: User.typename,
         where: {
-          fields: [{ field: "id", value: req.user.id }],
+          id: req.user.id
         },
       });
       */

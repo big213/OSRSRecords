@@ -49,22 +49,10 @@ export class CharacterService extends PaginatedService {
 
     // get all submissions that have the from characterId
     const submissions = await fetchTableRows({
-      select: [
-        {
-          field: "id",
-        },
-        {
-          field: "participantsList",
-        },
-      ],
-      from: Submission.typename,
+      select: ["id", "participantsList"],
+      table: Submission.typename,
       where: {
-        fields: [
-          {
-            field: "submissionCharacterParticipantLink/character.id",
-            value: fromCharacter.id,
-          },
-        ],
+        "submissionCharacterParticipantLink/character.id": fromCharacter.id,
       },
     });
 
@@ -83,12 +71,7 @@ export class CharacterService extends PaginatedService {
         },
         table: Submission.typename,
         where: {
-          fields: [
-            {
-              field: "id",
-              value: submission.id,
-            },
-          ],
+          id: submission.id,
         },
       });
     }
@@ -100,12 +83,7 @@ export class CharacterService extends PaginatedService {
       },
       table: SubmissionCharacterParticipantLink.typename,
       where: {
-        fields: [
-          {
-            field: "character",
-            value: fromCharacter.id,
-          },
-        ],
+        character: fromCharacter.id,
       },
     });
 
@@ -113,12 +91,7 @@ export class CharacterService extends PaginatedService {
     await deleteTableRow({
       table: this.typename,
       where: {
-        fields: [
-          {
-            field: "id",
-            value: fromCharacter.id,
-          },
-        ],
+        id: fromCharacter.id,
       },
     });
 

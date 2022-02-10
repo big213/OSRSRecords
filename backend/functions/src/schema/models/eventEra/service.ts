@@ -72,18 +72,8 @@ export class EventEraService extends PaginatedService {
         },
         table: this.typename,
         where: {
-          fields: [
-            {
-              field: "isCurrent",
-              operator: "eq",
-              value: true,
-            },
-            {
-              field: "event",
-              operator: "eq",
-              value: validatedArgs.event,
-            },
-          ],
+          isCurrent: true,
+          event: validatedArgs.event,
         },
       });
     }
@@ -201,23 +191,11 @@ export class EventEraService extends PaginatedService {
   async syncIsRelevantStatus(eventId: string) {
     // get the beginDate of the most recent nerf, if any
     const results = await fetchTableRows({
-      select: [
-        {
-          field: "beginDate",
-        },
-      ],
-      from: this.typename,
+      select: ["beginDate"],
+      table: this.typename,
       where: {
-        fields: [
-          {
-            field: "isBuff",
-            value: false,
-          },
-          {
-            field: "event.id",
-            value: eventId,
-          },
-        ],
+        isBuff: false,
+        "event.id": eventId,
       },
       orderBy: [
         {
@@ -237,19 +215,17 @@ export class EventEraService extends PaginatedService {
           isRelevant: true,
         },
         table: this.typename,
-        where: {
-          fields: [
-            {
-              field: "beginDate",
-              operator: "gt",
-              value: mostRecentNerfBeginDate,
-            },
-            {
-              field: "event",
-              value: eventId,
-            },
-          ],
-        },
+        where: [
+          {
+            field: "beginDate",
+            operator: "gt",
+            value: mostRecentNerfBeginDate,
+          },
+          {
+            field: "event",
+            value: eventId,
+          },
+        ],
       });
 
       // if there was a recent nerf, set all records lte begin date as isRelevant = false
@@ -258,19 +234,17 @@ export class EventEraService extends PaginatedService {
           isRelevant: false,
         },
         table: this.typename,
-        where: {
-          fields: [
-            {
-              field: "beginDate",
-              operator: "lte",
-              value: mostRecentNerfBeginDate,
-            },
-            {
-              field: "event",
-              value: eventId,
-            },
-          ],
-        },
+        where: [
+          {
+            field: "beginDate",
+            operator: "lte",
+            value: mostRecentNerfBeginDate,
+          },
+          {
+            field: "event",
+            value: eventId,
+          },
+        ],
       });
     } else {
       // if no most recent nerfed eventEra, all eventEras should be isRelevant = true
@@ -280,12 +254,7 @@ export class EventEraService extends PaginatedService {
         },
         table: this.typename,
         where: {
-          fields: [
-            {
-              field: "event",
-              value: eventId,
-            },
-          ],
+          event: eventId,
         },
       });
     }

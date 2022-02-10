@@ -287,40 +287,38 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
           fieldPath,
           externalQuery: query,
           sqlParams: {
-            where: {
-              fields: [
-                {
-                  field: "event.id",
-                  operator: "eq",
-                  value: parentValue.event.id,
-                },
-                {
-                  field: "participants",
-                  operator: "eq",
-                  value: parentValue.participants,
-                },
-                {
-                  field: "status",
-                  operator: "eq",
-                  value: submissionStatusKenum.APPROVED.index,
-                },
-                {
-                  field: "eventEra.isRelevant",
-                  operator: "eq",
-                  value: true,
-                },
-                {
-                  field: "happenedOn",
-                  operator: "gt",
-                  value: parentValue.happenedOn,
-                },
-                {
-                  field: "isRelevantRecord",
-                  operator: "eq",
-                  value: true,
-                },
-              ],
-            },
+            where: [
+              {
+                field: "event.id",
+                operator: "eq",
+                value: parentValue.event.id,
+              },
+              {
+                field: "participants",
+                operator: "eq",
+                value: parentValue.participants,
+              },
+              {
+                field: "status",
+                operator: "eq",
+                value: submissionStatusKenum.APPROVED.index,
+              },
+              {
+                field: "eventEra.isRelevant",
+                operator: "eq",
+                value: true,
+              },
+              {
+                field: "happenedOn",
+                operator: "gt",
+                value: parentValue.happenedOn,
+              },
+              {
+                field: "isRelevantRecord",
+                operator: "eq",
+                value: true,
+              },
+            ],
             orderBy: [
               {
                 field: "happenedOn",
@@ -356,45 +354,43 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
           fieldPath,
           externalQuery: query,
           sqlParams: {
-            where: {
-              fields: [
-                {
-                  field: "event.id",
-                  operator: "eq",
-                  value: parentValue.event.id,
-                },
-                {
-                  field: "participants",
-                  operator: "eq",
-                  value: parentValue.participants,
-                },
-                {
-                  field: "status",
-                  operator: "eq",
-                  value: submissionStatusKenum.APPROVED.index,
-                },
-                {
-                  field: "eventEra.id",
-                  operator: "eq",
-                  value: parentValue.eventEra.id,
-                },
-                {
-                  field: "isRelevantRecord",
-                  operator: "eq",
-                  value: true,
-                },
-                {
-                  field: "happenedOn",
-                  operator: "lt",
-                  value: parentValue.happenedOn,
-                },
-                {
-                  field: "isRelevantRecord",
-                  operator: "eq",
-                  value: true,
-                },
-              ],
-            },
+            where: [
+              {
+                field: "event.id",
+                operator: "eq",
+                value: parentValue.event.id,
+              },
+              {
+                field: "participants",
+                operator: "eq",
+                value: parentValue.participants,
+              },
+              {
+                field: "status",
+                operator: "eq",
+                value: submissionStatusKenum.APPROVED.index,
+              },
+              {
+                field: "eventEra.id",
+                operator: "eq",
+                value: parentValue.eventEra.id,
+              },
+              {
+                field: "isRelevantRecord",
+                operator: "eq",
+                value: true,
+              },
+              {
+                field: "happenedOn",
+                operator: "lt",
+                value: parentValue.happenedOn,
+              },
+              {
+                field: "isRelevantRecord",
+                operator: "eq",
+                value: true,
+              },
+            ],
             orderBy: [
               {
                 field: "happenedOn",

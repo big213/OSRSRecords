@@ -194,10 +194,10 @@ export class UserService extends PaginatedService {
     const validatedArgs = <any>args;
     //check if record exists
     const results = await sqlHelper.fetchTableRows({
-      select: [{ field: "id" }, { field: "role" }, { field: "firebaseUid" }],
-      from: User.typename,
+      select: ["id", "role", "firebaseUid"],
+      table: User.typename,
       where: {
-        fields: [{ field: "id", value: data!.id }],
+        id: data!.id,
       },
     });
 
@@ -245,15 +245,9 @@ export class UserService extends PaginatedService {
     const validatedArgs = <any>args;
     // check if record exists, get ID
     const records = await sqlHelper.fetchTableRows({
-      select: [{ field: "id" }, { field: "firebaseUid" }, { field: "role" }],
-      from: this.typename,
-      where: {
-        connective: "AND",
-        fields: Object.entries(validatedArgs.item).map(([field, value]) => ({
-          field,
-          value,
-        })),
-      },
+      select: ["id", "role", "firebaseUid"],
+      table: this.typename,
+      where: validatedArgs.item,
     });
 
     if (records.length < 1) {
@@ -334,15 +328,9 @@ export class UserService extends PaginatedService {
 
     // confirm existence of item and get ID
     const results = await sqlHelper.fetchTableRows({
-      select: [{ field: "id" }, { field: "firebaseUid" }],
-      from: this.typename,
-      where: {
-        connective: "AND",
-        fields: Object.entries(validatedArgs).map(([field, value]) => ({
-          field,
-          value,
-        })),
-      },
+      select: ["id", "firebaseUid"],
+      table: this.typename,
+      where: validatedArgs,
     });
 
     if (results.length < 1) {

@@ -223,8 +223,8 @@ export class SubmissionService extends PaginatedService {
     const resultsCount = await countTableRows({
       field: "score",
       distinct: true,
-      from: this.typename,
-      where: whereObject,
+      table: this.typename,
+      where: [whereObject],
     });
 
     return resultsCount + 1;
@@ -474,12 +474,7 @@ export class SubmissionService extends PaginatedService {
         },
         table: this.typename,
         where: {
-          fields: [
-            {
-              field: "id",
-              value: itemId,
-            },
-          ],
+          id: itemId,
         },
       });
     }
@@ -585,12 +580,7 @@ export class SubmissionService extends PaginatedService {
         await deleteTableRow({
           table: SubmissionCharacterParticipantLink.typename,
           where: {
-            fields: [
-              {
-                field: "submission",
-                value: item.id,
-              },
-            ],
+            submission: item.id,
           },
         });
 
@@ -750,44 +740,38 @@ export class SubmissionService extends PaginatedService {
     // see if any discord leaderboards with eventEraMode: "RELEVANT_ERAS" need to be refreshed
     if (relevantEraRanking) {
       const discordChannelOutputs = await fetchTableRows({
-        select: [
+        select: ["discordChannel.id"],
+        table: DiscordChannelOutput.typename,
+        where: [
           {
-            field: "discordChannel.id",
+            field: "event.id",
+            operator: "eq",
+            value: eventId,
+          },
+          {
+            field: "participants",
+            operator: "in",
+            value: [null, participants],
+          },
+          {
+            field: "eventEra.id",
+            operator: "in",
+            value: [null, eventEraId],
+          },
+          {
+            field: "ranksToShow",
+            operator: "gte",
+            value: relevantEraRanking,
+          },
+          {
+            field: "eventEraMode",
+            value: eventEraModeKenum.RELEVANT_ERAS.index,
+          },
+          {
+            field: "isSoloPersonalBest",
+            value: null,
           },
         ],
-        from: DiscordChannelOutput.typename,
-        where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: eventId,
-            },
-            {
-              field: "participants",
-              operator: "in",
-              value: [null, participants],
-            },
-            {
-              field: "eventEra.id",
-              operator: "in",
-              value: [null, eventEraId],
-            },
-            {
-              field: "ranksToShow",
-              operator: "gte",
-              value: relevantEraRanking,
-            },
-            {
-              field: "eventEraMode",
-              value: eventEraModeKenum.RELEVANT_ERAS.index,
-            },
-            {
-              field: "isSoloPersonalBest",
-              value: null,
-            },
-          ],
-        },
       });
 
       discordChannelOutputs.forEach((ele) => {
@@ -798,44 +782,38 @@ export class SubmissionService extends PaginatedService {
     // see if any discord leaderboards with isSoloPersonalBest: true need to be refreshed
     if (participants === 1 && soloPBRanking) {
       const discordChannelOutputs = await fetchTableRows({
-        select: [
+        select: ["discordChannel.id"],
+        table: DiscordChannelOutput.typename,
+        where: [
           {
-            field: "discordChannel.id",
+            field: "event.id",
+            operator: "eq",
+            value: eventId,
+          },
+          {
+            field: "participants",
+            operator: "in",
+            value: [null, participants],
+          },
+          {
+            field: "eventEra.id",
+            operator: "in",
+            value: [null, eventEraId],
+          },
+          {
+            field: "ranksToShow",
+            operator: "gte",
+            value: soloPBRanking,
+          },
+          {
+            field: "eventEraMode",
+            value: eventEraModeKenum.RELEVANT_ERAS.index,
+          },
+          {
+            field: "isSoloPersonalBest",
+            value: true,
           },
         ],
-        from: DiscordChannelOutput.typename,
-        where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: eventId,
-            },
-            {
-              field: "participants",
-              operator: "in",
-              value: [null, participants],
-            },
-            {
-              field: "eventEra.id",
-              operator: "in",
-              value: [null, eventEraId],
-            },
-            {
-              field: "ranksToShow",
-              operator: "gte",
-              value: soloPBRanking,
-            },
-            {
-              field: "eventEraMode",
-              value: eventEraModeKenum.RELEVANT_ERAS.index,
-            },
-            {
-              field: "isSoloPersonalBest",
-              value: true,
-            },
-          ],
-        },
       });
 
       discordChannelOutputs.forEach((ele) => {
@@ -915,28 +893,22 @@ export class SubmissionService extends PaginatedService {
 
     // get the nth fastest score, where n = ranksToShow
     const nthScoreResults = await fetchTableRows({
-      select: [
-        {
-          field: "score",
-        },
-      ],
-      from: this.typename,
+      select: ["score"],
+      table: this.typename,
       distinctOn: ["score"],
-      where: {
-        fields: [
-          {
-            field: "event.id",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "status",
-            operator: "eq",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-          ...additionalFilters,
-        ],
-      },
+      where: [
+        {
+          field: "event.id",
+          operator: "eq",
+          value: eventId,
+        },
+        {
+          field: "status",
+          operator: "eq",
+          value: submissionStatusKenum.APPROVED.index,
+        },
+        ...additionalFilters,
+      ],
       orderBy: [
         {
           field: "score",
@@ -952,16 +924,10 @@ export class SubmissionService extends PaginatedService {
 
   async getSubmissionCharacters(submissionId: string) {
     const submissionLinks = await fetchTableRows({
-      select: [{ field: "character.name" }],
-      from: SubmissionCharacterParticipantLink.typename,
+      select: ["character.name"],
+      table: SubmissionCharacterParticipantLink.typename,
       where: {
-        fields: [
-          {
-            field: "submission",
-            operator: "eq",
-            value: submissionId,
-          },
-        ],
+        submission: submissionId,
       },
       orderBy: [
         {
@@ -1013,16 +979,10 @@ export class SubmissionService extends PaginatedService {
     )}`;
 
     const submissionLinks = await fetchTableRows({
-      select: [{ field: "character.name" }, { field: "character.id" }],
-      from: SubmissionCharacterParticipantLink.typename,
+      select: ["character.name", "character.id"],
+      table: SubmissionCharacterParticipantLink.typename,
       where: {
-        fields: [
-          {
-            field: "submission",
-            operator: "eq",
-            value: submissionId,
-          },
-        ],
+        submission: submissionId,
       },
       orderBy: [
         {
@@ -1063,47 +1023,38 @@ export class SubmissionService extends PaginatedService {
     // check if this record would appear in any rank style leaderboards. isSoloPersonalBest: true and relevant_eras only
     if (soloPBUpdateLogPost.ranking) {
       const discordChannelOutputs = await fetchTableRows({
-        select: [
+        select: ["ranksToShow", "discordChannel.channelId"],
+        table: DiscordChannelOutput.typename,
+        where: [
+          {
+            field: "event.id",
+            operator: "eq",
+            value: submission["event.id"],
+          },
+          {
+            field: "participants",
+            operator: "in",
+            value: [null, submission.participants],
+          },
+          {
+            field: "eventEra.id",
+            operator: "in",
+            value: [null, submission["eventEra.id"]],
+          },
           {
             field: "ranksToShow",
+            operator: "gte",
+            value: soloPBRanking,
           },
           {
-            field: "discordChannel.channelId",
+            field: "eventEraMode",
+            value: eventEraModeKenum.RELEVANT_ERAS.index,
+          },
+          {
+            field: "isSoloPersonalBest",
+            value: true,
           },
         ],
-        from: DiscordChannelOutput.typename,
-        where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: submission["event.id"],
-            },
-            {
-              field: "participants",
-              operator: "in",
-              value: [null, submission.participants],
-            },
-            {
-              field: "eventEra.id",
-              operator: "in",
-              value: [null, submission["eventEra.id"]],
-            },
-            {
-              field: "ranksToShow",
-              operator: "gte",
-              value: soloPBRanking,
-            },
-            {
-              field: "eventEraMode",
-              value: eventEraModeKenum.RELEVANT_ERAS.index,
-            },
-            {
-              field: "isSoloPersonalBest",
-              value: true,
-            },
-          ],
-        },
       });
 
       if (discordChannelOutputs.length > 0) {
@@ -1205,35 +1156,14 @@ export class SubmissionService extends PaginatedService {
             soloPBUpdateLogPost.kickedSubmissions = [];
             // get ids of submissions with this score
             const submissions = await fetchTableRows({
-              select: [
-                {
-                  field: "id",
-                },
-              ],
-              from: this.typename,
+              select: ["id"],
+              table: this.typename,
               where: {
-                fields: [
-                  {
-                    field: "event.id",
-                    value: submission["event.id"],
-                  },
-                  {
-                    field: "participants",
-                    value: submission.participants,
-                  },
-                  {
-                    field: "eventEra.isRelevant",
-                    value: true,
-                  },
-                  {
-                    field: "score",
-                    value: nPlusOneHighestScore,
-                  },
-                  {
-                    field: "isSoloPersonalBest",
-                    value: true,
-                  },
-                ],
+                "event.id": submission["event.id"],
+                participants: submission.participants,
+                "eventEra.isRelevant": true,
+                score: nPlusOneHighestScore,
+                isSoloPersonalBest: true,
               },
               orderBy: [
                 {
@@ -1257,47 +1187,38 @@ export class SubmissionService extends PaginatedService {
     // check if this record would appear in any normal style leaderboards. eventEraMode: relevant_eras only
     if (relevantErasUpdateLogPost.ranking) {
       const discordChannelOutputs = await fetchTableRows({
-        select: [
+        select: ["ranksToShow", "discordChannel.channelId"],
+        table: DiscordChannelOutput.typename,
+        where: [
+          {
+            field: "event.id",
+            operator: "eq",
+            value: submission["event.id"],
+          },
+          {
+            field: "participants",
+            operator: "in",
+            value: [null, submission.participants],
+          },
+          {
+            field: "eventEra.id",
+            operator: "in",
+            value: [null, submission["eventEra.id"]],
+          },
           {
             field: "ranksToShow",
+            operator: "gte",
+            value: relevantEraRanking,
           },
           {
-            field: "discordChannel.channelId",
+            field: "eventEraMode",
+            value: eventEraModeKenum.RELEVANT_ERAS.index,
+          },
+          {
+            field: "isSoloPersonalBest",
+            value: null,
           },
         ],
-        from: DiscordChannelOutput.typename,
-        where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: submission["event.id"],
-            },
-            {
-              field: "participants",
-              operator: "in",
-              value: [null, submission.participants],
-            },
-            {
-              field: "eventEra.id",
-              operator: "in",
-              value: [null, submission["eventEra.id"]],
-            },
-            {
-              field: "ranksToShow",
-              operator: "gte",
-              value: relevantEraRanking,
-            },
-            {
-              field: "eventEraMode",
-              value: eventEraModeKenum.RELEVANT_ERAS.index,
-            },
-            {
-              field: "isSoloPersonalBest",
-              value: null,
-            },
-          ],
-        },
       });
 
       if (discordChannelOutputs.length > 0) {
@@ -1371,43 +1292,14 @@ export class SubmissionService extends PaginatedService {
 
             if (secondPlaceScore) {
               const secondPlaceSubmissions = await fetchTableRows({
-                select: [
-                  {
-                    field: "id",
-                  },
-                  {
-                    field: "score",
-                  },
-                ],
-                from: this.typename,
+                select: ["id", "score"],
+                table: this.typename,
                 where: {
-                  fields: [
-                    {
-                      field: "event.id",
-                      operator: "eq",
-                      value: submission["event.id"],
-                    },
-                    {
-                      field: "status",
-                      operator: "eq",
-                      value: submissionStatusKenum.APPROVED.index,
-                    },
-                    {
-                      field: "score",
-                      operator: "eq",
-                      value: secondPlaceScore,
-                    },
-                    {
-                      field: "eventEra.isRelevant",
-                      operator: "eq",
-                      value: true,
-                    },
-                    {
-                      field: "participants",
-                      operator: "eq",
-                      value: submission.participants,
-                    },
-                  ],
+                  "event.id": submission["event.id"],
+                  status: submissionStatusKenum.APPROVED.index,
+                  score: secondPlaceScore,
+                  "eventEra.isRelevant": true,
+                  participants: submission.participants,
                 },
                 orderBy: [
                   {
@@ -1607,16 +1499,10 @@ export class SubmissionService extends PaginatedService {
   // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
   async syncSoloPBState(submissionId: string, eventId: string) {
     const submissionLinks = await fetchTableRows({
-      select: [{ field: "character.id" }],
-      from: SubmissionCharacterParticipantLink.typename,
+      select: ["character.id"],
+      table: SubmissionCharacterParticipantLink.typename,
       where: {
-        fields: [
-          {
-            field: "submission",
-            operator: "eq",
-            value: submissionId,
-          },
-        ],
+        submission: submissionId,
       },
     });
 
@@ -1627,31 +1513,13 @@ export class SubmissionService extends PaginatedService {
 
     // get fastest approved submission by user given participants = 1 and event
     const [fastestRecord, secondFastestRecord] = await fetchTableRows({
-      select: [{ field: "id" }],
-      from: this.typename,
+      select: ["id"],
+      table: this.typename,
       where: {
-        fields: [
-          {
-            field: "event",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            operator: "eq",
-            value: 1,
-          },
-          {
-            field: "status",
-            operator: "eq",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-          {
-            field: "submissionCharacterParticipantLink/character.id",
-            operator: "eq",
-            value: characterId,
-          },
-        ],
+        event: eventId,
+        participants: 1,
+        status: submissionStatusKenum.APPROVED.index,
+        "submissionCharacterParticipantLink/character.id": characterId,
       },
       orderBy: [
         {
@@ -1671,31 +1539,13 @@ export class SubmissionService extends PaginatedService {
     if (secondFastestRecord) {
       // need to lookup IDs since it is not possible to do update where "submissionCharacterParticipantLink/character.id"
       const submissions = await fetchTableRows({
-        select: [{ field: "id" }],
-        from: this.typename,
+        select: ["id"],
+        table: this.typename,
         where: {
-          fields: [
-            {
-              field: "event.id",
-              operator: "eq",
-              value: eventId,
-            },
-            {
-              field: "participants",
-              operator: "eq",
-              value: 1,
-            },
-            {
-              field: "status",
-              operator: "eq",
-              value: submissionStatusKenum.APPROVED.index,
-            },
-            {
-              field: "submissionCharacterParticipantLink/character.id",
-              operator: "eq",
-              value: characterId,
-            },
-          ],
+          "event.id": eventId,
+          participants: 1,
+          status: submissionStatusKenum.APPROVED.index,
+          "submissionCharacterParticipantLink/character.id": characterId,
         },
       });
 
@@ -1704,15 +1554,13 @@ export class SubmissionService extends PaginatedService {
           isSoloPersonalBest: false,
         },
         table: this.typename,
-        where: {
-          fields: [
-            {
-              field: "id",
-              operator: "in",
-              value: submissions.map((submission) => submission.id),
-            },
-          ],
-        },
+        where: [
+          {
+            field: "id",
+            operator: "in",
+            value: submissions.map((submission) => submission.id),
+          },
+        ],
       });
     }
 
@@ -1723,13 +1571,7 @@ export class SubmissionService extends PaginatedService {
       },
       table: this.typename,
       where: {
-        fields: [
-          {
-            field: "id",
-            operator: "eq",
-            value: fastestRecord.id,
-          },
-        ],
+        id: fastestRecord.id,
       },
     });
   }
@@ -1738,22 +1580,10 @@ export class SubmissionService extends PaginatedService {
   async generateSubmissionReviewerCommentsText(submissionId: string) {
     // get submission info
     const [submission] = await fetchTableRows({
-      select: [
-        {
-          field: "id",
-        },
-        {
-          field: "reviewerComments",
-        },
-      ],
-      from: this.typename,
+      select: ["id", "reviewerComments"],
+      table: this.typename,
       where: {
-        fields: [
-          {
-            field: "id",
-            value: submissionId,
-          },
-        ],
+        id: submissionId,
       },
     });
 
@@ -1769,48 +1599,21 @@ export class SubmissionService extends PaginatedService {
     // get submission info
     const [submission] = await fetchTableRows({
       select: [
-        {
-          field: "id",
-        },
-        {
-          field: "event.name",
-        },
-        {
-          field: "participants",
-        },
-        {
-          field: "score",
-        },
-        {
-          field: "externalLinks",
-        },
-        {
-          field: "happenedOn",
-        },
-        {
-          field: "world",
-        },
-        {
-          field: "privateComments",
-        },
-        {
-          field: "publicComments",
-        },
-        {
-          field: "reviewerComments",
-        },
-        {
-          field: "discordId",
-        },
+        "id",
+        "event.name",
+        "participants",
+        "score",
+        "externalLinks",
+        "happenedOn",
+        "world",
+        "privateComments",
+        "publicComments",
+        "reviewerComments",
+        "discordId",
       ],
-      from: this.typename,
+      table: this.typename,
       where: {
-        fields: [
-          {
-            field: "id",
-            value: submissionId,
-          },
-        ],
+        id: submissionId,
       },
     });
 
@@ -1903,47 +1706,20 @@ export class SubmissionService extends PaginatedService {
       },
       table: this.typename,
       where: {
-        fields: [
-          {
-            field: "event",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            value: participants,
-          },
-        ],
+        event: eventId,
+        participants: participants,
       },
     });
 
     // lookup all approved submissions in relevantEra, sorting by happenedOn
     const submissions = await fetchTableRows({
-      select: [
-        {
-          field: "id",
-        },
-        {
-          field: "score",
-        },
-      ],
-      from: this.typename,
+      select: ["id", "score"],
+      table: this.typename,
       where: {
-        fields: [
-          { field: "event", value: eventId },
-          {
-            field: "participants",
-            value: participants,
-          },
-          {
-            field: "status",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-          {
-            field: "eventEra.isRelevant",
-            operator: "eq",
-            value: true,
-          },
-        ],
+        event: eventId,
+        participants: participants,
+        status: submissionStatusKenum.APPROVED.index,
+        "eventEra.isRelevant": true,
       },
       orderBy: [
         {
@@ -1966,12 +1742,7 @@ export class SubmissionService extends PaginatedService {
           },
           table: this.typename,
           where: {
-            fields: [
-              {
-                field: "id",
-                value: submission.id,
-              },
-            ],
+            id: submission.id,
           },
         });
       }
@@ -2054,12 +1825,7 @@ export class SubmissionService extends PaginatedService {
     await deleteTableRow({
       table: SubmissionCharacterParticipantLink.typename,
       where: {
-        fields: [
-          {
-            field: "submission",
-            value: item.id,
-          },
-        ],
+        submission: item.id,
       },
     });
 

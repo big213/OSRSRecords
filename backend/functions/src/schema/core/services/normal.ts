@@ -7,6 +7,7 @@ import {
   SqlSelectQuery,
   SqlSelectQueryObject,
   SqlWhereFieldOperator,
+  SqlWhereInput,
   SqlWhereObject,
 } from "../helpers/sql";
 import { permissionsCheck } from "../helpers/permissions";
@@ -178,7 +179,7 @@ export class NormalService extends BaseService {
       externalQuery: selectQuery,
       sqlParams: {
         where: {
-          fields: [{ field: "id", value: validatedArgs.id }],
+          id: validatedArgs.id,
         },
       },
       data,
@@ -288,7 +289,7 @@ export class NormalService extends BaseService {
       fieldPath,
       externalQuery: selectQuery,
       sqlParams: {
-        where: whereObject,
+        where: [whereObject],
         limit: 1,
         specialParams: await this.getSpecialParams({
           req,
@@ -376,7 +377,7 @@ export class NormalService extends BaseService {
     const resultsCount = await Resolver.countObjectType(
       this.typename,
       fieldPath,
-      whereObject,
+      [whereObject],
       true
     );
 
@@ -529,8 +530,8 @@ export class NormalService extends BaseService {
     // set limit to args.first or args.last, one of which must be provided
     const limit = Number(validatedArgs.first ?? validatedArgs.last);
 
-    const sqlParams: Omit<SqlSelectQuery, "from" | "select"> = {
-      where: whereObject,
+    const sqlParams: Omit<SqlSelectQuery, "table" | "select"> = {
+      where: [whereObject],
       orderBy,
       limit,
       specialParams: await this.getSpecialParams({
@@ -588,15 +589,9 @@ export class NormalService extends BaseService {
       ) {
         // get record ID of type, replace object with the ID
         const results = await fetchTableRows({
-          select: [{ field: "id" }],
-          from: typeField.name,
-          where: {
-            connective: "AND",
-            fields: Object.entries(args[key]).map(([field, value]) => ({
-              field,
-              value,
-            })),
-          },
+          select: ["id"],
+          table: typeField.name,
+          where: args[key],
         });
 
         if (results.length < 1) {
@@ -616,7 +611,7 @@ export class NormalService extends BaseService {
     return undefined;
   }
 
-  sqlParamsModifier(sqlParams: Omit<SqlSelectQuery, "from" | "select">) {}
+  sqlParamsModifier(sqlParams: Omit<SqlSelectQuery, "table" | "select">) {}
 
   // looks up a record using its keys
   async lookupRecord(
@@ -630,14 +625,8 @@ export class NormalService extends BaseService {
         selectFields.length > 0
           ? selectFields.map((field) => ({ field }))
           : [{ field: "id" }],
-      from: this.typename,
-      where: {
-        connective: "AND",
-        fields: Object.entries(args).map(([field, value]) => ({
-          field,
-          value,
-        })),
-      },
+      table: this.typename,
+      where: args,
     });
 
     if (results.length < 1 && throwError) {
@@ -653,16 +642,13 @@ export class NormalService extends BaseService {
   // look up multiple records
   async lookupMultipleRecord(
     selectFields: string[],
-    whereObject: SqlWhereObject,
+    whereInput: SqlWhereInput,
     fieldPath: string[]
   ): Promise<any> {
     const results = await fetchTableRows({
-      select:
-        selectFields.length > 0
-          ? selectFields.map((field) => ({ field }))
-          : [{ field: "id" }],
-      from: this.typename,
-      where: whereObject,
+      select: selectFields.length > 0 ? selectFields : ["id"],
+      table: this.typename,
+      where: whereInput,
     });
 
     return results;
@@ -670,12 +656,12 @@ export class NormalService extends BaseService {
 
   // count the records matching the criteria
   async getRecordCount(
-    whereObject: SqlWhereObject,
+    whereInput: SqlWhereInput,
     fieldPath: string[]
   ): Promise<any> {
     const recordsCount = await countTableRows({
-      from: this.typename,
-      where: whereObject,
+      table: this.typename,
+      where: whereInput,
     });
 
     return recordsCount;
@@ -699,12 +685,7 @@ export class NormalService extends BaseService {
     // check if the id already is in use
     const recordsCount = await this.getRecordCount(
       {
-        fields: [
-          {
-            field: "id",
-            value: id,
-          },
-        ],
+        id,
       },
       fieldPath
     );
