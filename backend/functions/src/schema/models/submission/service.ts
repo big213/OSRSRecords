@@ -240,20 +240,9 @@ export class SubmissionService extends PaginatedService {
 
     const count = await this.getRecordCount(
       {
-        fields: [
-          {
-            field: "evidenceKey",
-            value: evidenceKey,
-          },
-          {
-            field: "event",
-            value: eventId,
-          },
-          {
-            field: "status",
-            value: submissionStatusKenum.APPROVED.index,
-          },
-        ],
+        evidenceKey,
+        event: eventId,
+        status: submissionStatusKenum.APPROVED.index,
       },
       fieldPath
     );
@@ -1071,37 +1060,12 @@ export class SubmissionService extends PaginatedService {
         // check if it was a tie (more than one other approved submission in relevant era with same score)
         const sameScoreCount = await this.getRecordCount(
           {
-            fields: [
-              {
-                field: "score",
-                operator: "eq",
-                value: submission.score,
-              },
-              {
-                field: "event.id",
-                operator: "eq",
-                value: submission["event.id"],
-              },
-              {
-                field: "status",
-                operator: "eq",
-                value: submissionStatusKenum.APPROVED.index,
-              },
-              {
-                field: "eventEra.isRelevant",
-                operator: "eq",
-                value: true,
-              },
-              {
-                field: "participants",
-                operator: "eq",
-                value: submission.participants,
-              },
-              {
-                field: "isSoloPersonalBest",
-                value: true,
-              },
-            ],
+            score: submission.score,
+            "event.id": submission["event.id"],
+            status: submissionStatusKenum.APPROVED.index,
+            "eventEra.isRelevant": true,
+            participants: submission.participants,
+            isSoloPersonalBest: true,
           },
           fieldPath
         );
@@ -1243,33 +1207,11 @@ export class SubmissionService extends PaginatedService {
             // check if it was a WR tie (more than one other approved submission in relevant era with same score)
             const sameScoreCount = await this.getRecordCount(
               {
-                fields: [
-                  {
-                    field: "score",
-                    operator: "eq",
-                    value: submission.score,
-                  },
-                  {
-                    field: "event.id",
-                    operator: "eq",
-                    value: submission["event.id"],
-                  },
-                  {
-                    field: "status",
-                    operator: "eq",
-                    value: submissionStatusKenum.APPROVED.index,
-                  },
-                  {
-                    field: "eventEra.isRelevant",
-                    operator: "eq",
-                    value: true,
-                  },
-                  {
-                    field: "participants",
-                    operator: "eq",
-                    value: submission.participants,
-                  },
-                ],
+                score: submission.score,
+                "event.id": submission["event.id"],
+                status: submissionStatusKenum.APPROVED.index,
+                "eventEra.isRelevant": true,
+                participants: submission.participants,
               },
               fieldPath
             );

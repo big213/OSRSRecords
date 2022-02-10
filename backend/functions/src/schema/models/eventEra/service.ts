@@ -48,18 +48,8 @@ export class EventEraService extends PaginatedService {
     // check if any previous era that is current with the same event.id
     const previousCurrentCount = await this.getRecordCount(
       {
-        fields: [
-          {
-            field: "isCurrent",
-            operator: "eq",
-            value: true,
-          },
-          {
-            field: "event.id",
-            operator: "eq",
-            value: validatedArgs.event,
-          },
-        ],
+        isCurrent: true,
+        "event.id": validatedArgs.event,
       },
       fieldPath
     );
