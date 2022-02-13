@@ -535,7 +535,7 @@ export function lookupFieldInfo(recordInfo, field: string) {
 
   // field unknown, abort
   if (!fieldInfo)
-    throw new Error(`Unknown field on ${recordInfo.typename}:' ${field}`)
+    throw new Error(`Unknown field on ${recordInfo.typename}: '${field}'`)
 
   return fieldInfo
 }

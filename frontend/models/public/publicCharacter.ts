@@ -19,7 +19,7 @@ export const PublicCharacter = {
           ...PublicSubmission.paginationOptions,
           headerOptions: [
             {
-              field: 'ranking',
+              field: 'relevantEraRanking',
               width: '100px',
               align: 'right',
             },
@@ -40,8 +40,8 @@ export const PublicCharacter = {
               align: 'right',
             },
             {
-              field: 'mainExternalLink',
-              width: '150px',
+              field: 'mainEvidenceLinks',
+              width: '50px',
             },
             {
               field: 'happenedOn',
