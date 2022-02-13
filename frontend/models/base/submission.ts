@@ -148,7 +148,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     externalLinks: {
       text: 'Evidence Links',
-      hint: 'Image or video links backing up the submission. At least 1 gif/video preferred.',
+      hint: 'Image or video links backing up the submission. At least 1 image + 1 gif/video required. If you have any links that you would prefer NOT to be shown publicly, please include them in the "Private Comments" section below.',
       inputType: 'value-array',
       inputOptions: {
         nestedFields: [
@@ -156,7 +156,7 @@ export const Submission = <RecordInfo<'submission'>>{
             key: 'main',
             inputType: 'text',
             text: 'Link URL',
-            hint: 'Imgur/Streamable links preferred',
+            hint: 'Imgur/Streamable/YT links preferred',
           },
         ],
       },
