@@ -186,6 +186,16 @@ export default {
           )
         }
 
+        // if less than 2 links provided, MUST have a private comment stating why
+        if (
+          inputs.externalLinks.filter((link) => link).length < 2 &&
+          !inputs.privateComments
+        ) {
+          throw new Error(
+            'If less than 2 valid links provided, must provide more links or info in the Private Comments box'
+          )
+        }
+
         // changed: set discordId field if first participant's discordId is populated and the discordId field is not populated
         if (
           this.mode === 'add' &&
