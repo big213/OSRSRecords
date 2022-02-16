@@ -40,13 +40,13 @@ app.use(async function (req, res, next) {
   }
 
   // handle origins -- only accepting string type origins.
-  const origin =
-    Array.isArray(allowedOrigins) && allowedOrigins.length
-      ? typeof req.headers.origin === "string" &&
-        allowedOrigins.includes(req.headers.origin)
-        ? req.headers.origin
-        : allowedOrigins[0]
-      : "*";
+  // if allowedOrigins is empty, allow all origins "*"
+  const origin = allowedOrigins.length
+    ? typeof req.headers.origin === "string" &&
+      allowedOrigins.includes(req.headers.origin)
+      ? req.headers.origin
+      : allowedOrigins[0]
+    : "*";
 
   res.header("Access-Control-Allow-Origin", origin);
   if (origin !== "*") {
