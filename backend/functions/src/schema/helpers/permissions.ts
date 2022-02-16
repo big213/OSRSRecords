@@ -44,17 +44,6 @@ export function generateUserRoleGuard(
     if (!req.user) return false;
 
     try {
-      // role is loaded in helpers/auth on token decode
-      /*
-      const userRecords = await sqlHelper.fetchTableRows({
-        select: [{ field: "role" }],
-        from: User.typename,
-        where: {
-          id: req.user.id
-        },
-      });
-      */
-
       if (!req.user.role) return false;
       return allowedRoles.includes(req.user.role);
     } catch (err) {

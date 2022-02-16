@@ -289,15 +289,6 @@ export default {
       } */
     },
 
-    canSee(allowedRoles, allowedPermissions) {
-      return (
-        allowedRoles.includes(this.$store.getters['auth/user']?.role) ||
-        allowedPermissions.some((ele) =>
-          this.$store.getters['auth/user']?.allPermissions.includes(ele)
-        )
-      )
-    },
-
     toggleTheme() {
       this.$vuetify.theme.dark = !this.$vuetify.theme.dark
       localStorage.setItem('theme', this.$vuetify.theme.dark ? 'dark' : 'light')
