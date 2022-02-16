@@ -25,8 +25,6 @@ if (env.base?.origins) {
   );
 }
 
-console.log(allowedOrigins);
-
 // extract the user ID from all requests.
 app.use(async function (req, res, next) {
   try {
