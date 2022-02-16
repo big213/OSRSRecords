@@ -45,13 +45,14 @@ function generateMigration(initSubscriptions = true, force = false) {
         // set actual field name
         const sqlFieldName = typeDefField.sqlOptions.field ?? fieldName;
 
-        // if ID field, set ID and return
-        /*
-        if (sqlFieldName === "id") {
+        // if ID field and it is an integer, set auto-increment and return
+        if (
+          sqlFieldName === "id" &&
+          typeDefField.sqlOptions.type === "integer"
+        ) {
           operationsArray.push("table.increments()");
           return;
         }
-        */
 
         let operationString = `table.${typeDefField.sqlOptions.type}("${sqlFieldName}")`;
 

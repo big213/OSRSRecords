@@ -1,6 +1,7 @@
 // Query builder (Typescript version >= 4.1.3 required)
 /* const queryResult = executeGiraffeql({
   // Start typing here to get hints
+  
 }); */
 
 export function executeGiraffeql<Key extends keyof Root>(
@@ -90,10 +91,12 @@ export type SortByField<T> = {
   /**Regex Field*/ regex: RegExp;
   /**Valid JSON*/ json: unknown;
   /**Valid JSON as a string*/ jsonString: string;
+  /**RSN Field*/ rsn: string;
   /**Enum stored as a separate key value*/ submissionStatus:
     | "SUBMITTED"
     | "UNDER_REVIEW"
     | "APPROVED"
+    | "INFORMATION_REQUESTED"
     | "REJECTED";
   /**Enum stored as a separate key value*/ eventDifficulty:
     | "EASY"
@@ -175,6 +178,7 @@ export type SortByField<T> = {
     excludeParticipants?: Scalars["boolean"];
     excludeEventEra?: Scalars["boolean"];
     isRelevantEventEra?: Scalars["boolean"] | null;
+    isSoloPersonalBest?: Scalars["boolean"] | null;
   };
   /**Input object for syncCurrentUser*/ syncCurrentUser: {
     email: Scalars["string"];
@@ -384,6 +388,10 @@ export type SortByField<T> = {
   "submissionFilterByField/eventEra.isRelevant": FilterByField<
     Scalars["boolean"]
   >;
+  "submissionFilterByField/isSoloPersonalBest": FilterByField<
+    Scalars["boolean"]
+  >;
+  "submissionFilterByField/isRelevantRecord": FilterByField<Scalars["boolean"]>;
   "submissionFilterByField/participants": FilterByField<Scalars["number"]>;
   "submissionFilterByField/status": FilterByField<Scalars["submissionStatus"]>;
   "submissionFilterByField/submissionCharacterParticipantLink/character.id": FilterByField<
@@ -395,6 +403,8 @@ export type SortByField<T> = {
     "event.id"?: InputTypes["submissionFilterByField/event.id"];
     "eventEra.id"?: InputTypes["submissionFilterByField/eventEra.id"];
     "eventEra.isRelevant"?: InputTypes["submissionFilterByField/eventEra.isRelevant"];
+    isSoloPersonalBest?: InputTypes["submissionFilterByField/isSoloPersonalBest"];
+    isRelevantRecord?: InputTypes["submissionFilterByField/isRelevantRecord"];
     participants?: InputTypes["submissionFilterByField/participants"];
     status?: InputTypes["submissionFilterByField/status"];
     "submissionCharacterParticipantLink/character.id"?: InputTypes["submissionFilterByField/submissionCharacterParticipantLink/character.id"];
@@ -426,6 +436,8 @@ export type SortByField<T> = {
     externalLinks?: Scalars["url"][];
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
+    reviewerComments?: Scalars["string"] | null;
+    isRecordingVerified?: Scalars["boolean"];
     submittedBy?: Scalars["string"] | null;
     discordId?: Scalars["string"] | null;
   };
@@ -441,6 +453,8 @@ export type SortByField<T> = {
     externalLinks?: Scalars["url"][];
     privateComments?: Scalars["string"] | null;
     publicComments?: Scalars["string"] | null;
+    reviewerComments?: Scalars["string"] | null;
+    isRecordingVerified?: Scalars["boolean"];
     submittedBy?: Scalars["string"] | null;
     discordId?: Scalars["string"] | null;
   };
@@ -471,13 +485,13 @@ export type SortByField<T> = {
     search?: Scalars["string"];
   };
   createCharacter: {
-    name: Scalars["string"];
+    name: Scalars["rsn"];
     avatar?: Scalars["string"] | null;
     description?: Scalars["string"] | null;
     ownedBy?: InputTypes["user"] | null;
   };
   updateCharacterFields: {
-    name?: Scalars["string"];
+    name?: Scalars["rsn"];
     avatar?: Scalars["string"] | null;
     description?: Scalars["string"] | null;
     ownedBy?: InputTypes["user"] | null;
@@ -485,6 +499,10 @@ export type SortByField<T> = {
   updateCharacter: {
     item: InputTypes["character"];
     fields: InputTypes["updateCharacterFields"];
+  };
+  remapCharacterPayload: {
+    from: InputTypes["character"];
+    to: InputTypes["character"];
   };
   /**Input object for getRepositoryReleases*/ getRepositoryReleases: {
     first: Scalars["number"];
@@ -584,6 +602,8 @@ export type SortByField<T> = {
     eventEra?: InputTypes["eventEra"] | null;
     eventEraMode?: Scalars["eventEraMode"];
     ranksToShow?: Scalars["number"];
+    linesLimit?: Scalars["number"] | null;
+    isSoloPersonalBest?: Scalars["boolean"] | null;
     sort: Scalars["number"];
   };
   updateDiscordChannelOutputFields: {
@@ -593,6 +613,8 @@ export type SortByField<T> = {
     eventEra?: InputTypes["eventEra"] | null;
     eventEraMode?: Scalars["eventEraMode"];
     ranksToShow?: Scalars["number"];
+    linesLimit?: Scalars["number"] | null;
+    isSoloPersonalBest?: Scalars["boolean"] | null;
     sort?: Scalars["number"];
   };
   updateDiscordChannelOutput: {
@@ -641,6 +663,11 @@ export type SortByField<T> = {
   updateEventEra: {
     item: InputTypes["eventEra"];
     fields: InputTypes["updateEventEraFields"];
+  };
+  discordRequestPayload: {
+    method: Scalars["string"];
+    path: Scalars["string"];
+    params?: Scalars["unknown"] | null;
   };
   submissionCharacterParticipantLink: {
     id?: Scalars["id"];
@@ -1054,13 +1081,22 @@ export type ParticipantsList = {
   externalLinks: { Type: Scalars["url"][]; Args: undefined };
   privateComments: { Type: Scalars["string"] | null; Args: undefined };
   publicComments: { Type: Scalars["string"] | null; Args: undefined };
+  reviewerComments: { Type: Scalars["string"] | null; Args: undefined };
   discordMessageId: { Type: Scalars["string"] | null; Args: undefined };
   mainExternalLink: { Type: Scalars["url"] | null; Args: undefined };
+  firstImageLink: { Type: Scalars["url"] | null; Args: undefined };
+  firstVideoLink: { Type: Scalars["url"] | null; Args: undefined };
   evidenceKey: { Type: Scalars["string"] | null; Args: undefined };
-  isRecord: { Type: Scalars["boolean"]; Args: undefined };
+  isRelevantRecord: { Type: Scalars["boolean"]; Args: undefined };
+  isSoloPersonalBest: { Type: Scalars["boolean"]; Args: undefined };
+  isRecordingVerified: { Type: Scalars["boolean"]; Args: undefined };
   /**The numerical score rank of this PB given its event, pbClass, and setSize, among public PBs only*/ ranking: {
     Type: Scalars["number"] | null;
     Args: [InputTypes["rankingInput"]];
+  };
+  /**If this was a record, this points to the superseding record, if any*/ supersedingRecord: {
+    Type: Submission | null;
+    Args: undefined;
   };
   /**The previous record given the event.id, participants, and eventEra.id, if any*/ previousRecord: {
     Type: Submission | null;
@@ -1084,7 +1120,7 @@ export type ParticipantsList = {
     Type: Scalars["string"];
     Args: [Scalars["number"]];
   };
-  name: { Type: Scalars["string"]; Args: undefined };
+  name: { Type: Scalars["rsn"]; Args: undefined };
   standardizedName: { Type: Scalars["string"]; Args: undefined };
   avatar: { Type: Scalars["string"] | null; Args: undefined };
   description: { Type: Scalars["string"] | null; Args: undefined };
@@ -1152,6 +1188,8 @@ export type ParticipantsList = {
   eventEra: { Type: EventEra | null; Args: undefined };
   eventEraMode: { Type: Scalars["eventEraMode"]; Args: undefined };
   ranksToShow: { Type: Scalars["number"]; Args: undefined };
+  linesLimit: { Type: Scalars["number"] | null; Args: undefined };
+  isSoloPersonalBest: { Type: Scalars["boolean"] | null; Args: undefined };
   sort: { Type: Scalars["number"]; Args: undefined };
   /**When the record was created*/ createdAt: {
     Type: Scalars["unixTimestamp"];
@@ -1276,6 +1314,10 @@ export type ParticipantsList = {
   deleteCharacter: { Type: Character; Args: InputTypes["character"] };
   createCharacter: { Type: Character; Args: InputTypes["createCharacter"] };
   updateCharacter: { Type: Character; Args: InputTypes["updateCharacter"] };
+  remapCharacter: {
+    Type: Character;
+    Args: InputTypes["remapCharacterPayload"];
+  };
   getRepositoryReleases: {
     Type: Scalars["unknown"][];
     Args: InputTypes["getRepositoryReleases"];
@@ -1341,7 +1383,13 @@ export type ParticipantsList = {
   deleteEventEra: { Type: EventEra; Args: InputTypes["eventEra"] };
   createEventEra: { Type: EventEra; Args: InputTypes["createEventEra"] };
   updateEventEra: { Type: EventEra; Args: InputTypes["updateEventEra"] };
-  getImgurData: { Type: Scalars["unknown"]; Args: Scalars["string"] };
+  getImgurImage: { Type: Scalars["unknown"]; Args: Scalars["string"] };
+  getImgurAlbum: { Type: Scalars["unknown"]; Args: Scalars["string"] };
+  sendDiscordRequest: {
+    Type: Scalars["unknown"];
+    Args: InputTypes["discordRequestPayload"];
+  };
+  executeAdminFunction: { Type: Scalars["unknown"]; Args: Scalars["string"] };
   getSubmissionCharacterParticipantLink: {
     Type: SubmissionCharacterParticipantLink;
     Args: InputTypes["submissionCharacterParticipantLink"];

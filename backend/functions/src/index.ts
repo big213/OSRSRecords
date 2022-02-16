@@ -14,11 +14,18 @@ const app = express();
 
 // app.use(express.json()); -- apparently not needed on cloud functions
 
-const allowedOrigins = [
-  "https://osrsrecords.com",
-  "https://alpha.osrsrecords.com",
-  "http://localhost:3000",
-];
+const allowedOrigins = ["http://localhost:3000"];
+// add any additional origins
+if (env.base?.origins) {
+  allowedOrigins.push(
+    ...env.base.origins
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin)
+  );
+}
+
+console.log(allowedOrigins);
 
 // extract the user ID from all requests.
 app.use(async function (req, res, next) {
@@ -77,4 +84,5 @@ export const api = functions.https.onRequest(app);
 
 export { serveImage } from "./misc/serveImage";
 
+// additional project-specific endpoints
 export { handleDiscordInteraction } from "./misc/handleDiscordInteraction";

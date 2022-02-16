@@ -540,13 +540,13 @@ export function generateUpdatedAtField() {
   };
 }
 
-export function generateIdField() {
+export function generateIdField({ autoIncrement = false } = {}) {
   return {
     id: generateStandardField({
       description: "The unique ID of the field",
       allowNull: false,
-      sqlType: "string",
-      type: Scalars.id,
+      sqlType: autoIncrement ? "integer" : "string",
+      type: autoIncrement ? Scalars.number : Scalars.id,
       typeDefOptions: { addable: false, updateable: false }, // not addable or updateable
     }),
   };
