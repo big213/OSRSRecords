@@ -1,8 +1,16 @@
 import * as fs from "fs";
+import * as yargs from "yargs";
 
-const typename = process.argv[2];
+const argv = yargs(process.argv.slice(2))
+  .options({
+    name: { type: "string", demandOption: true },
+    link: { type: "boolean", default: false },
+  })
+  .parseSync();
 
-const isLink = false;
+const typename = argv.name;
+
+const isLink = argv.link;
 
 const capitalizedTypename =
   typename.charAt(0).toUpperCase() + typename.slice(1);
@@ -28,23 +36,26 @@ function processTemplate(
   return templateStringModified;
 }
 
+// determine the prefix
+const directoryPrefix = `src/schema/${isLink ? "links" : "models"}/`;
+
 // create the directory
-if (!fs.existsSync(`src/schema/models/${typename}`)) {
-  fs.mkdirSync(`src/schema/models/${typename}`);
+if (!fs.existsSync(`${directoryPrefix}${typename}`)) {
+  fs.mkdirSync(`${directoryPrefix}${typename}`);
 }
 
 const templateFiles = [
   {
     templateFilePath: "src/scripts/templates/rootResolver.txt",
-    destFilePath: `src/schema/models/${typename}/rootResolver.ts`,
+    destFilename: "rootResolver.ts",
   },
   {
     templateFilePath: "src/scripts/templates/service.txt",
-    destFilePath: `src/schema/models/${typename}/service.ts`,
+    destFilename: "service.ts",
   },
   {
     templateFilePath: "src/scripts/templates/typeDef.txt",
-    destFilePath: `src/schema/models/${typename}/typeDef.ts`,
+    destFilename: "typeDef.ts",
   },
 ];
 
@@ -53,7 +64,7 @@ templateFiles.forEach((templateFileObject) => {
   const template = fs.readFileSync(templateFileObject.templateFilePath, "utf8");
 
   fs.writeFileSync(
-    templateFileObject.destFilePath,
+    `${directoryPrefix}${typename}/${templateFileObject.destFilename}`,
     processTemplate(template, {
       typename,
       capitalizedTypename,

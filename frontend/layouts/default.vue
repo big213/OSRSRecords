@@ -282,12 +282,7 @@ export default {
       }
     },
 
-    handleItemAdded() {
-      /*       switch (this.editRecordDialogRecordInfo.typename) {
-        case 'workspace':
-          break;
-      } */
-    },
+    handleItemAdded() {},
 
     toggleTheme() {
       this.$vuetify.theme.dark = !this.$vuetify.theme.dark
