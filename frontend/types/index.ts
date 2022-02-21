@@ -1,4 +1,4 @@
-import { InputTypes, MainTypes, FilterByField } from '~/types/schema'
+import { InputTypes, MainTypes, FilterByField } from '../../schema'
 import { CrudRawFilterObject, CrudRawSortObject } from './misc'
 
 export type RecordInfo<T extends keyof MainTypes> = {

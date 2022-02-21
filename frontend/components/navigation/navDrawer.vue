@@ -1,7 +1,11 @@
 <template>
   <v-navigation-drawer v-bind="$attrs">
     <nuxt-link to="/" class="hidden-md-and-up">
-      <v-img :src="require('~/static/logo-trimmed.png')" class="ma-3" contain />
+      <v-img
+        :src="require('~/static/logo-horizontal.png')"
+        class="ma-3"
+        contain
+      />
     </nuxt-link>
     <v-divider></v-divider>
     <v-list dense color="accent">
@@ -28,12 +32,7 @@
           Submit Record
         </v-btn>
       </v-list-item>
-      <v-list-item
-        v-for="(item, i) in visibleNavItems"
-        :key="i"
-        :to="item.to"
-        router
-      >
+      <v-list-item v-for="(item, i) in navItems" :key="i" :to="item.to" router>
         <v-list-item-action>
           <v-icon>{{ item.icon }}</v-icon>
         </v-list-item-action>
@@ -54,32 +53,21 @@
         </v-list-item-content>
       </v-list-item>
     </v-list>
-
-    <!--
-        <v-divider></v-divider>
-      <v-list v-if="user" dense>
-        <v-list-group prepend-icon="mdi-account" no-action>
-          <template v-slot:activator>
-            <v-list-item-content>
-              <v-list-item-title>My Account</v-list-item-title>
-            </v-list-item-content>
-          </template>
-
-          <v-list-item
-            v-for="(item, i) in userItems"
-            :key="i"
-            :to="item.to"
-            router
-            exact
-          >
-            <v-list-item-content>
-              <v-list-item-title v-text="item.title" />
-            </v-list-item-content>
-          </v-list-item>
-        </v-list-group>
-      </v-list>
-      -->
     <v-divider></v-divider>
+    <!--
+    <v-list v-if="user" dense color="accent">
+      <v-subheader>My Account</v-subheader>
+      <v-list-item v-for="(item, i) in userItems" :key="i" :to="item.to" router>
+        <v-list-item-action>
+          <v-icon>{{ item.icon }}</v-icon>
+        </v-list-item-action>
+        <v-list-item-content>
+          <v-list-item-title v-text="item.title" />
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
+    <v-divider></v-divider>
+    -->
     <v-list v-if="isAdmin" dense color="accent">
       <v-subheader>Moderation</v-subheader>
       <v-list-item
@@ -105,6 +93,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { generateCrudRecordInterfaceRoute } from '~/services/base'
 import AdminNavRoutes from '~/components/navigation/adminNavRoutes.vue'
 
@@ -128,13 +117,11 @@ export default {
           icon: 'mdi-podium',
           title: 'Leaderboard',
           to: '/leaderboard',
-          loginRequired: false,
         },
         {
           icon: 'mdi-seal',
           title: 'Latest Submissions',
           to: '/latest-submissions',
-          loginRequired: false,
         },
         {
           icon: 'mdi-account',
@@ -147,7 +134,6 @@ export default {
               desc: true,
             },
           }),
-          loginRequired: false,
         },
       ],
       userItems: [
@@ -234,23 +220,12 @@ export default {
     }
   },
   computed: {
-    visibleNavItems() {
-      return this.navItems.filter(
-        (item) => this.$store.getters['auth/user'] || !item.loginRequired
-      )
-    },
+    ...mapGetters({
+      user: 'auth/user',
+    }),
 
     isAdmin() {
       return this.$store.getters['auth/user']?.role === 'ADMIN'
-    },
-  },
-  methods: {
-    close() {
-      this.$emit('close')
-    },
-    handleSubmit(data) {
-      this.close()
-      this.$emit('handleSubmit', data)
     },
   },
 }

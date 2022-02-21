@@ -2,6 +2,7 @@ import { getUserRoles } from '~/services/dropdown'
 import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
+import AvatarColumn from '~/components/table/avatarColumn.vue'
 import BooleanColumn from '~/components/table/booleanColumn.vue'
 
 export const User = <RecordInfo<'user'>>{
@@ -30,6 +31,7 @@ export const User = <RecordInfo<'user'>>{
     avatar: {
       text: 'Avatar',
       inputType: 'avatar',
+      component: AvatarColumn,
     },
     password: {
       text: 'Password',

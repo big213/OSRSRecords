@@ -1,8 +1,10 @@
 // Query builder (Typescript version >= 4.1.3 required)
-/* const queryResult = executeGiraffeql({
+/*
+const queryResult = executeGiraffeql({
   // Start typing here to get hints
   
-}); */
+});
+*/
 
 export function executeGiraffeql<Key extends keyof Root>(
   query: GetQuery<Key>

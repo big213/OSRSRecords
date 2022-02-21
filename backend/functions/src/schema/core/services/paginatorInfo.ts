@@ -1,9 +1,9 @@
 import { NormalService, SimpleService } from ".";
-import * as Resolver from "../helpers/resolver";
 import { itemNotFoundError } from "../helpers/error";
 import { generatePaginatorInfoTypeDef } from "../generators";
 import { ServiceFunctionInputs } from "../../../types";
 import { lookupSymbol, GiraffeqlObjectType } from "giraffeql";
+import { getObjectType } from "../helpers/resolver";
 
 export class PaginatorInfoService extends SimpleService {
   constructor(service: NormalService) {
@@ -28,7 +28,7 @@ export class PaginatorInfoService extends SimpleService {
     }: ServiceFunctionInputs) => {
       const selectQuery = query || Object.assign({}, this.presets.default);
 
-      const results = await Resolver.getObjectType({
+      const results = await getObjectType({
         typename: this.typename,
         req,
         fieldPath,

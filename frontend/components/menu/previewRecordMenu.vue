@@ -29,9 +29,6 @@
                 <v-list-item-subtitle
                   >Type: {{ itemData.__typename }}</v-list-item-subtitle
                 >
-                <!--                 <v-list-item-subtitle
-                  >Nationality: {{ itemData.country }}</v-list-item-subtitle
-                > -->
               </template>
             </template>
           </v-list-item-content>

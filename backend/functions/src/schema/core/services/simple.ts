@@ -1,8 +1,8 @@
 import { BaseService } from ".";
 import { GiraffeqlObjectType } from "giraffeql";
-import * as Resolver from "../helpers/resolver";
-import * as errorHelper from "../helpers/error";
 import { ServiceFunctionInputs } from "../../../types";
+import { getObjectType } from "../helpers/resolver";
+import { itemNotFoundError } from "../helpers/error";
 
 export class SimpleService extends BaseService {
   typeDef!: GiraffeqlObjectType;
@@ -25,7 +25,7 @@ export class SimpleService extends BaseService {
     // if no fields requested, can skip the permissions check
     if (Object.keys(selectQuery).length < 1) return { typename: this.typename };
 
-    const results = await Resolver.getObjectType({
+    const results = await getObjectType({
       typename: this.typename,
       req,
       fieldPath,
@@ -34,7 +34,7 @@ export class SimpleService extends BaseService {
     });
 
     if (results.length < 1) {
-      throw errorHelper.itemNotFoundError(fieldPath);
+      throw itemNotFoundError(fieldPath);
     }
 
     return results[0];

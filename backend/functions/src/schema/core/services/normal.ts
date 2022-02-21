@@ -1,4 +1,3 @@
-import * as errorHelper from "../helpers/error";
 import { BaseService } from ".";
 import {
   countTableRows,
@@ -11,8 +10,6 @@ import {
   SqlWhereObject,
 } from "../helpers/sql";
 import { permissionsCheck } from "../helpers/permissions";
-
-import * as Resolver from "../helpers/resolver";
 
 import {
   GiraffeqlObjectType,
@@ -31,6 +28,14 @@ import {
 import { ServiceFunctionInputs } from "../../../types";
 
 import { btoa, escapeRegExp, generateId, isObject } from "../helpers/shared";
+import {
+  countObjectType,
+  createObjectType,
+  deleteObjectType,
+  getObjectType,
+  updateObjectType,
+} from "../helpers/resolver";
+import { itemNotFoundError } from "../helpers/error";
 
 export type FieldObject = {
   field?: string;
@@ -172,7 +177,7 @@ export class NormalService extends BaseService {
     const selectQuery = query || Object.assign({}, this.presets.default);
 
     //check if the record and query is fetchable
-    const results = await Resolver.getObjectType({
+    const results = await getObjectType({
       typename: this.typename,
       req,
       fieldPath,
@@ -186,7 +191,7 @@ export class NormalService extends BaseService {
     });
 
     if (results.length < 1) {
-      throw errorHelper.itemNotFoundError(fieldPath);
+      throw itemNotFoundError(fieldPath);
     }
 
     const subscriptionFilterableArgs = {
@@ -283,7 +288,7 @@ export class NormalService extends BaseService {
       }))
     );
 
-    const results = await Resolver.getObjectType({
+    const results = await getObjectType({
       typename: this.typename,
       req,
       fieldPath,
@@ -304,7 +309,7 @@ export class NormalService extends BaseService {
     });
 
     if (results.length < 1) {
-      throw errorHelper.itemNotFoundError(fieldPath);
+      throw itemNotFoundError(fieldPath);
     }
 
     return results[0];
@@ -374,7 +379,7 @@ export class NormalService extends BaseService {
       whereObject.fields.push(whereSubObject);
     }
 
-    const resultsCount = await Resolver.countObjectType(
+    const resultsCount = await countObjectType(
       this.typename,
       fieldPath,
       [whereObject],
@@ -560,7 +565,7 @@ export class NormalService extends BaseService {
     // populate the distinctOn, in case the sqlParamsModifier modified the orderBy
     sqlParams.distinctOn = orderBy.map((ele) => ele.field).concat("id");
 
-    const results = await Resolver.getObjectType({
+    const results = await getObjectType({
       typename: this.typename,
       req,
       fieldPath,
@@ -710,7 +715,7 @@ export class NormalService extends BaseService {
     const validatedArgs = <any>args;
     await this.handleLookupArgs(args, fieldPath);
 
-    const addResults = await Resolver.createObjectType({
+    const addResults = await createObjectType({
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
@@ -765,7 +770,7 @@ export class NormalService extends BaseService {
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
 
-    await Resolver.updateObjectType({
+    await updateObjectType({
       typename: this.typename,
       id: item.id,
       updateFields: {
@@ -829,7 +834,7 @@ export class NormalService extends BaseService {
           data,
         });
 
-    await Resolver.deleteObjectType({
+    await deleteObjectType({
       typename: this.typename,
       id: item.id,
       req,

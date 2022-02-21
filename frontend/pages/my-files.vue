@@ -11,6 +11,7 @@ import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { MyFiles } from '~/models'
 
 export default {
+  middleware: ['router-auth'],
   components: {
     CrudRecordPage,
   },
@@ -26,7 +27,7 @@ export default {
       return this.$store.getters['auth/user']
         ? [
             {
-              field: 'createdBy.id',
+              field: 'createdBy',
               operator: 'eq',
               value: this.$store.getters['auth/user'].id,
             },

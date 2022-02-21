@@ -1,6 +1,6 @@
 import * as functions from "firebase-functions";
 
-export const isDev = process.env.DEV;
+export const isDev = process.env.FUNCTIONS_EMULATOR ?? process.env.DEV;
 
 export const env = isDev ? require("../../../env.json") : functions.config();
 
@@ -10,30 +10,16 @@ export const giraffeqlOptions = {
   processEntireTree: false,
 };
 
-export const pgProductionOptions = {
+const pgEnv = isDev ? env.pg_dev : env.pg;
+
+export const pgOptions = {
   client: "pg",
   connection: {
-    host: env.pg.host,
-    user: env.pg.user,
-    password: env.pg.password,
-    database: env.pg.database,
-    ...(env.pg.port && { port: env.pg.port }),
+    host: pgEnv.host,
+    user: pgEnv.user,
+    password: pgEnv.password,
+    database: pgEnv.database,
+    ...(pgEnv.port && { port: pgEnv.port }),
   },
   pool: { min: 0, max: 1 },
 };
-
-export const pgDevOptions = env.pg_dev
-  ? {
-      client: "pg",
-      connection: {
-        host: env.pg_dev.host,
-        user: env.pg_dev.user,
-        password: env.pg_dev.password,
-        database: env.pg_dev.database,
-        ...(env.pg_dev.port && { port: env.pg_dev.port }),
-      },
-      pool: { min: 0, max: 1 },
-    }
-  : null;
-
-export const pgOptions = isDev ? pgDevOptions : pgProductionOptions;

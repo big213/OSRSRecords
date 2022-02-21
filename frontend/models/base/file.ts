@@ -2,6 +2,7 @@ import type { RecordInfo } from '~/types'
 import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import FilesizeColumn from '~/components/table/filesizeColumn.vue'
 import FileColumn from '~/components/table/fileColumn.vue'
+import { generateJoinableField } from '~/services/recordInfo'
 
 export const File = <RecordInfo<'file'>>{
   typename: 'file',
@@ -33,6 +34,12 @@ export const File = <RecordInfo<'file'>>{
     contentType: {
       text: 'Content Type',
     },
+    createdBy: generateJoinableField({
+      text: 'Created By',
+      fieldname: 'createdBy',
+      typename: 'user',
+      hasAvatar: true,
+    }),
     createdAt: {
       text: 'Created At',
       component: TimeagoColumn,

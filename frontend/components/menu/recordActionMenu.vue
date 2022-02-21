@@ -132,7 +132,6 @@ export default {
       type: Object,
       default: () => ({}),
     },
-
     recordInfo: {
       type: Object,
       required: true,

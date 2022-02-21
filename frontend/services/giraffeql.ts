@@ -1,7 +1,7 @@
 import axios from 'axios'
 import firebase from '~/services/fireinit'
 import 'firebase/auth'
-import { Root, GetQuery, GetResponse } from '~/types/schema'
+import { Root, GetQuery, GetResponse } from '../../schema'
 
 const prodResource = axios.create({
   baseURL: process.env.apiUrl,

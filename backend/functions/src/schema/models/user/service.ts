@@ -1,17 +1,10 @@
 import { PaginatedService } from "../../core/services";
-
 import { User } from "../../services";
-
-import * as Resolver from "../../core/helpers/resolver";
-import * as sqlHelper from "../../core/helpers/sql";
-import * as errorHelper from "../../core/helpers/error";
 import * as admin from "firebase-admin";
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
-import { lookupSymbol, StringKeyObject } from "giraffeql";
 
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { userRoleKenum } from "../../enums";
-import { Root } from "../../../types/schema";
 import { isObject } from "giraffeql/lib/helpers/base";
 import {
   filterPassesTest,
@@ -19,26 +12,16 @@ import {
   isUserLoggedIn,
 } from "../../helpers/permissions";
 import { objectOnlyHasFields } from "../../core/helpers/shared";
+import { fetchTableRows } from "../../core/helpers/sql";
+import {
+  createObjectType,
+  deleteObjectType,
+  updateObjectType,
+} from "../../core/helpers/resolver";
+import { generateError, itemNotFoundError } from "../../core/helpers/error";
 
 export class UserService extends PaginatedService {
   defaultTypename = "user";
-
-  presets = {
-    default: {
-      id: lookupSymbol,
-      name: lookupSymbol,
-      email: lookupSymbol,
-      avatar: lookupSymbol,
-      role: lookupSymbol,
-      permissions: lookupSymbol,
-      createdAt: lookupSymbol,
-      updatedAt: lookupSymbol,
-      createdBy: {
-        id: lookupSymbol,
-        name: lookupSymbol,
-      },
-    },
-  };
 
   filterFieldsMap = {
     id: {},
@@ -60,8 +43,8 @@ export class UserService extends PaginatedService {
   accessControl: AccessControlMap = {
     /*
     Allow if:
-    - item isPublic === true
-    - OR, item was created by currentUser
+    - item was created by currentUser
+    - item isPublic === true AND requested fields has fields id, name, avatar, email ONLY
     - OR, if requested fields are id, name, avatar ONLY
     */
     get: async ({ req, args, query, fieldPath }) => {
@@ -71,9 +54,21 @@ export class UserService extends PaginatedService {
         fieldPath
       );
 
-      if (record.isPublic) return true;
-
       if (isCurrentUser(req, record["createdBy.id"])) return true;
+
+      if (
+        isObject(query) &&
+        objectOnlyHasFields(query, [
+          "id",
+          "name",
+          "avatar",
+          "email",
+          "isPublic",
+        ]) &&
+        record.isPublic
+      ) {
+        return true;
+      }
 
       if (
         isObject(query) &&
@@ -112,18 +107,13 @@ export class UserService extends PaginatedService {
 
     /*
     Allow if:
-    - user is currentUser AND update fields ONLY avatar, name, isPublic, pinnedWorkspaces
+    - user is currentUser AND update fields ONLY avatar, name, isPublic
     */
     update: async ({ req, args }) => {
       if (
         isUserLoggedIn(req) &&
         isCurrentUser(req, req.user!.id) &&
-        objectOnlyHasFields(args.fields, [
-          "avatar",
-          "name",
-          "isPublic",
-          "pinnedWorkspaces",
-        ])
+        objectOnlyHasFields(args.fields, ["avatar", "name", "isPublic"])
       ) {
         return true;
       }
@@ -157,7 +147,7 @@ export class UserService extends PaginatedService {
       photoURL: validatedArgs.avatar,
     });
 
-    const addResults = await Resolver.createObjectType({
+    const addResults = await createObjectType({
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
@@ -193,7 +183,7 @@ export class UserService extends PaginatedService {
     // args should be validated already
     const validatedArgs = <any>args;
     //check if record exists
-    const results = await sqlHelper.fetchTableRows({
+    const results = await fetchTableRows({
       select: ["id", "role", "firebaseUid"],
       table: User.typename,
       where: {
@@ -202,7 +192,7 @@ export class UserService extends PaginatedService {
     });
 
     if (results.length < 1) {
-      throw errorHelper.itemNotFoundError(fieldPath);
+      throw itemNotFoundError(fieldPath);
     }
 
     const item = results[0];
@@ -213,7 +203,7 @@ export class UserService extends PaginatedService {
       validatedArgs.email = userRecord.email;
     }
 
-    await Resolver.updateObjectType({
+    await updateObjectType({
       typename: this.typename,
       id: <number>validatedArgs.id,
       updateFields: {
@@ -244,14 +234,14 @@ export class UserService extends PaginatedService {
     // args should be validated already
     const validatedArgs = <any>args;
     // check if record exists, get ID
-    const records = await sqlHelper.fetchTableRows({
+    const records = await fetchTableRows({
       select: ["id", "role", "firebaseUid"],
       table: this.typename,
       where: validatedArgs.item,
     });
 
     if (records.length < 1) {
-      throw errorHelper.itemNotFoundError(fieldPath);
+      throw itemNotFoundError(fieldPath);
     }
 
     const item = records[0];
@@ -264,14 +254,14 @@ export class UserService extends PaginatedService {
       userRoleKenum[records[0].role] === "ADMIN" &&
       records[0].id < req.user!.id
     ) {
-      throw errorHelper.generateError(
+      throw generateError(
         "Cannot update more senior admin user",
         fieldPath,
         401
       );
     }
 
-    await Resolver.updateObjectType({
+    await updateObjectType({
       typename: this.typename,
       id: item.id,
       updateFields: {
@@ -324,10 +314,10 @@ export class UserService extends PaginatedService {
     isAdmin = false,
   }: ServiceFunctionInputs) {
     // args should be validated already
-    const validatedArgs = <Root["deleteUser"]["Args"]>args;
+    const validatedArgs = <any>args;
 
     // confirm existence of item and get ID
-    const results = await sqlHelper.fetchTableRows({
+    const results = await fetchTableRows({
       select: ["id", "firebaseUid"],
       table: this.typename,
       where: validatedArgs,
@@ -351,7 +341,7 @@ export class UserService extends PaginatedService {
           data,
         });
 
-    await Resolver.deleteObjectType({
+    await deleteObjectType({
       typename: this.typename,
       id: item.id,
       req,

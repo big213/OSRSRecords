@@ -1,11 +1,11 @@
 import { SimpleService, PaginatedService } from ".";
 
-import * as Resolver from "../helpers/resolver";
 import { itemNotFoundError } from "../helpers/error";
 import { generatePaginatorTypeDef } from "../generators";
 import { PaginatorData, ServiceFunctionInputs } from "../../../types";
 
 import { lookupSymbol, GiraffeqlObjectType, StringKeyObject } from "giraffeql";
+import { getObjectType } from "../helpers/resolver";
 
 export class PaginatorService extends SimpleService {
   constructor(service: PaginatedService) {
@@ -52,7 +52,7 @@ export class PaginatorService extends SimpleService {
             }),
       };
 
-      const results = await Resolver.getObjectType({
+      const results = await getObjectType({
         typename: this.typename,
         req,
         fieldPath,

@@ -13,12 +13,12 @@
         <div v-html="item.descriptionHTML"></div>
       </div>
       <v-divider />
-      <!--       <div class="mt-3">
+      <div v-if="siteGithubRepositoryUrl" class="mt-3">
         To see all releases, check out our
-        <a href="https://github.com/cubing/CubePB/releases" target="_blank"
+        <a :href="siteGithubRepositoryUrl + '/releases'" target="_blank"
           >Github repository</a
         >
-      </div> -->
+      </div>
     </v-card-text>
   </v-card>
 </template>
@@ -26,11 +26,13 @@
 <script>
 import { executeGiraffeql } from '~/services/giraffeql'
 import { generateTimeAgoString } from '~/services/base'
+import { siteGithubRepositoryUrl } from '~/services/config'
 
 export default {
   data() {
     return {
       releases: [],
+      siteGithubRepositoryUrl,
       loading: {
         loadData: false,
       },

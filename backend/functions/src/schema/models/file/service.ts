@@ -1,9 +1,13 @@
 import { PaginatedService } from "../../core/services";
-import * as Resolver from "../../core/helpers/resolver";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { ServiceFunctionInputs, AccessControlMap } from "../../../types";
 import * as admin from "firebase-admin";
 import { updateTableRow } from "../../core/helpers/sql";
+import {
+  createObjectType,
+  deleteObjectType,
+} from "../../core/helpers/resolver";
+import { filterPassesTest, isCurrentUser } from "../../helpers/permissions";
 
 export class FileService extends PaginatedService {
   defaultTypename = "file";
@@ -29,7 +33,36 @@ export class FileService extends PaginatedService {
 
   groupByFieldsMap = {};
 
-  accessControl: AccessControlMap = {};
+  accessControl: AccessControlMap = {
+    /*
+    Allow if:
+    - createdBy.id is currentUser
+    */
+    get: async ({ req, args, fieldPath }) => {
+      const record = await this.lookupRecord(["createdBy.id"], args, fieldPath);
+      if (isCurrentUser(req, record["createdBy.id"])) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /*
+    Allow if:
+    - filtering by createdBy.id is currentUser
+    */
+    getMultiple: ({ req, args }) => {
+      if (
+        filterPassesTest(args.filterBy, (filterObject) => {
+          return isCurrentUser(req, filterObject["createdBy.id"]?.eq);
+        })
+      ) {
+        return true;
+      }
+
+      return false;
+    },
+  };
 
   async updateFileParentKeys(
     userId: string,
@@ -91,7 +124,7 @@ export class FileService extends PaginatedService {
 
     await file.move("source/" + validatedArgs.location);
 
-    const addResults = await Resolver.createObjectType({
+    const addResults = await createObjectType({
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
@@ -152,7 +185,7 @@ export class FileService extends PaginatedService {
           data,
         });
 
-    await Resolver.deleteObjectType({
+    await deleteObjectType({
       typename: this.typename,
       id: item.id,
       req,

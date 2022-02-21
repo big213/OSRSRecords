@@ -27,6 +27,12 @@ jobs:
           API_URL: https://api.osrsrecords.com
           IMAGE_SERVING_URL: https://cdn.osrsrecords.com
           VER: ${{ github.ref }}
+          SITE_NAME: "OSRSRecords"
+          SITE_DESCRIPTION: "OSRSRecords is a website for tracking PvM speedrun records in Old School RuneScape community."
+          SITE_IMAGE_URL: https://cdn.osrsrecords.com/permanent/android-chrome-384x384.png
+          SITE_CONTACT_EMAIL: hello@osrsrecords.com
+          SITE_DISCORD_LINK: https://discord.gg/8U56ZZn
+          SITE_GITHUB_REPOSITORY_URL: https://github.com/big213/OSRSRecords
       - name: Deploy to Firebase
         uses: w9jds/firebase-action@master
         with:

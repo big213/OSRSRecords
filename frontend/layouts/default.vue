@@ -10,11 +10,10 @@
     <v-app-bar :clipped-left="clipped" fixed app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <nuxt-link to="/" class="hidden-sm-and-down">
-        <v-img
-          :src="require('~/static/logo-trimmed.png')"
-          max-height="48"
-          max-width="150"
-          contain
+        <img
+          :src="require('~/static/logo-horizontal.png')"
+          style="height: 48px"
+          class="mt-2"
         />
       </nuxt-link>
       <v-spacer />
@@ -110,35 +109,7 @@
     <v-main :style="styleComputed">
       <nuxt />
     </v-main>
-    <v-footer :absolute="!fixed" app>
-      <VersionCheckText />
-      <span>&nbsp;&copy; {{ new Date().getFullYear() }}</span>
-      <v-spacer></v-spacer>
-      <!--       <nuxt-link to="/legal/privacy" class="mr-2"> Privacy & Terms </nuxt-link> -->
-      <v-icon small class="mr-2" @click="openLink('https://discord.gg/8U56ZZn')"
-        >mdi-discord</v-icon
-      >
-      <v-icon
-        small
-        class="mr-2"
-        @click="openLink('https://github.com/big213/OSRSRecords')"
-        >mdi-github</v-icon
-      >
-      <v-icon
-        small
-        class="mr-2"
-        title="hello@osrsrecords.com"
-        @click="copyToClipboard('hello@osrsrecords.com')"
-        >mdi-email</v-icon
-      >
-      <v-icon
-        small
-        class="mr-2"
-        title="Toogle Brightness"
-        @click="toggleTheme()"
-        >mdi-brightness-4</v-icon
-      >
-    </v-footer>
+    <Footer :absolute="!fixed" app></Footer>
     <Snackbar />
     <EditRecordDialog
       v-if="dialogs.editRecord"
@@ -165,9 +136,9 @@
 <script>
 import { mapGetters } from 'vuex'
 import Snackbar from '~/components/snackbar/snackbar'
-import VersionCheckText from '~/components/common/versionCheckText.vue'
-import { copyToClipboard, openLink, handleError } from '~/services/base'
+import { handleError } from '~/services/base'
 import NavDrawer from '~/components/navigation/navDrawer.vue'
+import Footer from '~/components/navigation/footer.vue'
 import firebase from '~/services/fireinit'
 import 'firebase/auth'
 import EditRecordDialog from '~/components/dialog/editRecordDialog.vue'
@@ -178,7 +149,7 @@ export default {
   components: {
     NavDrawer,
     Snackbar,
-    VersionCheckText,
+    Footer,
     EditRecordDialog,
     CrudRecordDialog,
   },
@@ -187,6 +158,7 @@ export default {
       clipped: true,
       drawer: true,
       fixed: true,
+      miniVariant: false,
 
       dialogs: {
         editRecord: null,
@@ -199,9 +171,6 @@ export default {
       ],
 
       backgroundImage: null,
-
-      title: 'OSRSRecords',
-      miniVariant: false,
     }
   },
 
@@ -265,29 +234,7 @@ export default {
   },
 
   methods: {
-    copyToClipboard(content) {
-      return copyToClipboard(this, content)
-    },
-    openLink,
-
-    openCreateSubmissionDialog() {
-      try {
-        this.$root.$emit('openEditRecordDialog', {
-          recordInfo: 'MySubmission',
-          mode: 'add',
-          selectedItem: {},
-        })
-      } catch (err) {
-        handleError(this, err)
-      }
-    },
-
     handleItemAdded() {},
-
-    toggleTheme() {
-      this.$vuetify.theme.dark = !this.$vuetify.theme.dark
-      localStorage.setItem('theme', this.$vuetify.theme.dark ? 'dark' : 'light')
-    },
 
     logout() {
       try {

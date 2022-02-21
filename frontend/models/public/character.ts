@@ -1,5 +1,5 @@
 import { Character } from '../base'
-import { PublicSubmission } from './publicSubmission'
+import { PublicSubmission } from './submission'
 
 export const PublicCharacter = {
   ...Character,

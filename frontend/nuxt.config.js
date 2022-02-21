@@ -9,8 +9,13 @@ export default {
     VER: process.env.VER,
     apiUrl: process.env.API_URL,
     imageServingUrl: process.env.IMAGE_SERVING_URL,
-    restApiUrl: process.env.REST_API_URL,
     buildDate: new Date().toDateString(),
+    siteName: process.env.SITE_NAME,
+    siteDescription: process.env.SITE_DESCRIPTION,
+    siteImageUrl: process.env.SITE_IMAGE_URL,
+    siteContactEmail: process.env.SITE_CONTACT_EMAIL,
+    siteDiscordLink: process.env.SITE_DISCORD_LINK,
+    siteGithubRepositoryUrl: process.env.SITE_GITHUB_REPOSITORY_URL,
   },
 
   // Target (https://go.nuxtjs.dev/config-target)
@@ -19,7 +24,9 @@ export default {
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
     titleTemplate: (titleChunk) => {
-      return titleChunk ? `${titleChunk} - OSRSRecords` : 'OSRSRecords'
+      return titleChunk
+        ? `${titleChunk} - ${process.env.siteName}`
+        : process.env.siteName
     },
     meta: [
       { charset: 'utf-8' },
@@ -27,13 +34,11 @@ export default {
       {
         hid: 'description',
         name: 'description',
-        content:
-          'Website for tracking PvM speedrun records in Old School RuneScape',
+        content: process.env.SITE_DESCRIPTION,
       },
       {
         property: 'og:image',
-        content:
-          'https://cdn.osrsrecords.com/permanent/android-chrome-384x384.png',
+        content: process.env.SITE_IMAGE_URL,
       },
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],

@@ -1,5 +1,5 @@
 {
-  "name": "osrs-records-frontend",
+  "name": "frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,14 +9,13 @@
     "generate": "nuxt generate",
     "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "lint": "npm run lint:js",
-    "fetch:schema": "node scripts/fetchSchema.js"
+    "generate:model": "ts-node scripts/generateModel.ts"
   },
   "dependencies": {
     "axios": "^0.20.0",
     "convert-array-to-csv": "^2.0.0",
     "core-js": "^3.6.5",
     "firebase": "^8.0.0",
-    "js-cookie": "^2.2.1",
     "nanoid": "^3.1.22",
     "nuxt": "^2.15.8",
     "pretty-bytes": "^5.4.1",
@@ -33,14 +32,17 @@
     "@nuxtjs/eslint-config-typescript": "^3.0.0",
     "@nuxtjs/eslint-module": "^2.0.0",
     "@nuxtjs/vuetify": "^1.11.3",
+    "@types/yargs": "^17.0.8",
     "babel-eslint": "^10.1.0",
     "eslint": "^7.19.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-plugin-nuxt": "^1.0.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "fs": "^0.0.1-security",
     "prettier": "^2.1.2",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4",
-    "vuetify": "^2.6.2"
+    "vuetify": "^2.6.2",
+    "yargs": "^17.3.1"
   }
 }

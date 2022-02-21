@@ -9,8 +9,12 @@ process.nextTick(() => {
   tsSchemaGenerator.buildSchema();
   tsSchemaGenerator.processSchema();
 
-  fs.writeFile("schema.ts", tsSchemaGenerator.outputSchema(), function (err) {
-    if (err) console.log(err);
-    console.log("Schema Written > schema.ts");
-  });
+  fs.writeFile(
+    "../../schema.ts",
+    tsSchemaGenerator.outputSchema(),
+    function (err) {
+      if (err) console.log(err);
+      console.log("Schema Written > schema.ts");
+    }
+  );
 });

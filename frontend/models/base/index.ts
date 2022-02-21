@@ -9,3 +9,4 @@ export { File } from './file'
 export { Character } from './character'
 export { DiscordChannel } from './discordChannel'
 export { DiscordChannelOutput } from './discordChannelOutput'
+/** END Base Model Import */
