@@ -10,7 +10,6 @@ import {
   sendDiscordMessage,
   channelMap,
   updateDiscordMessage,
-  generateParticipantsText,
   getGuildMemberId,
   createDMChannel,
   generateViewSubmissionButtonComponent,
@@ -18,12 +17,12 @@ import {
   submissionStatusMap,
   crosspostDiscordMessage,
   discordUserIdMap,
+  generateEventText,
 } from "../../helpers/discord";
 import {
   countTableRows,
   deleteTableRow,
   fetchTableRows,
-  SqlSelectQuery,
   SqlWhereFieldObject,
   SqlWhereObject,
   updateTableRow,
@@ -952,6 +951,7 @@ export class SubmissionService extends PaginatedService {
         "id",
         "event.id",
         "event.name",
+        "event.maxParticipants",
         "eventEra.id",
         "participants",
         "score",
@@ -963,9 +963,11 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
-    const eventStr = `${submission["event.name"]} - ${generateParticipantsText(
-      submission.participants
-    )}`;
+    const eventStr = generateEventText(
+      submission["event.name"],
+      submission.participants,
+      submission["event.maxParticipants"]
+    );
 
     const submissionLinks = await fetchTableRows({
       select: ["character.name", "character.id"],
@@ -1543,6 +1545,7 @@ export class SubmissionService extends PaginatedService {
       select: [
         "id",
         "event.name",
+        "event.maxParticipants",
         "participants",
         "score",
         "externalLinks",
@@ -1573,8 +1576,10 @@ export class SubmissionService extends PaginatedService {
 
     return `Happened On: ${formatUnixTimestamp(
       submission.happenedOn
-    )}\nEvent: ${submission["event.name"]} - ${generateParticipantsText(
-      submission.participants
+    )}\nEvent: ${generateEventText(
+      submission["event.name"],
+      submission.participants,
+      submission["event.maxParticipants"]
     )}\nTime: ${serializeTime(submission.score)}\nTeam Members: (${
       submission.participants
     }) ${characters.join(", ")}\nLinks: ${submission.externalLinks

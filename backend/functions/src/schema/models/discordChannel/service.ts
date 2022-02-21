@@ -7,7 +7,7 @@ import {
 import { PaginatedService } from "../../core/services";
 import { eventEraModeKenum, submissionStatusKenum } from "../../enums";
 import {
-  generateParticipantsText,
+  generateEventText,
   placeEmojisMap,
   sendDiscordMessage,
   updateDiscordMessage,
@@ -25,6 +25,7 @@ type outputObject = {
   eventEraId: any | null;
   eventEraMode: eventEraModeKenum;
   participants: number | null;
+  maxParticipants: number | null;
   ranksToShow: number;
   linesLimit: number | null;
   isSoloPersonalBest: boolean | null;
@@ -120,6 +121,7 @@ export class DiscordChannelService extends PaginatedService {
         "event.id",
         "event.name",
         "event.avatarOverride",
+        "event.maxParticipants",
         "event.eventClass.avatar",
         "participants",
         "eventEra.id",
@@ -154,6 +156,7 @@ export class DiscordChannelService extends PaginatedService {
         eventEraId: output["eventEra.id"],
         eventEraMode: eventEraModeKenum.fromUnknown(output.eventEraMode),
         participants: output.participants,
+        maxParticipants: output["event.maxParticipants"],
         isSoloPersonalBest: output.isSoloPersonalBest,
         ranksToShow: output.ranksToShow,
         linesLimit: output.linesLimit,
@@ -321,9 +324,11 @@ export class DiscordChannelService extends PaginatedService {
       }
 
       embeds.push({
-        title: `${outputObject.event.name} - ${generateParticipantsText(
-          outputObject.participants
-        )}`,
+        title: generateEventText(
+          outputObject.event.name,
+          outputObject.participants,
+          outputObject.maxParticipants
+        ),
         url: generateLeaderboardRoute({
           eventId: outputObject.event.id, // required
           eventEraId: outputObject.eventEraId, // optional

@@ -3,8 +3,6 @@ import { getEventEras, getEventsByGroup } from '~/services/dropdown'
 import { participantsTextMap } from './constants'
 import { CrudRawFilterObject } from '~/types/misc'
 
-type StringKeyObject = { [x: string]: any }
-
 // tens digits only
 export function serializeTime(ms: number | null): string | null {
   if (!ms) return null
@@ -156,9 +154,7 @@ export function generateParticipantsOptions(
   ) {
     returnOptions.push({
       id: participantsCounter,
-      name:
-        participantsTextMap[participantsCounter] ??
-        participantsCounter + '-Man',
+      name: generateParticipantsText(participantsCounter),
     })
 
     // for any set of options with a solo option, also add a special Solo PB option
@@ -176,4 +172,20 @@ export function generateParticipantsOptions(
 // unixTimestamp in seconds
 export function daysDiff(unixTimestampFrom: number, unixTimestampTo: number) {
   return Math.floor((unixTimestampTo - unixTimestampFrom) / (60 * 60 * 24))
+}
+
+export function generateParticipantsText(participants: number | null) {
+  if (participants === null) return 'Fastest Completion'
+
+  return participantsTextMap[participants] ?? participants + '-Man'
+}
+
+export function generateEventText(
+  eventName: string,
+  participants: number | null,
+  maxParticipants: number | null
+) {
+  return `${eventName}${
+    maxParticipants === 1 ? '' : ' - ' + generateParticipantsText(participants)
+  }`
 }

@@ -215,3 +215,13 @@ export function generateParticipantsText(participants: number | null) {
 
   return participantsTextMap[participants] ?? participants + "-Man";
 }
+
+export function generateEventText(
+  eventName: string,
+  participants: number | null,
+  maxParticipants: number | null
+) {
+  return `${eventName}${
+    maxParticipants === 1 ? "" : " - " + generateParticipantsText(participants)
+  }`;
+}

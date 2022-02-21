@@ -15,7 +15,7 @@
 <script>
 import columnMixin from '~/mixins/column'
 import PreviewRecordMenu from '~/components/menu/previewRecordMenu.vue'
-import { participantsTextMap } from '~/services/constants'
+import { generateEventText } from '~/services/common'
 
 export default {
   components: {
@@ -28,10 +28,11 @@ export default {
     computedEvent() {
       return {
         ...this.currentValue.event,
-        name: `${this.currentValue.event.name} (${
-          participantsTextMap[this.currentValue.participants] ??
-          this.currentValue.participants + '-Man'
-        })`,
+        name: generateEventText(
+          this.currentValue.event.name,
+          this.currentValue.participants,
+          this.currentValue.event.maxParticipants
+        ),
       }
     },
   },

@@ -55,6 +55,7 @@ export const Submission = <RecordInfo<'submission'>>{
         'event.name',
         'event.avatar',
         'event.id',
+        'event.maxParticipants',
         'event.__typename',
         'participants',
       ],

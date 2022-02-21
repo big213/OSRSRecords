@@ -228,5 +228,18 @@ export default {
       return this.$store.getters['auth/user']?.role === 'ADMIN'
     },
   },
+  methods: {
+    openCreateSubmissionDialog() {
+      try {
+        this.$root.$emit('openEditRecordDialog', {
+          recordInfo: 'MySubmission',
+          mode: 'add',
+          selectedItem: {},
+        })
+      } catch (err) {
+        handleError(this, err)
+      }
+    },
+  },
 }
 </script>
