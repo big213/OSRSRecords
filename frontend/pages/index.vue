@@ -21,6 +21,10 @@
               >.</span
             >
           </p>
+          <p>
+            RuneScape is a registered trademark of Jagex Ltd. This site is not
+            affiliated with Jagex Ltd.
+          </p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
