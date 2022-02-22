@@ -189,3 +189,8 @@ export function generateEventText(
     maxParticipants === 1 ? '' : ' - ' + generateParticipantsText(participants)
   }`
 }
+
+// currently only Imgur/Streamable/YT links supported
+export function isValidEvidenceLink(link: string) {
+  return link.match(/youtu|streamable|imgur/)
+}

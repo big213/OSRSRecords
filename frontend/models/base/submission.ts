@@ -17,7 +17,7 @@ import ReignColumn from '~/components/table/special/reignColumn.vue'
 import ParticipantsColumn from '~/components/table/special/participantsColumn.vue'
 import ParticipantsPreviewColumn from '~/components/table/special/participantsPreviewColumn.vue'
 import { getEventsByGroup, getSubmissionStatuses } from '~/services/dropdown'
-import { serializeTime } from '~/services/common'
+import { isValidEvidenceLink, serializeTime } from '~/services/common'
 import {
   generateJoinableField,
   generatePreviewableRecordField,
@@ -157,7 +157,7 @@ export const Submission = <RecordInfo<'submission'>>{
             key: 'main',
             inputType: 'text',
             text: 'Link URL',
-            hint: 'Imgur/Streamable/YT links preferred',
+            hint: 'Only Imgur/Streamable/YT links currently supported',
           },
         ],
       },
@@ -165,8 +165,17 @@ export const Submission = <RecordInfo<'submission'>>{
       parseValue: (val) => {
         if (!Array.isArray(val)) throw new Error('Array expected')
 
-        // filter out falsey values
-        return val.map((ele) => ele.main).filter((ele) => ele)
+        // filter out empty links
+        const nonEmptyLinks = val.map((ele) => ele.main).filter((ele) => ele)
+
+        // throw err if not imgur/streamable/yt
+        if (nonEmptyLinks.some((link) => !isValidEvidenceLink(link))) {
+          throw new Error(
+            'Only Imgur/Streamable/YouTube Links currently supported'
+          )
+        }
+
+        return nonEmptyLinks
       },
       serialize: (val) => {
         if (!Array.isArray(val)) return []
