@@ -192,5 +192,5 @@ export function generateEventText(
 
 // currently only Imgur/Streamable/YT links supported
 export function isValidEvidenceLink(link: string) {
-  return link.match(/youtu|streamable|imgur/)
+  return link.match(/youtu\.be|youtube\.com|streamable\.com|imgur\.com/)
 }
