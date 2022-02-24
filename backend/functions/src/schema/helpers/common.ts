@@ -50,6 +50,6 @@ export function generateLeaderboardRoute(leaderboardInputs: {
 // checks if a url is some sort of video content
 export function isVideoUrl(url: string) {
   return url.match(
-    /(.(gif|mp4)$)|(youtu\.be|youtube\.com|streamable\.com|gfycat\.com)/
+    /(\.(gif|mp4)$)|(youtu\.be|youtube\.com|streamable\.com|gfycat\.com)/
   );
 }
