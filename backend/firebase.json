@@ -7,7 +7,7 @@
   },
   "hosting": [
     {
-      "target": "osrs-records-api",
+      "target": "api",
       "public": "public",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "trailingSlash": false,
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "target": "osrs-records-cdn",
+      "target": "cdn",
       "public": "public",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "trailingSlash": false,

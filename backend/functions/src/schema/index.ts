@@ -16,6 +16,7 @@ import eventEra from "./models/eventEra/typeDef";
 /** END TypeDef Import */
 
 import submissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/typeDef";
+import userUserFollowLink from "./links/userUserFollowLink/typeDef"
 /** END LINK TypeDef Import */
 
 // add the objectTypeDefs for the services with objectTypeDefs
@@ -35,6 +36,7 @@ allServices.EventEra.setTypeDef(eventEra);
 allServices.SubmissionCharacterParticipantLink.setTypeDef(
   submissionCharacterParticipantLink
 );
+allServices.UserUserFollowLink.setTypeDef(userUserFollowLink)
 /** END LINK TypeDef Set */
 
 import User from "./models/user/rootResolver";
@@ -54,6 +56,7 @@ import Admin from "./models/admin/rootResolver";
 /** END RootResolver Import */
 
 import SubmissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/rootResolver";
+import UserUserFollowLink from "./links/userUserFollowLink/rootResolver"
 /** END LINK RootResolver Import */
 
 allServices.User.setRootResolvers(User);
@@ -75,4 +78,5 @@ allServices.Admin.setRootResolvers(Admin);
 allServices.SubmissionCharacterParticipantLink.setRootResolvers(
   SubmissionCharacterParticipantLink
 );
+allServices.UserUserFollowLink.setRootResolvers(UserUserFollowLink);
 /** END LINK RootResolver Set */

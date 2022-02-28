@@ -4,20 +4,28 @@ import { InputType } from '~/types'
 export function generatePreviewableRecordField({
   fieldname,
   text,
+  followLinkModel,
 }: {
-  fieldname: string
+  fieldname?: string
   text: string
+  followLinkModel?: string
 }) {
+  const fieldnamePrefix = fieldname ? fieldname + '.' : ''
   return {
     text,
     fields: [
-      `${fieldname}.name`,
-      `${fieldname}.id`,
-      `${fieldname}.__typename`,
-      `${fieldname}.avatar`,
+      `${fieldnamePrefix}name`,
+      `${fieldnamePrefix}id`,
+      `${fieldnamePrefix}__typename`,
+      `${fieldnamePrefix}avatar`,
     ],
     pathPrefix: fieldname,
     component: RecordColumn,
+    ...(followLinkModel && {
+      columnOptions: {
+        linkModel: followLinkModel,
+      },
+    }),
   }
 }
 

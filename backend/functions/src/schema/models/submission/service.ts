@@ -19,14 +19,7 @@ import {
   discordUserIdMap,
   generateEventText,
 } from "../../helpers/discord";
-import {
-  countTableRows,
-  deleteTableRow,
-  fetchTableRows,
-  SqlWhereFieldObject,
-  SqlWhereObject,
-  updateTableRow,
-} from "../../core/helpers/sql";
+import { SqlWhereFieldObject, SqlWhereObject } from "../../core/helpers/sql";
 import { eventEraModeKenum, submissionStatusKenum } from "../../enums";
 import {
   DiscordChannel,
@@ -219,10 +212,9 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
-    const resultsCount = await countTableRows({
+    const resultsCount = await this.getSqlRecordCount({
       field: "score",
       distinct: true,
-      table: this.typename,
       where: [whereObject],
     });
 
@@ -237,11 +229,13 @@ export class SubmissionService extends PaginatedService {
     // if no evidenceKey, pass
     if (!evidenceKey) return;
 
-    const count = await this.getRecordCount(
+    const count = await this.getSqlRecordCount(
       {
-        evidenceKey,
-        event: eventId,
-        status: submissionStatusKenum.APPROVED.index,
+        where: {
+          evidenceKey,
+          event: eventId,
+          status: submissionStatusKenum.APPROVED.index,
+        },
       },
       fieldPath
     );
@@ -294,9 +288,11 @@ export class SubmissionService extends PaginatedService {
     }
 
     // changed: check if number of participants is between minParticipants and maxParticipants for the event
-    const eventRecord = await Event.lookupRecord(
-      ["minParticipants", "maxParticipants"],
-      { id: validatedArgs.event },
+    const eventRecord = await Event.getFirstSqlRecord(
+      {
+        select: ["minParticipants", "maxParticipants"],
+        where: { id: validatedArgs.event },
+      },
       fieldPath
     );
 
@@ -321,9 +317,11 @@ export class SubmissionService extends PaginatedService {
     }
 
     // changed: check if happenedOn is between beginDate and endDate for eventEra
-    const eventEraRecord = await EventEra.lookupRecord(
-      ["beginDate", "endDate", "event.id"],
-      { id: validatedArgs.eventEra },
+    const eventEraRecord = await EventEra.getFirstSqlRecord(
+      {
+        select: ["beginDate", "endDate", "event.id"],
+        where: { id: validatedArgs.eventEra },
+      },
       fieldPath
     );
 
@@ -456,11 +454,10 @@ export class SubmissionService extends PaginatedService {
         }
       }
 
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           discordMessageId: discordMessage.id,
         },
-        table: this.typename,
         where: {
           id: itemId,
         },
@@ -480,20 +477,22 @@ export class SubmissionService extends PaginatedService {
     // args should be validated already
     const validatedArgs = <any>args;
 
-    const item = await this.lookupRecord(
-      [
-        "id",
-        "event.id",
-        "participants",
-        "eventEra.id",
-        "score",
-        "status",
-        "discordMessageId",
-        "externalLinks",
-        "discordId",
-        "participantsList",
-      ],
-      validatedArgs.item,
+    const item = await this.getFirstSqlRecord(
+      {
+        select: [
+          "id",
+          "event.id",
+          "participants",
+          "eventEra.id",
+          "score",
+          "status",
+          "discordMessageId",
+          "externalLinks",
+          "discordId",
+          "participantsList",
+        ],
+        where: validatedArgs.item,
+      },
       fieldPath
     );
 
@@ -565,8 +564,7 @@ export class SubmissionService extends PaginatedService {
         JSON.stringify(validatedArgs.fields.participantsList) !==
         JSON.stringify(item.participantsList)
       ) {
-        await deleteTableRow({
-          table: SubmissionCharacterParticipantLink.typename,
+        await SubmissionCharacterParticipantLink.deleteSqlRecord({
           where: {
             submission: item.id,
           },
@@ -727,9 +725,8 @@ export class SubmissionService extends PaginatedService {
 
     // see if any discord leaderboards with eventEraMode: "RELEVANT_ERAS" need to be refreshed
     if (relevantEraRanking) {
-      const discordChannelOutputs = await fetchTableRows({
+      const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
         select: ["discordChannel.id"],
-        table: DiscordChannelOutput.typename,
         where: [
           {
             field: "event.id",
@@ -769,9 +766,8 @@ export class SubmissionService extends PaginatedService {
 
     // see if any discord leaderboards with isSoloPersonalBest: true need to be refreshed
     if (participants === 1 && soloPBRanking) {
-      const discordChannelOutputs = await fetchTableRows({
+      const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
         select: ["discordChannel.id"],
-        table: DiscordChannelOutput.typename,
         where: [
           {
             field: "event.id",
@@ -880,9 +876,8 @@ export class SubmissionService extends PaginatedService {
     }
 
     // get the nth fastest score, where n = ranksToShow
-    const nthScoreResults = await fetchTableRows({
+    const nthScoreResults = await this.getAllSqlRecord({
       select: ["score"],
-      table: this.typename,
       distinctOn: ["score"],
       where: [
         {
@@ -911,19 +906,19 @@ export class SubmissionService extends PaginatedService {
   }
 
   async getSubmissionCharacters(submissionId: string) {
-    const submissionLinks = await fetchTableRows({
-      select: ["character.name"],
-      table: SubmissionCharacterParticipantLink.typename,
-      where: {
-        submission: submissionId,
-      },
-      orderBy: [
-        {
-          field: "character.name",
-          desc: false,
+    const submissionLinks =
+      await SubmissionCharacterParticipantLink.getAllSqlRecord({
+        select: ["character.name"],
+        where: {
+          submission: submissionId,
         },
-      ],
-    });
+        orderBy: [
+          {
+            field: "character.name",
+            desc: false,
+          },
+        ],
+      });
 
     return submissionLinks.map((link) => link["character.name"]);
   }
@@ -946,20 +941,22 @@ export class SubmissionService extends PaginatedService {
     }[] = [];
 
     // fetch relevant submission info
-    const submission = await this.lookupRecord(
-      [
-        "id",
-        "event.id",
-        "event.name",
-        "event.maxParticipants",
-        "eventEra.id",
-        "participants",
-        "score",
-        "externalLinks",
-        "happenedOn",
-        "isRecordingVerified",
-      ],
-      { id: submissionId },
+    const submission = await this.getFirstSqlRecord(
+      {
+        select: [
+          "id",
+          "event.id",
+          "event.name",
+          "event.maxParticipants",
+          "eventEra.id",
+          "participants",
+          "score",
+          "externalLinks",
+          "happenedOn",
+          "isRecordingVerified",
+        ],
+        where: { id: submissionId },
+      },
       fieldPath
     );
 
@@ -969,19 +966,19 @@ export class SubmissionService extends PaginatedService {
       submission["event.maxParticipants"]
     );
 
-    const submissionLinks = await fetchTableRows({
-      select: ["character.name", "character.id"],
-      table: SubmissionCharacterParticipantLink.typename,
-      where: {
-        submission: submissionId,
-      },
-      orderBy: [
-        {
-          field: "character.name",
-          desc: false,
+    const submissionLinks =
+      await SubmissionCharacterParticipantLink.getAllSqlRecord({
+        select: ["character.name", "character.id"],
+        where: {
+          submission: submissionId,
         },
-      ],
-    });
+        orderBy: [
+          {
+            field: "character.name",
+            desc: false,
+          },
+        ],
+      });
 
     const relevantErasUpdateLogPost: RelevantErasUpdateLogPost = {
       currentSubmission: {
@@ -1013,9 +1010,8 @@ export class SubmissionService extends PaginatedService {
 
     // check if this record would appear in any rank style leaderboards. isSoloPersonalBest: true and relevant_eras only
     if (soloPBUpdateLogPost.ranking) {
-      const discordChannelOutputs = await fetchTableRows({
+      const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
         select: ["ranksToShow", "discordChannel.channelId"],
-        table: DiscordChannelOutput.typename,
         where: [
           {
             field: "event.id",
@@ -1060,14 +1056,16 @@ export class SubmissionService extends PaginatedService {
         );
 
         // check if it was a tie (more than one other approved submission in relevant era with same score)
-        const sameScoreCount = await this.getRecordCount(
+        const sameScoreCount = await this.getSqlRecordCount(
           {
-            score: submission.score,
-            "event.id": submission["event.id"],
-            status: submissionStatusKenum.APPROVED.index,
-            "eventEra.isRelevant": true,
-            participants: submission.participants,
-            isSoloPersonalBest: true,
+            where: {
+              score: submission.score,
+              "event.id": submission["event.id"],
+              status: submissionStatusKenum.APPROVED.index,
+              "eventEra.isRelevant": true,
+              participants: submission.participants,
+              isSoloPersonalBest: true,
+            },
           },
           fieldPath
         );
@@ -1121,9 +1119,8 @@ export class SubmissionService extends PaginatedService {
           if (nPlusOneHighestScore) {
             soloPBUpdateLogPost.kickedSubmissions = [];
             // get ids of submissions with this score
-            const submissions = await fetchTableRows({
+            const submissions = await this.getAllSqlRecord({
               select: ["id"],
-              table: this.typename,
               where: {
                 "event.id": submission["event.id"],
                 participants: submission.participants,
@@ -1152,9 +1149,8 @@ export class SubmissionService extends PaginatedService {
 
     // check if this record would appear in any normal style leaderboards. eventEraMode: relevant_eras only
     if (relevantErasUpdateLogPost.ranking) {
-      const discordChannelOutputs = await fetchTableRows({
+      const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
         select: ["ranksToShow", "discordChannel.channelId"],
-        table: DiscordChannelOutput.typename,
         where: [
           {
             field: "event.id",
@@ -1207,13 +1203,15 @@ export class SubmissionService extends PaginatedService {
         } else {
           if (relevantErasUpdateLogPost.isWR) {
             // check if it was a WR tie (more than one other approved submission in relevant era with same score)
-            const sameScoreCount = await this.getRecordCount(
+            const sameScoreCount = await this.getSqlRecordCount(
               {
-                score: submission.score,
-                "event.id": submission["event.id"],
-                status: submissionStatusKenum.APPROVED.index,
-                "eventEra.isRelevant": true,
-                participants: submission.participants,
+                where: {
+                  score: submission.score,
+                  "event.id": submission["event.id"],
+                  status: submissionStatusKenum.APPROVED.index,
+                  "eventEra.isRelevant": true,
+                  participants: submission.participants,
+                },
               },
               fieldPath
             );
@@ -1235,9 +1233,8 @@ export class SubmissionService extends PaginatedService {
             });
 
             if (secondPlaceScore) {
-              const secondPlaceSubmissions = await fetchTableRows({
+              const secondPlaceSubmissions = await this.getAllSqlRecord({
                 select: ["id", "score"],
-                table: this.typename,
                 where: {
                   "event.id": submission["event.id"],
                   status: submissionStatusKenum.APPROVED.index,
@@ -1442,13 +1439,13 @@ export class SubmissionService extends PaginatedService {
 
   // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
   async syncSoloPBState(submissionId: string, eventId: string) {
-    const submissionLinks = await fetchTableRows({
-      select: ["character.id"],
-      table: SubmissionCharacterParticipantLink.typename,
-      where: {
-        submission: submissionId,
-      },
-    });
+    const submissionLinks =
+      await SubmissionCharacterParticipantLink.getAllSqlRecord({
+        select: ["character.id"],
+        where: {
+          submission: submissionId,
+        },
+      });
 
     // only need to check for participants = 1
     if (submissionLinks.length !== 1) return;
@@ -1456,9 +1453,8 @@ export class SubmissionService extends PaginatedService {
     const characterId = submissionLinks[0]["character.id"];
 
     // get fastest approved submission by user given participants = 1 and event
-    const [fastestRecord, secondFastestRecord] = await fetchTableRows({
+    const [fastestRecord, secondFastestRecord] = await this.getAllSqlRecord({
       select: ["id"],
-      table: this.typename,
       where: {
         event: eventId,
         participants: 1,
@@ -1482,9 +1478,8 @@ export class SubmissionService extends PaginatedService {
     // only need to do this if there's more than 1 submission returned
     if (secondFastestRecord) {
       // need to lookup IDs since it is not possible to do update where "submissionCharacterParticipantLink/character.id"
-      const submissions = await fetchTableRows({
+      const submissions = await this.getAllSqlRecord({
         select: ["id"],
-        table: this.typename,
         where: {
           "event.id": eventId,
           participants: 1,
@@ -1493,11 +1488,10 @@ export class SubmissionService extends PaginatedService {
         },
       });
 
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           isSoloPersonalBest: false,
         },
-        table: this.typename,
         where: [
           {
             field: "id",
@@ -1509,11 +1503,10 @@ export class SubmissionService extends PaginatedService {
     }
 
     // set the fastest record isSoloPersonalBest to true
-    await updateTableRow({
+    await this.updateSqlRecord({
       fields: {
         isSoloPersonalBest: true,
       },
-      table: this.typename,
       where: {
         id: fastestRecord.id,
       },
@@ -1523,9 +1516,8 @@ export class SubmissionService extends PaginatedService {
   // generate some text summarizing a submission's reviewer comments only
   async generateSubmissionReviewerCommentsText(submissionId: string) {
     // get submission info
-    const [submission] = await fetchTableRows({
+    const [submission] = await this.getAllSqlRecord({
       select: ["id", "reviewerComments"],
-      table: this.typename,
       where: {
         id: submissionId,
       },
@@ -1541,7 +1533,7 @@ export class SubmissionService extends PaginatedService {
   // generate some text summarizing a submission
   async generateSubmissionText(submissionId: string) {
     // get submission info
-    const [submission] = await fetchTableRows({
+    const [submission] = await this.getAllSqlRecord({
       select: [
         "id",
         "event.name",
@@ -1556,7 +1548,6 @@ export class SubmissionService extends PaginatedService {
         "reviewerComments",
         "discordId",
       ],
-      table: this.typename,
       where: {
         id: submissionId,
       },
@@ -1647,11 +1638,10 @@ export class SubmissionService extends PaginatedService {
 
   async syncIsRelevantRecord(eventId: string, participants: number) {
     // reset all isRecord flags for the event.
-    await updateTableRow({
+    await this.updateSqlRecord({
       fields: {
         isRelevantRecord: false,
       },
-      table: this.typename,
       where: {
         event: eventId,
         participants: participants,
@@ -1659,9 +1649,8 @@ export class SubmissionService extends PaginatedService {
     });
 
     // lookup all approved submissions in relevantEra, sorting by happenedOn
-    const submissions = await fetchTableRows({
+    const submissions = await this.getAllSqlRecord({
       select: ["id", "score"],
-      table: this.typename,
       where: {
         event: eventId,
         participants: participants,
@@ -1683,11 +1672,10 @@ export class SubmissionService extends PaginatedService {
       // is it better than the current record? if so, flag it and set that as new record
       if (submission.score < currentRecord) {
         currentRecord = submission.score;
-        await updateTableRow({
+        await this.updateSqlRecord({
           fields: {
             isRelevantRecord: true,
           },
-          table: this.typename,
           where: {
             id: submission.id,
           },
@@ -1713,18 +1701,20 @@ export class SubmissionService extends PaginatedService {
     // args should be validated already
     const validatedArgs = <any>args;
     // confirm existence of item and get ID
-    const item = await this.lookupRecord(
-      [
-        "id",
-        "status",
-        "event.id",
-        "eventEra.id",
-        "participants",
-        "isRelevantRecord",
-        "score",
-        "discordMessageId",
-      ],
-      validatedArgs,
+    const item = await this.getFirstSqlRecord(
+      {
+        select: [
+          "id",
+          "status",
+          "event.id",
+          "eventEra.id",
+          "participants",
+          "isRelevantRecord",
+          "score",
+          "discordMessageId",
+        ],
+        where: validatedArgs,
+      },
       fieldPath
     );
 
@@ -1769,8 +1759,7 @@ export class SubmissionService extends PaginatedService {
     });
 
     // changed: also need to delete related links
-    await deleteTableRow({
-      table: SubmissionCharacterParticipantLink.typename,
+    await SubmissionCharacterParticipantLink.deleteSqlRecord({
       where: {
         submission: item.id,
       },

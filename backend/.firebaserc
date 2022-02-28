@@ -5,10 +5,10 @@
   "targets": {
     "osrs-records": {
       "hosting": {
-        "osrs-records-cdn": [
+        "cdn": [
           "osrs-records-cdn"
         ],
-        "osrs-records-api": [
+        "api": [
           "osrs-records-api"
         ]
       }

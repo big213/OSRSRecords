@@ -7,7 +7,7 @@ export const PublicUser = {
     filterOptions: [],
     headerOptions: [
       {
-        field: 'nameWithAvatar',
+        field: 'record',
       },
       {
         field: 'createdAt',
@@ -18,7 +18,7 @@ export const PublicUser = {
   },
   routeName: 'i-view',
   viewOptions: {
-    fields: ['avatar', 'name', 'isPublic'],
+    fields: ['avatar', 'name', 'isPublic', 'currentUserFollowing'],
   },
   addOptions: undefined,
   editOptions: undefined,

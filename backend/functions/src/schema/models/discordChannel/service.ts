@@ -1,9 +1,5 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
-import {
-  fetchTableRows,
-  SqlWhereFieldObject,
-  updateTableRow,
-} from "../../core/helpers/sql";
+import { SqlWhereFieldObject } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 import { eventEraModeKenum, submissionStatusKenum } from "../../enums";
 import {
@@ -65,10 +61,12 @@ export class DiscordChannelService extends PaginatedService {
     isAdmin = false,
   }: ServiceFunctionInputs) {
     // confirm discordChannel exists, get id
-    const discordChannel = await this.lookupRecord(
-      ["id"],
+    const discordChannel = await this.getFirstSqlRecord(
       {
-        id: args.id,
+        select: ["id"],
+        where: {
+          id: args.id,
+        },
       },
       fieldPath
     );
@@ -86,10 +84,12 @@ export class DiscordChannelService extends PaginatedService {
 
   // renders the message for a specific discord channel and returns the JSON
   async renderOutput(discordChannelId: string, fieldPath: string[]) {
-    const discordChannel = await this.lookupRecord(
-      ["channelId", "primaryMessageId"],
+    const discordChannel = await this.getFirstSqlRecord(
       {
-        id: discordChannelId,
+        select: ["channelId", "primaryMessageId"],
+        where: {
+          id: discordChannelId,
+        },
       },
       fieldPath
     );
@@ -103,11 +103,10 @@ export class DiscordChannelService extends PaginatedService {
         }
       );
 
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           primaryMessageId: discordMessage.id,
         },
-        table: this.typename,
         where: {
           id: discordChannelId,
         },
@@ -116,7 +115,7 @@ export class DiscordChannelService extends PaginatedService {
       discordChannel.primaryMessageId = discordMessage.id;
     }
 
-    const discordChannelOutputs = await fetchTableRows({
+    const discordChannelOutputs = await this.getAllSqlRecord({
       select: [
         "event.id",
         "event.name",
@@ -130,7 +129,6 @@ export class DiscordChannelService extends PaginatedService {
         "linesLimit",
         "isSoloPersonalBest",
       ],
-      table: DiscordChannelOutput.typename,
       where: {
         "discordChannel.id": discordChannelId,
       },
@@ -222,9 +220,8 @@ export class DiscordChannelService extends PaginatedService {
         });
       }
 
-      const submissions = await fetchTableRows({
+      const submissions = await Submission.getAllSqlRecord({
         select: ["id", "event.name", "participants", "score", "externalLinks"],
-        table: Submission.typename,
         where: [
           {
             field: "event.id",

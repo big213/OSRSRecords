@@ -1,11 +1,6 @@
 import { AccessControlMap, ServiceFunctionInputs } from "../../../types";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { createObjectType } from "../../core/helpers/resolver";
-import {
-  deleteTableRow,
-  fetchTableRows,
-  updateTableRow,
-} from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 import { Submission, SubmissionCharacterParticipantLink } from "../../services";
 
@@ -43,14 +38,25 @@ export class CharacterService extends PaginatedService {
     isAdmin = false,
     data = {},
   }: ServiceFunctionInputs) {
-    const fromCharacter = await this.lookupRecord(["id"], args.from, fieldPath);
+    const fromCharacter = await this.getFirstSqlRecord(
+      {
+        select: ["id"],
+        where: args.from,
+      },
+      fieldPath
+    );
 
-    const toCharacter = await this.lookupRecord(["id"], args.to, fieldPath);
+    const toCharacter = await this.getFirstSqlRecord(
+      {
+        select: ["id"],
+        where: args.to,
+      },
+      fieldPath
+    );
 
     // get all submissions that have the from characterId
-    const submissions = await fetchTableRows({
+    const submissions = await Submission.getAllSqlRecord({
       select: ["id", "participantsList"],
-      table: Submission.typename,
       where: {
         "submissionCharacterParticipantLink/character.id": fromCharacter.id,
       },
@@ -65,11 +71,10 @@ export class CharacterService extends PaginatedService {
         }
       });
 
-      await updateTableRow({
+      await Submission.updateSqlRecord({
         fields: {
           participantsList: submission.participantsList,
         },
-        table: Submission.typename,
         where: {
           id: submission.id,
         },
@@ -77,19 +82,17 @@ export class CharacterService extends PaginatedService {
     }
 
     // update all references to from to to in submissionCharacterParticipantLink
-    await updateTableRow({
+    await SubmissionCharacterParticipantLink.updateSqlRecord({
       fields: {
         character: toCharacter.id,
       },
-      table: SubmissionCharacterParticipantLink.typename,
       where: {
         character: fromCharacter.id,
       },
     });
 
     // deletes the from character
-    await deleteTableRow({
-      table: this.typename,
+    await this.deleteSqlRecord({
       where: {
         id: fromCharacter.id,
       },
@@ -121,10 +124,12 @@ export class CharacterService extends PaginatedService {
     await this.handleLookupArgs(args, fieldPath);
 
     // changed: check for existence of standardizedName
-    const existingCharacter = await this.lookupRecord(
-      ["id"],
+    const existingCharacter = await this.getFirstSqlRecord(
       {
-        standardizedName: validatedArgs.name.toLowerCase(),
+        select: ["id"],
+        where: {
+          standardizedName: validatedArgs.name.toLowerCase(),
+        },
       },
       fieldPath,
       false

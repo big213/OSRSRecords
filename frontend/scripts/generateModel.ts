@@ -4,12 +4,20 @@ import yargs from 'yargs'
 const argv = yargs(process.argv.slice(2))
   .options({
     name: { type: 'string', demandOption: true },
+    link: { type: 'boolean', default: false },
   })
   .parseSync()
 
 const typename = argv.name
 
+const isLink = argv.link
+
 const capitalizedTypename = typename.charAt(0).toUpperCase() + typename.slice(1)
+
+// typename must start with lowercase and only include letters and numbers
+if (!typename.match(/^[a-z][a-zA-Z0-9]+/)) {
+  throw new Error(`Invalid typename`)
+}
 
 // parses templateString and replaces with any params
 function processTemplate(
@@ -50,7 +58,11 @@ if (!fs.existsSync(`models/base`)) {
   fs.mkdirSync(`models/base`)
 }
 
-const template = fs.readFileSync('scripts/templates/base.txt', 'utf8')
+// use different template depending on whether it is a link or not
+const template = fs.readFileSync(
+  `scripts/templates/${isLink ? 'baseLink.txt' : 'base.txt'}`,
+  'utf8'
+)
 
 // write the base model if it doesn't already exist
 if (!fs.existsSync(`models/base/${typename}.ts`)) {

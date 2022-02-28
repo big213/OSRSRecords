@@ -4,7 +4,6 @@ import {
   createObjectType,
   updateObjectType,
 } from "../../core/helpers/resolver";
-import { fetchTableRows, updateTableRow } from "../../core/helpers/sql";
 import { PaginatedService } from "../../core/services";
 
 export class EventEraService extends PaginatedService {
@@ -46,21 +45,19 @@ export class EventEraService extends PaginatedService {
     await this.handleLookupArgs(args, fieldPath);
 
     // check if any previous era that is current with the same event.id
-    const previousCurrentCount = await this.getRecordCount(
+    const previousCurrentCount = await this.getSqlRecordCount(
       {
-        isCurrent: true,
-        "event.id": validatedArgs.event,
+        where: { isCurrent: true, "event.id": validatedArgs.event },
       },
       fieldPath
     );
 
     // if any previous current eventEras with the same event.id, set all to false
     if (previousCurrentCount > 0) {
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           isCurrent: false,
         },
-        table: this.typename,
         where: {
           isCurrent: true,
           event: validatedArgs.event,
@@ -118,9 +115,11 @@ export class EventEraService extends PaginatedService {
     // args should be validated already
     const validatedArgs = <any>args;
 
-    const item = await this.lookupRecord(
-      ["id", "event.id", "isBuff"],
-      validatedArgs.item,
+    const item = await this.getFirstSqlRecord(
+      {
+        select: ["id", "event.id", "isBuff"],
+        where: validatedArgs.item,
+      },
       fieldPath
     );
 
@@ -180,9 +179,8 @@ export class EventEraService extends PaginatedService {
 
   async syncIsRelevantStatus(eventId: string) {
     // get the beginDate of the most recent nerf, if any
-    const results = await fetchTableRows({
+    const results = await this.getAllSqlRecord({
       select: ["beginDate"],
-      table: this.typename,
       where: {
         isBuff: false,
         "event.id": eventId,
@@ -200,11 +198,10 @@ export class EventEraService extends PaginatedService {
 
     // if there was a recent nerf, set all records after begin date as isRelevant = true
     if (mostRecentNerfBeginDate) {
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           isRelevant: true,
         },
-        table: this.typename,
         where: [
           {
             field: "beginDate",
@@ -219,11 +216,10 @@ export class EventEraService extends PaginatedService {
       });
 
       // if there was a recent nerf, set all records lte begin date as isRelevant = false
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           isRelevant: false,
         },
-        table: this.typename,
         where: [
           {
             field: "beginDate",
@@ -238,11 +234,10 @@ export class EventEraService extends PaginatedService {
       });
     } else {
       // if no most recent nerfed eventEra, all eventEras should be isRelevant = true
-      await updateTableRow({
+      await this.updateSqlRecord({
         fields: {
           isRelevant: true,
         },
-        table: this.typename,
         where: {
           event: eventId,
         },

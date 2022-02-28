@@ -16,9 +16,11 @@ export default new GiraffeqlObjectType(
     {
       submission: {
         service: Submission,
+        allowNull: false,
       },
       character: {
         service: Character,
+        allowNull: false,
       },
     },
     SubmissionCharacterParticipantLink,

@@ -36,6 +36,12 @@
       </v-list>
       <v-divider></v-divider>
       <v-card-actions>
+        <FollowButton
+          v-if="itemData && followLinkModel"
+          color="primary"
+          :item="itemData"
+          :follow-link-model="followLinkModel"
+        ></FollowButton>
         <v-spacer></v-spacer>
         <v-btn color="primary" @click="openPage()">
           <v-icon v-if="openMode === 'openInNew'" left>mdi-open-in-new</v-icon>
@@ -54,8 +60,12 @@ import {
   getIcon,
 } from '~/services/base'
 import { executeGiraffeql } from '~/services/giraffeql'
+import FollowButton from '~/components/button/followButton.vue'
 
 export default {
+  components: {
+    FollowButton,
+  },
   props: {
     item: {
       type: Object,
@@ -68,6 +78,13 @@ export default {
       validator: (value) => {
         return ['emit', 'openInNew', 'openInDialog'].includes(value)
       },
+    },
+
+    /*
+     ** the modelName of the follow model, if there is one
+     */
+    followLinkModel: {
+      type: String,
     },
   },
 
@@ -124,6 +141,11 @@ export default {
             __typename: true,
             name: true,
             avatar: true,
+            ...(this.followLinkModel && {
+              currentUserFollowLink: {
+                id: true,
+              },
+            }),
             __args: {
               id: this.item.id,
             },

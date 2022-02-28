@@ -9,4 +9,5 @@ export { File } from './file'
 export { Character } from './character'
 export { DiscordChannel } from './discordChannel'
 export { DiscordChannelOutput } from './discordChannelOutput'
+export { UserUserFollowLink } from './userUserFollowLink'
 /** END Base Model Import */

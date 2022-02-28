@@ -23,6 +23,7 @@ import { AdminService } from "./models/admin/service";
 /** END Service Import */
 
 import { SubmissionCharacterParticipantLinkService } from "./links/submissionCharacterParticipantLink/service";
+import { UserUserFollowLinkService } from "./links/userUserFollowLink/service";
 /** END LINK Service Import */
 
 export const User = new UserService();
@@ -42,22 +43,9 @@ export const Admin = new AdminService();
 /** END Service Set */
 
 export const SubmissionCharacterParticipantLink =
-  new SubmissionCharacterParticipantLinkService(
-    {
-      submission: {
-        service: Submission,
-      },
-      character: {
-        service: Character,
-      },
-    },
-    {
-      submission: "submission",
-      character: "character",
-    },
-    false
-  );
+  new SubmissionCharacterParticipantLinkService();
 
+export const UserUserFollowLink = new UserUserFollowLinkService();
 /** END LINK Service Set */
 
 export const UserRole = new KenumService("userRole", userRoleKenum);

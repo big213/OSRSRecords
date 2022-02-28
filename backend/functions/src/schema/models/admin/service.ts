@@ -4,7 +4,7 @@ import axios from "axios";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import { Event, EventEra, Submission } from "../../services";
-import { fetchTableRows, updateTableRow } from "../../core/helpers/sql";
+import { updateTableRow } from "../../core/helpers/sql";
 import { sendDiscordRequest } from "../../helpers/discord";
 
 const prodResource = axios.create({
@@ -64,18 +64,16 @@ export class AdminService extends BaseService {
   // syncs the isRelevantRecord for all events
   async syncAllIsRelevantRecord() {
     // get all events
-    const events = await fetchTableRows({
+    const events = await Event.getAllSqlRecord({
       select: ["id"],
-      table: Event.typename,
       where: {},
     });
 
     // for each event, reset all isRecord flags, look up all submissions
     for (const event of events) {
       // get all valid # of participants for the event
-      const submissionParticipants = await fetchTableRows({
+      const submissionParticipants = await Submission.getAllSqlRecord({
         select: ["participants"],
-        table: Submission.typename,
         distinctOn: ["participants"],
         where: {
           event: event.id,
@@ -93,13 +91,12 @@ export class AdminService extends BaseService {
   }
 
   async syncIsSoloPersonalBest() {
-    const submissions = await Submission.lookupMultipleRecord(
-      ["id", "event.id", "participantsList"],
-      {
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "event.id", "participantsList"],
+      where: {
         participants: 1,
       },
-      []
-    );
+    });
 
     // map of eventId+characterId -> submissionId
     const submissionIdMap: Map<
@@ -184,23 +181,19 @@ export class AdminService extends BaseService {
 
   async syncEvidenceKey() {
     // go through all submissions and sync evidenceKey field based on externalLinks
-    const submissions = await Submission.lookupMultipleRecord(
-      ["id", "externalLinks"],
-      {
-        fields: [],
-      },
-      []
-    );
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: {},
+    });
 
     for (const submission of submissions) {
       const evidenceKey = submission.externalLinks[0] ?? null;
 
       if (evidenceKey) {
-        await updateTableRow({
+        await Submission.updateSqlRecord({
           fields: {
             evidenceKey,
           },
-          table: Submission.typename,
           where: {
             id: submission.id,
           },
@@ -211,19 +204,16 @@ export class AdminService extends BaseService {
 
   async syncEventEra() {
     // go through all submissions and confirm if happenedOn corresponds to the eventEra beginDate and endDate. if not, correct it
-    const submissions = await Submission.lookupMultipleRecord(
-      [
+    const submissions = await Submission.getAllSqlRecord({
+      select: [
         "id",
         "event.id",
         "eventEra.beginDate",
         "eventEra.endDate",
         "happenedOn",
       ],
-      {
-        fields: [],
-      },
-      []
-    );
+      where: {},
+    });
 
     const submissionsToCorrect: any[] = [];
 
@@ -241,13 +231,12 @@ export class AdminService extends BaseService {
     }
 
     for (const submission of submissionsToCorrect) {
-      const eventEras = await EventEra.lookupMultipleRecord(
-        ["id", "beginDate", "endDate"],
-        {
+      const eventEras = await EventEra.getAllSqlRecord({
+        select: ["id", "beginDate", "endDate"],
+        where: {
           event: submission["event.id"],
         },
-        []
-      );
+      });
 
       const matchingEventEra = eventEras.find((eventEra) => {
         return (
@@ -261,11 +250,10 @@ export class AdminService extends BaseService {
         throw new Error("no matching event era for " + submission.id);
       }
 
-      await updateTableRow({
+      await Submission.updateSqlRecord({
         fields: {
           eventEra: matchingEventEra.id,
         },
-        table: Submission.typename,
         where: {
           id: submission.id,
         },
@@ -275,17 +263,16 @@ export class AdminService extends BaseService {
 
   async syncHappenedOn() {
     // go through all submissions, sync the happenedOn with the imgur metadata
-    const submissions = await Submission.lookupMultipleRecord(
-      ["id", "externalLinks"],
-      [
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: [
         {
           field: "createdAt",
           operator: "lt",
           value: 1641357843,
         },
       ],
-      []
-    );
+    });
 
     for (const submission of submissions) {
       const firstExternalLink = submission.externalLinks[0];
@@ -302,11 +289,10 @@ export class AdminService extends BaseService {
             },
           });
 
-          await updateTableRow({
+          await Submission.updateSqlRecord({
             fields: {
               happenedOn: data.data.datetime,
             },
-            table: Submission.typename,
             where: {
               id: submission.id,
             },

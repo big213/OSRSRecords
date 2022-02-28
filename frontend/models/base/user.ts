@@ -4,6 +4,8 @@ import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
 import AvatarColumn from '~/components/table/avatarColumn.vue'
 import BooleanColumn from '~/components/table/booleanColumn.vue'
+import FollowColumn from '~/components/table/followColumn.vue'
+import { generatePreviewableRecordField } from '~/services/recordInfo'
 
 export const User = <RecordInfo<'user'>>{
   typename: 'user',
@@ -25,6 +27,10 @@ export const User = <RecordInfo<'user'>>{
       fields: ['name', 'avatar'],
       component: NameAvatarColumn,
     },
+    record: generatePreviewableRecordField({
+      text: 'User',
+      followLinkModel: 'userUserFollowLink',
+    }),
     email: {
       text: 'Email',
     },
@@ -53,6 +59,14 @@ export const User = <RecordInfo<'user'>>{
       component: BooleanColumn,
       parseQueryValue: (val) => val === 'true',
       inputType: 'switch',
+    },
+    currentUserFollowing: {
+      text: 'Follow',
+      fields: ['currentUserFollowLink.id'],
+      component: FollowColumn,
+      columnOptions: {
+        linkModel: 'userUserFollowLink',
+      },
     },
     createdAt: {
       text: 'Created At',
@@ -108,7 +122,14 @@ export const User = <RecordInfo<'user'>>{
     fields: ['name', 'email', 'role', 'permissions', 'isPublic'],
   },
   viewOptions: {
-    fields: ['name', 'email', 'role', 'permissions', 'isPublic'],
+    fields: [
+      'name',
+      'email',
+      'role',
+      'permissions',
+      'isPublic',
+      'currentUserFollowing',
+    ],
   },
   enterOptions: {},
   deleteOptions: {},
