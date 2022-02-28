@@ -205,8 +205,8 @@
                         :is="headerItem.fieldInfo.component"
                         v-if="headerItem.fieldInfo.component"
                         :item="item"
-                        :options="headerItem.fieldInfo.columnOptions"
                         :field-path="headerItem.path"
+                        :options="headerItem.fieldInfo.columnOptions"
                         @submit="reset({ resetExpanded: false })"
                         @item-updated="reset({ resetExpanded: false })"
                       ></component>
@@ -317,8 +317,8 @@
                   :is="headerItem.fieldInfo.component"
                   v-if="headerItem.fieldInfo.component"
                   :item="props.item"
-                  :options="headerItem.fieldInfo.columnOptions"
                   :field-path="headerItem.path"
+                  :options="headerItem.fieldInfo.columnOptions"
                   @submit="reset({ resetExpanded: false })"
                   @item-updated="reset({ resetExpanded: false })"
                 ></component>
@@ -367,8 +367,8 @@
                 :is="headerItem.fieldInfo.component"
                 v-if="headerItem.fieldInfo.component"
                 :item="props.item"
-                :options="headerItem.fieldInfo.columnOptions"
                 :field-path="headerItem.path"
+                :options="headerItem.fieldInfo.columnOptions"
                 @submit="reset({ resetExpanded: false })"
                 @item-updated="reset({ resetExpanded: false })"
               ></component>
