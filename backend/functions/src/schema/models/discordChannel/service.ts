@@ -115,7 +115,7 @@ export class DiscordChannelService extends PaginatedService {
       discordChannel.primaryMessageId = discordMessage.id;
     }
 
-    const discordChannelOutputs = await this.getAllSqlRecord({
+    const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
       select: [
         "event.id",
         "event.name",
