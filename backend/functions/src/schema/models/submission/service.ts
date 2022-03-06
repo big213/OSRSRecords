@@ -1391,7 +1391,7 @@ export class SubmissionService extends PaginatedService {
               : ""
           }🔸 Added **${eventStr} - ${serializeTime(
             submission.score
-          )}** by\n\`\`\`fix\n${relevantErasUpdateLogPost.currentSubmission.characters.join(
+          )}** by\n\`\`\`yaml\n${relevantErasUpdateLogPost.currentSubmission.characters.join(
             ", "
           )}\`\`\`\n🔸 ${
             relevantErasUpdateLogPost.isWR ? "as a tie for" : "to"
