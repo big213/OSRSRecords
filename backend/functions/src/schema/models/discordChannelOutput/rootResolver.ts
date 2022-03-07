@@ -2,11 +2,9 @@ import { DiscordChannelOutput } from "../../services";
 import { generateBaseRootResolvers } from "../../core/helpers/rootResolver";
 
 export default {
-  ...generateBaseRootResolvers(DiscordChannelOutput, [
-    "get",
-    "getMultiple",
-    "delete",
-    "create",
-    "update",
-  ]),
+  ...generateBaseRootResolvers({
+    service: DiscordChannelOutput,
+    methods: ["get", "getMultiple", "delete", "create", "update"],
+    restMethods: ["get", "getMultiple"],
+  }),
 };

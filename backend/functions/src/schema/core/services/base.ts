@@ -4,8 +4,8 @@ import {
   ExternalQuery,
 } from "../../../types";
 import { userPermissionEnum } from "../../enums";
-import { lookupSymbol, GiraffeqlRootResolverType } from "giraffeql";
-import { badPermissionsError, PermissionsError } from "../helpers/error";
+import { GiraffeqlRootResolverType } from "giraffeql";
+import { PermissionsError } from "../helpers/error";
 
 export abstract class BaseService {
   typename: string;
@@ -14,11 +14,7 @@ export abstract class BaseService {
 
   rootResolvers?: { [x: string]: GiraffeqlRootResolverType };
 
-  presets: ExternalQuery = {
-    default: {
-      "*": lookupSymbol,
-    },
-  };
+  defaultQuery?: ExternalQuery;
 
   setRootResolvers(rootResolvers: {
     [x: string]: GiraffeqlRootResolverType;
@@ -86,12 +82,18 @@ export abstract class BaseService {
           : false;
       }
 
-      if (!allowed) throw badPermissionsError(fieldPath);
+      if (!allowed)
+        throw new PermissionsError({
+          fieldPath,
+        });
 
       return allowed;
     } catch (err: unknown) {
       if (err instanceof Error && !(err instanceof PermissionsError)) {
-        throw badPermissionsError(fieldPath, err.message);
+        throw new PermissionsError({
+          fieldPath,
+          message: err.message,
+        });
       }
 
       throw err;

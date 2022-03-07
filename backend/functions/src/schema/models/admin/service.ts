@@ -4,7 +4,6 @@ import axios from "axios";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import { Event, EventEra, Submission } from "../../services";
-import { updateTableRow } from "../../core/helpers/sql";
 import { sendDiscordRequest } from "../../helpers/discord";
 
 const prodResource = axios.create({

@@ -7,13 +7,11 @@ import {
 } from "giraffeql";
 
 export default {
-  ...generateBaseRootResolvers(Character, [
-    "get",
-    "getMultiple",
-    "delete",
-    "create",
-    "update",
-  ]),
+  ...generateBaseRootResolvers({
+    service: Character,
+    methods: ["get", "getMultiple", "delete", "create", "update"],
+    restMethods: ["get", "getMultiple"],
+  }),
   remapCharacter: new GiraffeqlRootResolverType({
     name: "remapCharacter",
     type: Character.typeDefLookup,

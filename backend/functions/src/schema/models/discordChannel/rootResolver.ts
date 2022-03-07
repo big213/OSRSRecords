@@ -3,13 +3,11 @@ import { generateBaseRootResolvers } from "../../core/helpers/rootResolver";
 import { GiraffeqlInputFieldType, GiraffeqlRootResolverType } from "giraffeql";
 
 export default {
-  ...generateBaseRootResolvers(DiscordChannel, [
-    "get",
-    "getMultiple",
-    "delete",
-    "create",
-    "update",
-  ]),
+  ...generateBaseRootResolvers({
+    service: DiscordChannel,
+    methods: ["get", "getMultiple", "delete", "create", "update"],
+    restMethods: ["get", "getMultiple"],
+  }),
   // forces refresh of the discord channel specified
   refreshDiscordChannel: new GiraffeqlRootResolverType({
     name: "refreshDiscordChannel",

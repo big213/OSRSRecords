@@ -212,7 +212,7 @@ export class SubmissionService extends PaginatedService {
       });
     }
 
-    const resultsCount = await this.getSqlRecordCount({
+    const resultsCount = await this.countSqlRecord({
       field: "score",
       distinct: true,
       where: [whereObject],
@@ -229,7 +229,7 @@ export class SubmissionService extends PaginatedService {
     // if no evidenceKey, pass
     if (!evidenceKey) return;
 
-    const count = await this.getSqlRecordCount(
+    const count = await this.countSqlRecord(
       {
         where: {
           evidenceKey,
@@ -1056,7 +1056,7 @@ export class SubmissionService extends PaginatedService {
         );
 
         // check if it was a tie (more than one other approved submission in relevant era with same score)
-        const sameScoreCount = await this.getSqlRecordCount(
+        const sameScoreCount = await this.countSqlRecord(
           {
             where: {
               score: submission.score,
@@ -1203,7 +1203,7 @@ export class SubmissionService extends PaginatedService {
         } else {
           if (relevantErasUpdateLogPost.isWR) {
             // check if it was a WR tie (more than one other approved submission in relevant era with same score)
-            const sameScoreCount = await this.getSqlRecordCount(
+            const sameScoreCount = await this.countSqlRecord(
               {
                 where: {
                   score: submission.score,
