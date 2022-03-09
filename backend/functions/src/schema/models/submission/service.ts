@@ -1105,7 +1105,12 @@ export class SubmissionService extends PaginatedService {
               score: charactersSecondFastestScore,
             };
           }
-        } else if (!soloPBUpdateLogPost.isTie) {
+        }
+
+        if (
+          !soloPBUpdateLogPost.currentUserSecondPlaceSubmission &&
+          !soloPBUpdateLogPost.isTie
+        ) {
           // if it was not an improvement in the leaderboard AND it was not a tie, someone (or multiple people) just got kicked to 11th place. find out who that was, if any
           const nPlusOneHighestScore = await this.getNthFastestScore({
             n: soloPBUpdateLogPost.ranksToShow + 1,
@@ -1333,7 +1338,7 @@ export class SubmissionService extends PaginatedService {
             soloPBUpdateLogPost.isWR ? "WR" : "PB"
           } - ${serializeTime(
             submission.score
-          )}** by\n\`\`\`fix\n${soloPBUpdateLogPost.currentSubmission.characters.join(
+          )}** by\n\`\`\`yaml\n+ ${soloPBUpdateLogPost.currentSubmission.characters.join(
             ", "
           )}\`\`\`${
             kickedText ? kickedText + "\n" : ""
@@ -1391,7 +1396,7 @@ export class SubmissionService extends PaginatedService {
               : ""
           }🔸 Added **${eventStr} - ${serializeTime(
             submission.score
-          )}** by\n\`\`\`yaml\n${relevantErasUpdateLogPost.currentSubmission.characters.join(
+          )}** by\n\`\`\`yaml\n+ ${relevantErasUpdateLogPost.currentSubmission.characters.join(
             ", "
           )}\`\`\`\n🔸 ${
             relevantErasUpdateLogPost.isWR ? "as a tie for" : "to"

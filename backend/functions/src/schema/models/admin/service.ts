@@ -5,6 +5,7 @@ import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import { Event, EventEra, Submission } from "../../services";
 import { sendDiscordRequest } from "../../helpers/discord";
+import { eventEraModeKenum } from "../../enums";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -55,7 +56,7 @@ export class AdminService extends BaseService {
     fs.writeFileSync("src/abc.txt", allLinksStr);
     */
 
-    await this.syncAllIsRelevantRecord();
+    // await this.syncAllIsRelevantRecord();
 
     return "done";
   }
