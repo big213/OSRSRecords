@@ -26,6 +26,7 @@ import {
   DiscordChannelOutput,
   Event,
   EventEra,
+  ExternalLinkBackup,
   SubmissionCharacterParticipantLink,
 } from "../../services";
 import {
@@ -558,7 +559,7 @@ export class SubmissionService extends PaginatedService {
       fieldPath,
     });
 
-    // changed: todo: if participantsList was changed in any way, need to also delete all submissionParticipantLinks and re-sync them
+    // changed: if participantsList was changed in any way, need to also delete all submissionParticipantLinks and re-sync them
     if (validatedArgs.fields.participantsList) {
       if (
         JSON.stringify(validatedArgs.fields.participantsList) !==
@@ -634,12 +635,21 @@ export class SubmissionService extends PaginatedService {
       }
 
       // if the status changed from ANY->APPROVED, need to also possibly send an announcement in update-logs
-      await this.broadcastUpdateLogs({
-        submissionId: item.id,
-        relevantEraRanking,
-        soloPBRanking,
-        fieldPath,
-      });
+      if (newStatus === submissionStatusKenum.APPROVED) {
+        await this.broadcastUpdateLogs({
+          submissionId: item.id,
+          relevantEraRanking,
+          soloPBRanking,
+          fieldPath,
+        });
+
+        // if the status changed from ANY->APPROVED, need to ensure the externalLinks are backed up
+        await ExternalLinkBackup.backupExternalLinks(
+          item.id,
+          req.user!.id,
+          item.externalLinks
+        );
+      }
 
       // if the status was updated, also force refresh of the discordMessage, if any
       if (item.discordMessageId) {

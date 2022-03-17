@@ -44,6 +44,7 @@ export default {
     allowNull: false,
     args: new GiraffeqlInputFieldType({
       required: true,
+      allowNull: true,
       type: Scalars.string,
     }),
     resolver: (inputs) => Admin.executeAdminFunction(inputs),

@@ -125,6 +125,14 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
         field: "external_links",
       },
     }),
+    externalLinkBackups: generateArrayField({
+      allowNull: false,
+      type: Scalars.id,
+      allowNullElement: false,
+      sqlOptions: {
+        field: "external_link_backups",
+      },
+    }),
     privateComments: generateTextField({
       allowNull: true,
       sqlOptions: {

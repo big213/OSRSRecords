@@ -13,10 +13,11 @@ import file from "./models/file/typeDef";
 import discordChannel from "./models/discordChannel/typeDef";
 import discordChannelOutput from "./models/discordChannelOutput/typeDef";
 import eventEra from "./models/eventEra/typeDef";
+import externalLinkBackup from "./models/externalLinkBackup/typeDef"
 /** END TypeDef Import */
 
 import submissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/typeDef";
-import userUserFollowLink from "./links/userUserFollowLink/typeDef"
+import userUserFollowLink from "./links/userUserFollowLink/typeDef";
 /** END LINK TypeDef Import */
 
 // add the objectTypeDefs for the services with objectTypeDefs
@@ -31,12 +32,13 @@ allServices.File.setTypeDef(file);
 allServices.DiscordChannel.setTypeDef(discordChannel);
 allServices.DiscordChannelOutput.setTypeDef(discordChannelOutput);
 allServices.EventEra.setTypeDef(eventEra);
+allServices.ExternalLinkBackup.setTypeDef(externalLinkBackup)
 /** END TypeDef Set */
 
 allServices.SubmissionCharacterParticipantLink.setTypeDef(
   submissionCharacterParticipantLink
 );
-allServices.UserUserFollowLink.setTypeDef(userUserFollowLink)
+allServices.UserUserFollowLink.setTypeDef(userUserFollowLink);
 /** END LINK TypeDef Set */
 
 import User from "./models/user/rootResolver";
@@ -53,10 +55,11 @@ import DiscordChannelOutput from "./models/discordChannelOutput/rootResolver";
 import EventEra from "./models/eventEra/rootResolver";
 import Imgur from "./models/imgur/rootResolver";
 import Admin from "./models/admin/rootResolver";
+import ExternalLinkBackup from "./models/externalLinkBackup/rootResolver"
 /** END RootResolver Import */
 
 import SubmissionCharacterParticipantLink from "./links/submissionCharacterParticipantLink/rootResolver";
-import UserUserFollowLink from "./links/userUserFollowLink/rootResolver"
+import UserUserFollowLink from "./links/userUserFollowLink/rootResolver";
 /** END LINK RootResolver Import */
 
 allServices.User.setRootResolvers(User);
@@ -73,6 +76,7 @@ allServices.DiscordChannelOutput.setRootResolvers(DiscordChannelOutput);
 allServices.EventEra.setRootResolvers(EventEra);
 allServices.Imgur.setRootResolvers(Imgur);
 allServices.Admin.setRootResolvers(Admin);
+allServices.ExternalLinkBackup.setRootResolvers(ExternalLinkBackup);
 /** END RootResolver Set */
 
 allServices.SubmissionCharacterParticipantLink.setRootResolvers(

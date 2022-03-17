@@ -3,9 +3,18 @@ import { BaseService } from "../../core/services";
 import axios from "axios";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
-import { Event, EventEra, Submission } from "../../services";
+import {
+  Event,
+  EventEra,
+  ExternalLinkBackup,
+  Submission,
+} from "../../services";
 import { sendDiscordRequest } from "../../helpers/discord";
-import { eventEraModeKenum } from "../../enums";
+import { submissionStatusKenum } from "../../enums";
+import { Request } from "express";
+import { SqlWhereFieldObject } from "../../core/helpers/sql";
+import { isTimeoutImminent } from "../../core/helpers/shared";
+import { TimeoutError } from "../../core/helpers/error";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -59,6 +68,51 @@ export class AdminService extends BaseService {
     // await this.syncAllIsRelevantRecord();
 
     return "done";
+  }
+
+  // goes through all the APPROVED submissions, finds any images and backs them up
+  async backupAllSubmissionEvidence(req: Request, after: string | null) {
+    const whereObject: SqlWhereFieldObject[] = [
+      {
+        field: "status",
+        value: submissionStatusKenum.APPROVED.index,
+      },
+    ];
+
+    if (after) {
+      whereObject.push({
+        field: "id",
+        operator: "lte",
+        value: after,
+      });
+    }
+
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: whereObject,
+      orderBy: [
+        {
+          field: "id",
+          desc: true,
+        },
+      ],
+    });
+
+    for (const submission of submissions) {
+      await ExternalLinkBackup.backupExternalLinks(
+        submission.id,
+        req.user!.id,
+        submission.externalLinks
+      ).catch(() => {
+        console.log(`Failed at submission.id: ${submission.id}`);
+      });
+
+      if (isTimeoutImminent(req)) {
+        throw new TimeoutError({
+          message: `${submission.id}`,
+        });
+      }
+    }
   }
 
   // syncs the isRelevantRecord for all events

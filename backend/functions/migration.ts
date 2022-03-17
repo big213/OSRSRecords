@@ -75,6 +75,7 @@ export async function up(knex: Knex): Promise<void[]> {
       table.integer("world").nullable();
       table.jsonb("files").notNullable().defaultTo([]);
       table.jsonb("external_links").notNullable().defaultTo([]);
+      table.jsonb("external_link_backups").notNullable().defaultTo([]);
       table.text("private_comments").nullable();
       table.text("public_comments").nullable();
       table.text("reviewer_comments").nullable();
@@ -150,6 +151,14 @@ export async function up(knex: Knex): Promise<void[]> {
       table.dateTime("updated_at").nullable();
       table.string("created_by").notNullable();
     }),
+    knex.schema.createTable("externalLinkBackup", function (table) {
+      table.string("id").notNullable().primary();
+      table.string("url").notNullable().unique();
+      table.string("file").notNullable();
+      table.dateTime("created_at").notNullable().defaultTo(knex.fn.now());
+      table.dateTime("updated_at").nullable();
+      table.string("created_by").notNullable();
+    }),
     knex.schema.createTable(
       "submissionCharacterParticipantLink",
       function (table) {
@@ -188,6 +197,7 @@ export async function down(knex: Knex): Promise<void[]> {
     knex.schema.dropTable("discordChannel"),
     knex.schema.dropTable("discordChannelOutput"),
     knex.schema.dropTable("eventEra"),
+    knex.schema.dropTable("externalLinkBackup"),
     knex.schema.dropTable("submissionCharacterParticipantLink"),
     knex.schema.dropTable("userUserFollowLink"),
   ]);

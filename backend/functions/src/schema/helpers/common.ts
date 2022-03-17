@@ -53,3 +53,11 @@ export function isVideoUrl(url: string) {
     /(\.(gif|mp4)$)|(youtu\.be|youtube\.com|streamable\.com|gfycat\.com)/
   );
 }
+
+// is the file a direct link to a url
+export function isFileUrl(url: string) {
+  return !!url
+    .split("/")
+    .pop()
+    ?.match(/\.[a-z]*$/);
+}
