@@ -78,7 +78,7 @@ export const Character = <RecordInfo<'character'>>{
     downloadOptions: {},
   },
   addOptions: {
-    fields: ['ownedBy', 'avatar', 'name', 'description', 'isHardMode'],
+    fields: ['ownedBy', 'avatar', 'name', 'description'],
   },
   // importOptions: { fields: ['avatar', 'name', 'description', 'isPublic'] },
   editOptions: {
