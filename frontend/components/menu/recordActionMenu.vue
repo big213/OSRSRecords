@@ -12,7 +12,7 @@
       <v-list-item
         v-if="recordInfo.enterOptions && !hideEnter"
         key="enter"
-        @click="goToPage(true)"
+        @click="goToRecordPage(true)"
       >
         <v-list-item-icon>
           <v-icon>mdi-newspaper-variant-outline</v-icon>
@@ -124,7 +124,7 @@
 </template>
 
 <script>
-import { goToPage } from '~/services/base'
+import { enterRoute, generateViewRecordRoute } from '~/services/base'
 
 export default {
   props: {
@@ -192,19 +192,12 @@ export default {
           pageOptions: {
             search: null,
             filters: expandTypeObject.initialFilters ?? [],
-            sortBy: expandTypeObject.initialSortOptions?.sortBy ?? [],
-            sortDesc: expandTypeObject.initialSortOptions?.sortDesc ?? [],
+            sort: expandTypeObject.initialSortOptions ?? undefined,
           },
         })
-      else
-        goToPage(
-          this,
-          this.recordInfo.typename,
-          this.recordInfo.routeName,
-          this.item.id,
-          true,
-          index
-        )
+      else {
+        this.goToRecordPage(false, index)
+      }
     },
 
     reloadParent() {
@@ -230,13 +223,16 @@ export default {
       actionWrapper.isLoading = false
     },
 
-    goToPage() {
-      goToPage(
+    goToRecordPage(openInNew, expandIndex) {
+      enterRoute(
         this,
-        this.recordInfo.typename,
-        this.recordInfo.routeName,
-        this.item.id,
-        ...arguments
+        generateViewRecordRoute(this, {
+          typename: this.recordInfo.typename,
+          routeType: this.recordInfo.enterOptions.routeType,
+          id: this.item.id,
+          expand: expandIndex,
+        }),
+        openInNew
       )
     },
   },

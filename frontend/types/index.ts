@@ -2,13 +2,13 @@ import { InputTypes, MainTypes, FilterByField } from '../../schema'
 import { CrudRawFilterObject, CrudRawSortObject } from './misc'
 
 export type RecordInfo<T extends keyof MainTypes> = {
+  // optional title for this recordInfo
+  title?: string
   // name of the type
   typename: T
   pluralTypename: string
   name: string
   pluralName: string
-  // route that shareUrl and enterItem should be based off
-  routeName?: string
   icon?: string
   // how to render the item as a string
   renderItem?: (item) => string
@@ -75,6 +75,13 @@ export type RecordInfo<T extends keyof MainTypes> = {
         ? boolean
         : false
       : false
+
+    // the field to filter by on i-crud path, if any
+    publicFilterField?: string
+
+    // the function to generate the lockedFilters for routeType "my"
+    myFilterField?: (that: any) => CrudRawFilterObject[]
+
     // all of the possible usable filters
     filterOptions: `${T}FilterByObject` extends keyof InputTypes
       ? FilterObject[]
@@ -173,7 +180,9 @@ export type RecordInfo<T extends keyof MainTypes> = {
     component?: any
   }
 
-  enterOptions?: {}
+  enterOptions?: {
+    routeType: 'i' | 'a' | 'my' | 's'
+  }
 
   expandTypes: {
     // recordInfo is required unless it is a custom component

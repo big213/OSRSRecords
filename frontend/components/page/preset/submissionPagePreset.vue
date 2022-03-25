@@ -24,13 +24,13 @@
 <script>
 import { getEventEras } from '~/services/dropdown'
 import {
-  generateCrudRecordInterfaceRoute,
   getInputObject,
   setInputValue,
   getInputValue,
   populateInputObject,
   isObject,
   handleError,
+  generateCrudRecordRoute,
 } from '~/services/base'
 import { generateParticipantsOptions } from '~/services/common'
 import { Submission } from '~/models/base'
@@ -364,9 +364,12 @@ export default {
       }
 
       this.$router.push(
-        generateCrudRecordInterfaceRoute(this.$route.path, {
-          ...originalPageOptions,
-          filters,
+        generateCrudRecordRoute(this, {
+          path: this.$route.path,
+          pageOptions: {
+            ...originalPageOptions,
+            filters,
+          },
         })
       )
     },

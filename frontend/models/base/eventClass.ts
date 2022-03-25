@@ -15,7 +15,6 @@ export const EventClass = <RecordInfo<'eventClass'>>{
   name: 'Event Class',
   pluralName: 'Event Classes',
   icon: 'mdi-content-copy',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -129,7 +128,9 @@ export const EventClass = <RecordInfo<'eventClass'>>{
       'parentRecord',
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [

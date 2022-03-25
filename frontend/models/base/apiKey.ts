@@ -9,7 +9,6 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
   name: 'API Key',
   pluralName: 'API Keys',
   icon: 'mdi-view-grid-plus',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -47,14 +46,19 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
   },
   paginationOptions: {
     hasSearch: false,
+    myFilterField: (that) => {
+      return [
+        {
+          field: 'user',
+          operator: 'eq',
+          value: that.$store.getters['auth/user'].id,
+        },
+      ]
+    },
     filterOptions: [],
     sortOptions: [
       {
         field: 'createdAt',
-        desc: true,
-      },
-      {
-        field: 'updatedAt',
         desc: true,
       },
     ],
@@ -85,6 +89,9 @@ export const ApiKey = <RecordInfo<'apiKey'>>{
   },
   viewOptions: {
     fields: ['name', 'permissions', 'code', 'user'],
+  },
+  enterOptions: {
+    routeType: 'a',
   },
   deleteOptions: {},
   shareOptions: undefined,

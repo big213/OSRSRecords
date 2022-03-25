@@ -2,6 +2,7 @@ import { User } from '../base'
 
 export const PublicUser = {
   ...User,
+  title: `Public ${User.pluralName}`,
   paginationOptions: {
     ...(!!User.paginationOptions && User.paginationOptions),
     filterOptions: [],
@@ -16,7 +17,6 @@ export const PublicUser = {
     ],
     downloadOptions: undefined,
   },
-  routeName: 'i-view',
   viewOptions: {
     fields: ['avatar', 'name', 'isPublic', 'currentUserFollowing'],
   },
@@ -24,4 +24,7 @@ export const PublicUser = {
   editOptions: undefined,
   deleteOptions: undefined,
   importOptions: undefined,
+  enterOptions: {
+    routeType: 'i',
+  },
 }

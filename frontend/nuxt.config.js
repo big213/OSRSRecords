@@ -1,4 +1,5 @@
 import colors from 'vuetify/es5/util/colors'
+import { routesMap } from './services/config'
 
 export default {
   // Disable server-side rendering (https://go.nuxtjs.dev/ssr-mode)
@@ -16,10 +17,34 @@ export default {
     siteContactEmail: process.env.SITE_CONTACT_EMAIL,
     siteDiscordLink: process.env.SITE_DISCORD_LINK,
     siteGithubRepositoryUrl: process.env.SITE_GITHUB_REPOSITORY_URL,
+    logoHasLightVariant: !!process.env.LOGO_HAS_LIGHT_VARIANT,
   },
 
   // Target (https://go.nuxtjs.dev/config-target)
   target: 'static',
+
+  generate: {
+    routes() {
+      function camelToKebabCase(str) {
+        return str
+          .split('')
+          .map((letter, idx) => {
+            return letter.toUpperCase() === letter
+              ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
+              : letter
+          })
+          .join('')
+      }
+
+      return Object.entries(routesMap).reduce((total, [key, val]) => {
+        total.push(...val.map((type) => `/${key}/${camelToKebabCase(type)}`))
+        total.push(
+          ...val.map((type) => `/${key}/view/${camelToKebabCase(type)}`)
+        )
+        return total
+      }, [])
+    },
+  },
 
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {

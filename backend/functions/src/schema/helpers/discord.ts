@@ -196,8 +196,8 @@ export function generateViewSubmissionButtonComponent(
         label: "View Submission",
         style: 5,
         url: `${env.site.base_url}/${
-          isPublic ? "m" : "a"
-        }/view?id=${submissionId}&expand=0&type=submission`,
+          isPublic ? "s/view/user-submission" : "a/view/submission"
+        }?id=${submissionId}&expand=0`,
       },
     ],
   };

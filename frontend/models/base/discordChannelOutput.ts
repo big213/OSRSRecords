@@ -13,7 +13,6 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
   name: 'Discord Channel Output',
   pluralName: 'Discord Channel Outputs',
   icon: 'mdi-format-list-checkbox',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -213,7 +212,9 @@ export const DiscordChannelOutput = <RecordInfo<'discordChannelOutput'>>{
       'isSoloPersonalBest',
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [],

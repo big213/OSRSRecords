@@ -5,8 +5,6 @@
       :record-info="recordInfo"
       :locked-filters="lockedFilters"
       :hidden-filters="hiddenFilters"
-      :head="head"
-      :title="title"
       icon="mdi-podium"
     ></CrudRecordPage>
   </div>
@@ -31,6 +29,7 @@ export default {
     return {
       recordInfo: {
         ...PublicSubmission,
+        title: 'Leaderboard',
         fields: {
           ...PublicSubmission.fields,
           relevantEraRanking: {
@@ -53,9 +52,6 @@ export default {
         },
       },
       hiddenFilters: ['status'],
-      head: {
-        title: 'Leaderboard',
-      },
       lockedFilters: [
         {
           field: 'status',
@@ -63,7 +59,6 @@ export default {
           value: 'APPROVED',
         },
       ],
-      title: 'Leaderboard',
       loading: {
         redirect: false,
       },

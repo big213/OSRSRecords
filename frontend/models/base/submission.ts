@@ -29,7 +29,6 @@ export const Submission = <RecordInfo<'submission'>>{
   name: 'Submission',
   pluralName: 'Submissions',
   icon: 'mdi-timer',
-  routeName: 'a-view',
   // renderItem: (item) => item.name,
   fields: {
     id: {
@@ -522,7 +521,9 @@ export const Submission = <RecordInfo<'submission'>>{
       'isRelevantRecord',
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [],

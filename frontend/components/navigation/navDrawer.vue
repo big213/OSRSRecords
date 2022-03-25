@@ -1,15 +1,18 @@
 <template>
   <v-navigation-drawer v-bind="$attrs">
     <nuxt-link to="/" class="hidden-md-and-up">
-      <v-img
-        :src="require('~/static/logo-horizontal.png')"
-        class="ma-3"
-        contain
-      />
+      <v-img :src="logoImageSrc" class="ma-3" contain />
     </nuxt-link>
     <v-divider></v-divider>
-    <v-list dense color="accent">
-      <v-list-item v-for="(item, i) in mainItems" :key="i" :to="item.to" router>
+    <v-list dense>
+      <v-list-item
+        v-for="(item, i) in mainItems"
+        :key="i"
+        :to="item.to"
+        nuxt
+        router
+        exact-path
+      >
         <v-list-item-action>
           <v-icon>{{ item.icon }}</v-icon>
         </v-list-item-action>
@@ -19,20 +22,16 @@
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
-    <v-list dense color="accent">
-      <v-subheader>Submissions</v-subheader>
-      <v-list-item class="mb-2">
-        <v-btn
-          block
-          color="primary"
-          class="pa-2"
-          @click="openCreateSubmissionDialog()"
-        >
-          <v-icon left>mdi-plus</v-icon>
-          Submit Record
-        </v-btn>
-      </v-list-item>
-      <v-list-item v-for="(item, i) in navItems" :key="i" :to="item.to" router>
+    <v-list dense>
+      <v-subheader>Explore</v-subheader>
+      <v-list-item
+        v-for="(item, i) in navItems"
+        :key="i"
+        :to="item.to"
+        nuxt
+        router
+        exact-path
+      >
         <v-list-item-action>
           <v-icon>{{ item.icon }}</v-icon>
         </v-list-item-action>
@@ -42,7 +41,7 @@
       </v-list-item>
     </v-list>
     <v-divider></v-divider>
-    <v-list dense color="accent">
+    <v-list dense>
       <v-subheader>Stats</v-subheader>
       <v-list-item v-for="(item, i) in statItems" :key="i" :to="item.to" router>
         <v-list-item-action>
@@ -55,9 +54,16 @@
     </v-list>
     <v-divider></v-divider>
     <!--
-    <v-list v-if="user" dense color="accent">
+    <v-list v-if="user" dense>
       <v-subheader>My Account</v-subheader>
-      <v-list-item v-for="(item, i) in userItems" :key="i" :to="item.to" router>
+      <v-list-item
+        v-for="(item, i) in userItems"
+        :key="i"
+        :to="item.to"
+        nuxt
+        router
+        exact-path
+      >
         <v-list-item-action>
           <v-icon>{{ item.icon }}</v-icon>
         </v-list-item-action>
@@ -68,12 +74,13 @@
     </v-list>
     <v-divider></v-divider>
     -->
-    <v-list v-if="isAdmin" dense color="accent">
+    <v-list v-if="isAdmin" dense>
       <v-subheader>Moderation</v-subheader>
       <v-list-item
         v-for="(item, i) in moderatorItems"
         :key="i"
         :to="item.to"
+        nuxt
         router
         exact
       >
@@ -87,15 +94,59 @@
     </v-list>
 
     <v-divider></v-divider>
-
-    <AdminNavRoutes v-if="isAdmin" color="accent"></AdminNavRoutes>
+    <AdminNavRoutes v-if="isAdmin"></AdminNavRoutes>
   </v-navigation-drawer>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import { generateCrudRecordInterfaceRoute } from '~/services/base'
+import { generateCrudRecordRoute } from '~/services/base'
 import AdminNavRoutes from '~/components/navigation/adminNavRoutes.vue'
+import { logoHasLightVariant } from '~/services/config'
+import * as myModels from '~/models/my'
+import * as publicModels from '~/models/public'
+
+function generateUserRouteObject(that, recordInfo, customPath) {
+  return {
+    icon: recordInfo.icon,
+    title: recordInfo.title ?? recordInfo.pluralName,
+    to:
+      customPath ??
+      generateCrudRecordRoute(that, {
+        typename: recordInfo.typename,
+        routeType: 'my',
+        pageOptions: {
+          search: '',
+          filters: [],
+          sort: {
+            field: 'createdAt',
+            desc: true,
+          },
+        },
+      }),
+  }
+}
+
+function generatePublicRouteObject(that, recordInfo, customPath) {
+  return {
+    icon: recordInfo.icon,
+    title: recordInfo.title ?? recordInfo.pluralName,
+    to:
+      customPath ??
+      generateCrudRecordRoute(that, {
+        typename: recordInfo.typename,
+        routeType: 'i',
+        pageOptions: {
+          search: '',
+          filters: [],
+          sort: {
+            field: 'createdAt',
+            desc: true,
+          },
+        },
+      }),
+  }
+}
 
 export default {
   components: {
@@ -111,7 +162,6 @@ export default {
           to: '/',
         },
       ],
-
       navItems: [
         {
           icon: 'mdi-podium',
@@ -123,34 +173,16 @@ export default {
           title: 'Latest Submissions',
           to: '/latest-submissions',
         },
-        {
-          icon: 'mdi-account',
-          title: 'Characters',
-          to: generateCrudRecordInterfaceRoute('/public-characters', {
-            search: '',
-            filters: [],
-            sort: {
-              field: 'createdAt',
-              desc: true,
-            },
-          }),
-        },
+        generatePublicRouteObject(this, publicModels.PublicCharacter),
       ],
+
       userItems: [
+        generateUserRouteObject(this, myModels.MyApiKey),
+        generateUserRouteObject(this, myModels.MyFile),
         {
           icon: 'mdi-account',
           title: 'My Profile',
-          to: '/my-profile?expand=0',
-        },
-        {
-          icon: 'mdi-view-grid-plus',
-          title: 'My Apps',
-          to: '/my-apps',
-        },
-        {
-          icon: 'mdi-file',
-          title: 'My Files',
-          to: '/my-files',
+          to: '/my-profile',
         },
       ],
 
@@ -166,36 +198,44 @@ export default {
         {
           icon: 'mdi-format-list-checkbox',
           title: 'Review Queue',
-          to: generateCrudRecordInterfaceRoute('/submissions', {
-            search: '',
-            filters: [
-              {
-                field: 'status',
-                operator: 'in',
-                value: ['UNDER_REVIEW', 'SUBMITTED', 'INFORMATION_REQUESTED'],
+          to: generateCrudRecordRoute(this, {
+            typename: 'submission',
+            routeType: 'a',
+            pageOptions: {
+              search: '',
+              filters: [
+                {
+                  field: 'status',
+                  operator: 'in',
+                  value: ['UNDER_REVIEW', 'SUBMITTED', 'INFORMATION_REQUESTED'],
+                },
+              ],
+              sort: {
+                field: 'createdAt',
+                desc: true,
               },
-            ],
-            sort: {
-              field: 'createdAt',
-              desc: true,
             },
           }),
         },
         {
           icon: 'mdi-checkbox-marked',
           title: 'Done',
-          to: generateCrudRecordInterfaceRoute('/submissions', {
-            search: '',
-            filters: [
-              {
-                field: 'status',
-                operator: 'in',
-                value: ['APPROVED', 'REJECTED'],
+          to: generateCrudRecordRoute(this, {
+            typename: 'submission',
+            routeType: 'a',
+            pageOptions: {
+              search: '',
+              filters: [
+                {
+                  field: 'status',
+                  operator: 'in',
+                  value: ['APPROVED', 'REJECTED'],
+                },
+              ],
+              sort: {
+                field: 'updatedAt',
+                desc: true,
               },
-            ],
-            sort: {
-              field: 'updatedAt',
-              desc: true,
             },
           }),
         },
@@ -207,12 +247,16 @@ export default {
         {
           icon: 'mdi-account',
           title: 'Manage Characters',
-          to: generateCrudRecordInterfaceRoute('/manage-characters', {
-            search: '',
-            filters: [],
-            sort: {
-              field: 'createdAt',
-              desc: true,
+          to: generateCrudRecordRoute(this, {
+            typename: 'character',
+            routeType: 'a',
+            pageOptions: {
+              search: '',
+              filters: [],
+              sort: {
+                field: 'createdAt',
+                desc: true,
+              },
             },
           }),
         },
@@ -227,7 +271,16 @@ export default {
     isAdmin() {
       return this.$store.getters['auth/user']?.role === 'ADMIN'
     },
+
+    logoImageSrc() {
+      return logoHasLightVariant
+        ? require(`~/static/logo-horizontal${
+            this.$vuetify.theme.dark ? '' : '-light'
+          }.png`)
+        : require('~/static/logo-horizontal.png')
+    },
   },
+
   methods: {
     openCreateSubmissionDialog() {
       try {

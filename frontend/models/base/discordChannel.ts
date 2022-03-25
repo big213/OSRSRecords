@@ -9,7 +9,6 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
   name: 'Discord Channel',
   pluralName: 'Discord Channels',
   icon: 'mdi-format-list-checkbox',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -71,7 +70,9 @@ export const DiscordChannel = <RecordInfo<'discordChannel'>>{
   viewOptions: {
     fields: ['name', 'channelId', 'primaryMessageId'],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [

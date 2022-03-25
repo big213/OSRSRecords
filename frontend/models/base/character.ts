@@ -11,7 +11,6 @@ export const Character = <RecordInfo<'character'>>{
   name: 'Character',
   pluralName: 'Characters',
   icon: 'mdi-account',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -92,7 +91,9 @@ export const Character = <RecordInfo<'character'>>{
       // 'owedBy.id'
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [

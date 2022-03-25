@@ -1,4 +1,4 @@
-import { generateCrudRecordInterfaceRoute } from './base'
+import { generateCrudRecordRoute } from './base'
 import { getEventEras, getEventsByGroup } from '~/services/dropdown'
 import { participantsTextMap } from './constants'
 import { CrudRawFilterObject } from '~/types/misc'
@@ -38,10 +38,10 @@ export async function generateLeaderboardRoute(
   that,
   leaderboardInputs: LeaderboardInputs
 ) {
-  return generateCrudRecordInterfaceRoute(
-    '/leaderboard',
-    await generateLeaderboardPageOptions(that, leaderboardInputs)
-  )
+  return generateCrudRecordRoute(that, {
+    path: '/leaderboard',
+    pageOptions: await generateLeaderboardPageOptions(that, leaderboardInputs),
+  })
 }
 
 export async function generateLeaderboardPageOptions(

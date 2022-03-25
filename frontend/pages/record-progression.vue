@@ -21,7 +21,7 @@
 
 <script>
 import { generateLeaderboardPageOptions } from '~/services/common'
-import { generateCrudRecordInterfaceRoute } from '~/services/base'
+import { generateCrudRecordRoute } from '~/services/base'
 import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
 import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { PublicSubmission } from '~/models/public'
@@ -101,11 +101,14 @@ export default {
         generateLeaderboardPageOptions(this, this.currentParams)
           .then((pageOptions) => {
             this.$router.push(
-              generateCrudRecordInterfaceRoute(this.$route.path, {
-                ...pageOptions,
-                sort: {
-                  field: 'happenedOn',
-                  desc: true,
+              generateCrudRecordRoute(this, {
+                path: this.$route.path,
+                pageOptions: {
+                  ...pageOptions,
+                  sort: {
+                    field: 'happenedOn',
+                    desc: true,
+                  },
                 },
               })
             )
@@ -121,11 +124,14 @@ export default {
       generateLeaderboardPageOptions(this, this.currentParams)
         .then((pageOptions) => {
           this.$router.push(
-            generateCrudRecordInterfaceRoute(this.$route.path, {
-              ...pageOptions,
-              sort: {
-                field: 'happenedOn',
-                desc: true,
+            generateCrudRecordRoute(this, {
+              path: this.$route.path,
+              pageOptions: {
+                ...pageOptions,
+                sort: {
+                  field: 'happenedOn',
+                  desc: true,
+                },
               },
             })
           )

@@ -1,7 +1,9 @@
 import { EventEra } from '../base'
 export const PublicEventEra = {
   ...EventEra,
-  routeName: 'i-view',
+  enterOptions: {
+    routeType: 'i',
+  },
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,

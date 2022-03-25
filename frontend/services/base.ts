@@ -364,58 +364,79 @@ export function handleError(that, err) {
   }
 }
 
-export function generateCrudRecordInterfaceRoute(
-  route: string,
-  pageOptions?: any
-) {
-  return (
-    route +
-    (pageOptions
-      ? '?pageOptions=' + encodeURIComponent(btoa(JSON.stringify(pageOptions)))
-      : '')
-  )
-}
-
-// generates a record route based on the recordInfo
-export function generateRecordRouteObject(
-  typename,
-  routeName,
-  itemId,
-  expandIndex = 0
-) {
-  if (!routeName) return null
-
-  return {
-    name: routeName,
-    query: {
-      id: itemId,
-      expand: expandIndex,
-      type: typename,
-    },
-  }
-}
-
-export function goToPage(
+export function generateCrudRecordRoute(
   that,
-  typename,
-  routeName,
-  itemId,
-  openInNew = false,
-  expandIndex = 0
-) {
-  const routeObject = generateRecordRouteObject(
+  {
+    path,
     typename,
-    routeName,
-    itemId,
-    expandIndex
-  )
+    routeType,
+    queryParams,
+    pageOptions,
+  }: {
+    path?: string
+    typename?: string
+    routeType?: 'i' | 'a' | 'my' | 's'
+    queryParams?: any
+    pageOptions?: any
+  }
+) {
+  // either path or typename/routeType required
+  if (!path && !(typename && routeType)) {
+    throw new Error('One of path or typename/routeType required')
+  }
 
-  if (!routeObject) return
+  return that.$router.resolve({
+    path: path ?? `/${routeType!}/${camelToKebabCase(typename!)}`,
+    query: {
+      ...queryParams,
+      ...(pageOptions && {
+        pageOptions: encodeURIComponent(btoa(JSON.stringify(pageOptions))),
+      }),
+    },
+  }).href
+}
+
+// either path or typename/routeType required
+export function generateViewRecordRoute(
+  that,
+  {
+    path,
+    typename,
+    routeType,
+    queryParams,
+    id,
+    expand = 0,
+  }: {
+    path?: string
+    typename?: string
+    routeType?: 'i' | 'a' | 'my' | 's'
+    queryParams?: any
+    id: string
+    expand?: number
+  }
+) {
+  // either path or typename/routeType required
+  if (!path && !(typename && routeType)) {
+    throw new Error('One of path or typename/routeType required')
+  }
+
+  return that.$router.resolve({
+    path: path ?? `/${routeType!}/view/${camelToKebabCase(typename!)}`,
+    query: {
+      id,
+      expand,
+      ...queryParams,
+    },
+  }).href
+}
+
+export function enterRoute(that, route: string, openInNew = false) {
+  if (!route) return
 
   if (openInNew) {
-    window.open(that.$router.resolve(routeObject).href, '_blank')
+    window.open(route, '_blank')
   } else {
-    that.$router.push(routeObject)
+    that.$router.push(route)
   }
 }
 
@@ -623,7 +644,7 @@ export function addNestedInputObject(
           label: nestedFieldInfo.text ?? nestedFieldInfo.key,
           inputType: nestedFieldInfo.inputType,
           inputOptions: nestedFieldInfo.inputOptions,
-          value: inputValue ? inputValue[nestedFieldInfo.key] : null,
+          value: (inputValue ? inputValue[nestedFieldInfo.key] : null) ?? null,
           getOptions: nestedFieldInfo.getOptions,
           options: [],
           cols: nestedFieldInfo.inputOptions?.cols,
@@ -696,4 +717,20 @@ export function processQuery(
       ),
     },
   }
+}
+
+// apiKey -> api-key
+export function camelToKebabCase(str: string) {
+  return str
+    .split('')
+    .map((letter, idx) => {
+      return letter.toUpperCase() === letter
+        ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
+        : letter
+    })
+    .join('')
+}
+
+export function kebabToCamelCase(str: string) {
+  return str.replace(/-./g, (x) => x[1].toUpperCase())
 }

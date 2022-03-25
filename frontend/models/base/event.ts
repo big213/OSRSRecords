@@ -18,7 +18,6 @@ export const Event = <RecordInfo<'event'>>{
   name: 'Event',
   pluralName: 'Events',
   icon: 'mdi-star-box',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -194,7 +193,9 @@ export const Event = <RecordInfo<'event'>>{
       'difficulty',
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [

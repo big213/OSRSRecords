@@ -2,9 +2,11 @@ import { Submission } from '../base'
 
 export const PublicSubmission = {
   ...Submission,
-  routeName: 'i-view',
   fields: {
     ...Submission.fields,
+  },
+  enterOptions: {
+    routeType: 'i',
   },
   paginationOptions: {
     ...Submission.paginationOptions,

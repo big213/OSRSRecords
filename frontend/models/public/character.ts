@@ -3,7 +3,6 @@ import { PublicSubmission } from './submission'
 
 export const PublicCharacter = {
   ...Character,
-  routeName: 'i-view',
   paginationOptions: {
     ...Character.paginationOptions,
     downloadOptions: undefined,
@@ -11,6 +10,9 @@ export const PublicCharacter = {
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,
+  enterOptions: {
+    routeType: 'i',
+  },
   expandTypes: [
     {
       recordInfo: {

@@ -20,7 +20,6 @@ export const EventEra = <RecordInfo<'eventEra'>>{
   name: 'Event Era',
   pluralName: 'Event Eras',
   icon: 'mdi-calendar-star',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -204,7 +203,9 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       'isRelevant',
     ],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [],

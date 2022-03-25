@@ -1,7 +1,9 @@
 import { EventClass } from '../base'
 export const PublicEventClass = {
   ...EventClass,
-  routeName: 'i-view',
+  enterOptions: {
+    routeType: 'i',
+  },
   addOptions: undefined,
   editOptions: undefined,
   deleteOptions: undefined,

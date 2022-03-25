@@ -8,8 +8,6 @@
       :record-info="recordInfo"
       :locked-filters="lockedFilters"
       :hidden-filters="hiddenFilters"
-      :head="head"
-      :title="title"
       icon="mdi-star"
     ></CrudRecordPage>
   </div>
@@ -19,7 +17,7 @@
 </template>
 
 <script>
-import { generateCrudRecordInterfaceRoute } from '~/services/base'
+import { generateCrudRecordRoute } from '~/services/base'
 import SubmissionPagePreset from '~/components/page/preset/submissionPagePreset.vue'
 import CrudRecordPage from '~/components/page/crudRecordPage.vue'
 import { PublicSubmission } from '~/models/public'
@@ -34,6 +32,7 @@ export default {
     return {
       recordInfo: {
         ...PublicSubmission,
+        title: 'Latest Submissions',
         paginationOptions: {
           ...PublicSubmission.paginationOptions,
           sortOptions: [
@@ -45,9 +44,6 @@ export default {
         },
       },
       hiddenFilters: ['status'],
-      head: {
-        title: 'Public Submissions',
-      },
       lockedFilters: [
         {
           field: 'status',
@@ -55,18 +51,20 @@ export default {
           value: 'APPROVED',
         },
       ],
-      title: 'Public Submissions',
     }
   },
 
   computed: {
-    targetRoute() {
-      return generateCrudRecordInterfaceRoute(this.$route.path, {
-        search: null,
-        filters: [],
-        sort: {
-          field: 'happenedOn',
-          desc: true,
+    defaultRoute() {
+      return generateCrudRecordRoute(this, {
+        path: this.$route.path,
+        pageOptions: {
+          search: '',
+          filters: [],
+          sort: {
+            field: 'happenedOn',
+            desc: true,
+          },
         },
       })
     },
@@ -76,7 +74,7 @@ export default {
     '$route.query.pageOptions'(val) {
       // if no pageOptions, automatically redirect
       if (!val) {
-        this.$router.push(this.targetRoute)
+        this.$router.push(this.defaultRoute)
       }
     },
   },
@@ -84,7 +82,7 @@ export default {
   mounted() {
     // if no pageOptions, automatically redirect
     if (!this.$route.query.pageOptions) {
-      this.$router.push(this.targetRoute)
+      this.$router.push(this.defaultRoute)
     }
   },
 }

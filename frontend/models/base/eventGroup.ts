@@ -9,7 +9,6 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
   name: 'Event Group',
   pluralName: 'Event Groups',
   icon: 'mdi-folder-information',
-  routeName: 'a-view',
   renderItem: (item) => item.name,
   fields: {
     id: {
@@ -116,7 +115,9 @@ export const EventGroup = <RecordInfo<'eventGroup'>>{
   viewOptions: {
     fields: ['sort', 'nameWithAvatar', 'contents'],
   },
-  enterOptions: {},
+  enterOptions: {
+    routeType: 'a',
+  },
   deleteOptions: {},
   shareOptions: {},
   expandTypes: [],
