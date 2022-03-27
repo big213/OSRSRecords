@@ -23,7 +23,18 @@
     </v-list>
     <v-divider></v-divider>
     <v-list dense>
-      <v-subheader>Explore</v-subheader>
+      <v-subheader>Submissions</v-subheader>
+      <v-list-item class="mb-2">
+        <v-btn
+          block
+          color="primary"
+          class="pa-2"
+          @click="openCreateSubmissionDialog()"
+        >
+          <v-icon left>mdi-plus</v-icon>
+          Submit Record
+        </v-btn>
+      </v-list-item>
       <v-list-item
         v-for="(item, i) in navItems"
         :key="i"
@@ -285,7 +296,7 @@ export default {
     openCreateSubmissionDialog() {
       try {
         this.$root.$emit('openEditRecordDialog', {
-          recordInfo: 'MySubmission',
+          recordInfo: 'UserSubmission',
           mode: 'add',
           selectedItem: {},
         })
