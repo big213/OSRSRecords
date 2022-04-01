@@ -124,6 +124,9 @@ export default {
       // has the recordInfo been changed?
       cancelPageOptionsReset: false,
 
+      // has reset been called on this tick already?
+      resetCalledOnTick: false,
+
       records: [],
       totalRecords: 0,
       endCursor: null,
@@ -391,6 +394,11 @@ export default {
       this.handleVisibilityChange,
       false
     )
+
+    // listen for root refresh events
+    if (this.recordInfo.paginationOptions.eventListener) {
+      this.$root.$on(`refresh-${this.recordInfo.typename}`, this.refreshCb)
+    }
   },
 
   destroyed() {
@@ -399,11 +407,21 @@ export default {
       'visibilitychange',
       this.handleVisibilityChange
     )
+
+    if (this.recordInfo.paginationOptions.eventListener) {
+      this.$root.$off(`refresh-${this.recordInfo.typename}`, this.refreshCb)
+    }
   },
 
   methods: {
     generateTimeAgoString,
     getIcon,
+
+    refreshCb() {
+      this.reset({
+        resetExpanded: false,
+      })
+    },
 
     toggleGridMode() {
       this.isGrid = !this.isGrid
@@ -573,12 +591,12 @@ export default {
         if (rawFilterObject.value === '__undefined') return total
 
         // parse '__null' to null first
-        // also parse '__now()' to current date string
+        // also parse '__now()' to current unix timestamp (seconds)
         const value =
           rawFilterObject.value === '__null'
             ? null
             : rawFilterObject.value === '__now()'
-            ? generateDateLocaleString(new Date().getTime() / 1000)
+            ? new Date().getTime() / 1000
             : rawFilterObject.value
 
         // apply parseValue function, if any
@@ -891,6 +909,17 @@ export default {
       showLoader = true,
       clearRecords = true,
     } = {}) {
+      // if reset was already called on this tick, stop execution
+      if (this.resetCalledOnTick) return
+
+      // indicate that reset was called on this tick
+      this.resetCalledOnTick = true
+
+      // reset the indicator on the next tick
+      this.$nextTick(() => {
+        this.resetCalledOnTick = false
+      })
+
       if (clearRecords) {
         this.records = []
         this.totalRecords = null
