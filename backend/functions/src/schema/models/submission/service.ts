@@ -30,7 +30,6 @@ import {
   SubmissionCharacterParticipantLink,
 } from "../../services";
 import {
-  formatUnixTimestamp,
   generateLeaderboardRoute,
   isVideoUrl,
   serializeTime,
@@ -1249,7 +1248,7 @@ export class SubmissionService extends PaginatedService {
 
             if (secondPlaceScore) {
               const secondPlaceSubmissions = await this.getAllSqlRecord({
-                select: ["id", "score"],
+                select: ["id", "score", "happenedOn"],
                 where: {
                   "event.id": submission["event.id"],
                   status: submissionStatusKenum.APPROVED.index,
@@ -1289,7 +1288,7 @@ export class SubmissionService extends PaginatedService {
     if (soloPBUpdateLogPost.relevantChannelIds.size) {
       if (soloPBUpdateLogPost.currentUserSecondPlaceSubmission) {
         discordMessageContents.push({
-          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+          content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
             soloPBUpdateLogPost.relevantChannelIds.size
               ? [...soloPBUpdateLogPost.relevantChannelIds]
                   .map((channelId) => "<#" + channelId + ">")
@@ -1338,7 +1337,7 @@ export class SubmissionService extends PaginatedService {
             : "";
 
         discordMessageContents.push({
-          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+          content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
             soloPBUpdateLogPost.relevantChannelIds.size
               ? [...soloPBUpdateLogPost.relevantChannelIds]
                   .map((channelId) => "<#" + channelId + ">")
@@ -1373,7 +1372,7 @@ export class SubmissionService extends PaginatedService {
         relevantErasUpdateLogPost.secondPlaceSubmissions.length > 0
       ) {
         discordMessageContents.push({
-          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+          content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
             relevantErasUpdateLogPost.relevantChannelIds.size
               ? [...relevantErasUpdateLogPost.relevantChannelIds]
                   .map((channelId) => "<#" + channelId + ">")
@@ -1382,10 +1381,16 @@ export class SubmissionService extends PaginatedService {
           }🔸 Replaced **${eventStr} WR - ${serializeTime(
             relevantErasUpdateLogPost.secondPlaceSubmissions[0].submission.score
           )}** by\n${relevantErasUpdateLogPost.secondPlaceSubmissions
-            .map(
-              (submissionObject) =>
-                `\`\`\`diff\n- ${submissionObject.characters.join(", ")}\`\`\``
-            )
+            .map((submissionObject) => {
+              const reignDays = Math.floor(
+                (submission.happenedOn -
+                  submissionObject.submission.happenedOn) /
+                  (24 * 60 * 60)
+              );
+              return `\`\`\`diff\n- ${submissionObject.characters.join(
+                ", "
+              )} (${reignDays < 1 ? "<1" : reignDays} day reign)\`\`\``;
+            })
             .join("\n")}\n🔸 with **${eventStr} WR - ${serializeTime(
             submission.score
           )}** by\n\`\`\`yaml\n+ ${relevantErasUpdateLogPost.currentSubmission.characters.join(
@@ -1398,7 +1403,7 @@ export class SubmissionService extends PaginatedService {
       } else {
         // if we end up here, relevantErasUpdateLogPost.isWR will always be either false or { isTie: true }
         discordMessageContents.push({
-          content: `${formatUnixTimestamp(submission.happenedOn)}\n\n${
+          content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
             relevantErasUpdateLogPost.relevantChannelIds.size
               ? [...relevantErasUpdateLogPost.relevantChannelIds]
                   .map((channelId) => "<#" + channelId + ">")
@@ -1580,9 +1585,9 @@ export class SubmissionService extends PaginatedService {
       );
     }
 
-    return `Happened On: ${formatUnixTimestamp(
+    return `Happened On: <t:${Math.floor(
       submission.happenedOn
-    )}\nEvent: ${generateEventText(
+    )}:D>\nEvent: ${generateEventText(
       submission["event.name"],
       submission.participants,
       submission["event.maxParticipants"]

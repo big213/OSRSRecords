@@ -221,7 +221,14 @@ export class DiscordChannelService extends PaginatedService {
       }
 
       const submissions = await Submission.getAllSqlRecord({
-        select: ["id", "event.name", "participants", "score", "externalLinks"],
+        select: [
+          "id",
+          "event.name",
+          "participants",
+          "score",
+          "externalLinks",
+          "happenedOn",
+        ],
         where: [
           {
             field: "event.id",
@@ -299,7 +306,9 @@ export class DiscordChannelService extends PaginatedService {
             placeEmojisMap[currentPlace] ?? "(" + currentPlace + ")"
           } ${serializeTime(
             submissionObject.submission.score
-          )} - ${submissionObject.characters.join(", ")} - [Proof](${
+          )} - ${submissionObject.characters.join(", ")} - <t:${Math.floor(
+            submissionObject.submission.happenedOn
+          )}:D> - [Proof](${
             submissionObject.submission.externalLinks.find(
               (link) => !isVideoUrl(link)
             ) ?? submissionObject.submission.externalLinks[0]
