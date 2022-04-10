@@ -9,7 +9,6 @@ import ResultColumn from '~/components/table/special/resultColumn.vue'
 import SubmissionTypeColumn from '~/components/table/special/submissionTypeColumn.vue'
 import AdminEditSubmissionInterface from '~/components/interface/crud/special/adminEditSubmissionInterface.vue'
 import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
-import { generateParseDateTimeStringFn } from '~/services/base'
 import UrlColumn from '~/components/table/urlColumn.vue'
 import EvidenceColumn from '~/components/table/special/evidenceColumn.vue'
 import RankingColumn from '~/components/table/special/rankingColumn.vue'
@@ -238,11 +237,9 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     happenedOn: {
       text: 'Happened On',
-      inputType: 'datepicker',
+      inputType: 'datetimepicker',
       optional: true,
       hint: 'If you used at least one imgur link in the evidence links, you can leave this blank',
-      // YYYY-MM-DD to unix timestamp
-      parseValue: generateParseDateTimeStringFn('startOfDay'),
       component: TimeagoColumn,
     },
     previousRecordHappenedOn: {

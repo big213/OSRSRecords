@@ -4,7 +4,6 @@ import AvatarColumn from '~/components/table/avatarColumn.vue'
 import UrlColumn from '~/components/table/urlColumn.vue'
 import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
 import TimeStringColumn from '~/components/table/timeStringColumn.vue'
-import { generateParseDateTimeStringFn } from '~/services/base'
 import { getEventDifficulties } from '~/services/dropdown'
 import {
   generateJoinableField,
@@ -71,10 +70,7 @@ export const Event = <RecordInfo<'event'>>{
     },
     releaseDate: {
       text: 'Release Date',
-      inputType: 'datepicker',
-      hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // YYYY-MM-DD to unix timestamp
-      parseValue: generateParseDateTimeStringFn('startOfDay'),
+      inputType: 'datetimepicker',
       parseImportValue: (val: string) => {
         if (!val) return null
 

@@ -5,6 +5,7 @@ export const siteContactEmail = process.env.siteContactEmail
 export const siteDiscordLink = process.env.siteDiscordLink
 export const siteGithubRepositoryUrl = process.env.siteGithubRepositoryUrl
 export const logoHasLightVariant = process.env.logoHasLightVariant
+export const defaultGridView = process.env.defaultGridView
 
 export const firebaseConfig = {
   apiKey: 'AIzaSyBoq4mq_Tn-Pi6Vof331A1Pp8ekO9lLK6Y',

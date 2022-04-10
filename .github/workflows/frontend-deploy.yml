@@ -34,6 +34,7 @@ jobs:
           SITE_DISCORD_LINK: https://discord.gg/8U56ZZn
           SITE_GITHUB_REPOSITORY_URL: https://github.com/big213/OSRSRecords
           LOGO_HAS_LIGHT_VARIANT:
+          DEFAULT_GRID_VIEW:
       - name: Deploy to Firebase
         uses: w9jds/firebase-action@master
         with:

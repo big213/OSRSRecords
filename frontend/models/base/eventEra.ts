@@ -1,8 +1,4 @@
 import type { RecordInfo } from '~/types'
-import {
-  generateDateLocaleString,
-  generateParseDateTimeStringFn,
-} from '~/services/base'
 import TimeStringColumn from '~/components/table/timeStringColumn.vue'
 import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/timeagoColumn.vue'
@@ -60,10 +56,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     }),
     beginDate: {
       text: 'Start Date',
-      inputType: 'datepicker',
-      hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // YYYY-MM-DD to unix timestamp
-      parseValue: generateParseDateTimeStringFn('startOfDay'),
+      inputType: 'datetimepicker',
       parseImportValue: (val: string) => {
         if (!val) return null
 
@@ -76,10 +69,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     },
     endDate: {
       text: 'End Date',
-      inputType: 'datepicker',
-      hint: 'To specify the exact date and time, use format: YYYY-MM-DD 1:23 PM',
-      // YYYY-MM-DD to unix timestamp
-      parseValue: generateParseDateTimeStringFn('startOfDay'),
+      inputType: 'datetimepicker',
       parseImportValue: (val: string) => {
         if (!val) return null
 
