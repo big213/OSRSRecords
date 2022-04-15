@@ -359,8 +359,8 @@ export const Submission = <RecordInfo<'submission'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    handleRowClick: (that, item) => {
-      that.openEditDialog('view', item)
+    handleRowClick: (that, props) => {
+      that.openEditDialog('view', props.item)
     },
     filterOptions: [
       {

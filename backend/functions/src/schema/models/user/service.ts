@@ -5,9 +5,7 @@ import {
   ExternalQuery,
   ServiceFunctionInputs,
 } from "../../../types";
-
 import { permissionsCheck } from "../../core/helpers/permissions";
-import { userRoleKenum } from "../../enums";
 import { isObject } from "giraffeql/lib/helpers/base";
 import {
   filterPassesTest,
@@ -20,7 +18,6 @@ import {
   deleteObjectType,
   updateObjectType,
 } from "../../core/helpers/resolver";
-import { generateError } from "../../core/helpers/error";
 import { lookupSymbol } from "giraffeql";
 
 export class UserService extends PaginatedService {
@@ -134,12 +131,12 @@ export class UserService extends PaginatedService {
 
     /*
     Allow if:
-    - user is currentUser AND update fields ONLY avatar, name, isPublic
+    - item.id is currentUser AND update fields ONLY avatar, name, isPublic
     */
     update: async ({ req, args }) => {
       if (
         isUserLoggedIn(req) &&
-        isCurrentUser(req, req.user!.id) &&
+        isCurrentUser(req, args.item.id) &&
         objectOnlyHasFields(args.fields, ["avatar", "name", "isPublic"])
       ) {
         return true;
@@ -147,7 +144,6 @@ export class UserService extends PaginatedService {
 
       return false;
     },
-    "*": () => false,
   };
 
   async getSpecialParams({ req }: ServiceFunctionInputs) {
@@ -273,15 +269,6 @@ export class UserService extends PaginatedService {
 
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
-
-    //check if target user is more senior admin
-    if (userRoleKenum[item.role] === "ADMIN" && item.id < req.user!.id) {
-      throw generateError(
-        "Cannot update more senior admin user",
-        fieldPath,
-        401
-      );
-    }
 
     await updateObjectType({
       typename: this.typename,
