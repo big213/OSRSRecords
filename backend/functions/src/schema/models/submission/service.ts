@@ -50,7 +50,11 @@ type RelevantErasUpdateLogPost = {
   isWR:
     | false
     | {
-        isTie: boolean;
+        isTie:
+          | false
+          | {
+              matchingScores: number; // number of submissions with same score
+            };
       };
   secondPlaceSubmissions: UpdateLogPostSubmission[] | null;
 };
@@ -71,7 +75,11 @@ type SoloPBUpdateLogPost = {
   relevantChannelIds: Set<string>;
   ranking: number | null;
   isWR: boolean;
-  isTie: boolean;
+  isTie:
+    | false
+    | {
+        matchingScores: number;
+      };
 };
 
 export class SubmissionService extends PaginatedService {
@@ -1080,7 +1088,8 @@ export class SubmissionService extends PaginatedService {
         );
 
         // was it a tie?
-        soloPBUpdateLogPost.isTie = sameScoreCount > 1;
+        soloPBUpdateLogPost.isTie =
+          sameScoreCount > 1 ? { matchingScores: sameScoreCount } : false;
 
         // get the soloPBRank of the character's previous record (given relevantEra, eventId, participants), if any.
         const charactersSecondFastestScore = await this.getNthFastestScore({
@@ -1231,7 +1240,8 @@ export class SubmissionService extends PaginatedService {
             );
 
             // was it a tie of a WR?
-            relevantErasUpdateLogPost.isWR.isTie = sameScoreCount > 1;
+            relevantErasUpdateLogPost.isWR.isTie =
+              sameScoreCount > 1 ? { matchingScores: sameScoreCount } : false;
           }
 
           if (relevantErasUpdateLogPost.isWR) {
@@ -1401,7 +1411,15 @@ export class SubmissionService extends PaginatedService {
           isSoloPersonalBest: null,
         });
       } else {
-        // if we end up here, relevantErasUpdateLogPost.isWR will always be either false or { isTie: true }
+        // if we end up here, relevantErasUpdateLogPost.isWR will always be either false or { isTie: { matchingScores: n } }
+
+        const isTie =
+          relevantErasUpdateLogPost.isWR && relevantErasUpdateLogPost.isWR.isTie
+            ? relevantErasUpdateLogPost.isWR.isTie
+            : null;
+
+        const matchingScores = isTie?.matchingScores!;
+
         discordMessageContents.push({
           content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
             relevantErasUpdateLogPost.relevantChannelIds.size
@@ -1414,7 +1432,9 @@ export class SubmissionService extends PaginatedService {
           )}** by\n\`\`\`yaml\n+ ${relevantErasUpdateLogPost.currentSubmission.characters.join(
             ", "
           )}\`\`\`\n🔸 ${
-            relevantErasUpdateLogPost.isWR ? "as a tie for" : "to"
+            relevantErasUpdateLogPost.isWR
+              ? `as a ${matchingScores}-way tie for`
+              : "to"
           } **${
             relevantErasUpdateLogPost.ranking! > 1 ? "Top 3 " : ""
           }${eventStr}${

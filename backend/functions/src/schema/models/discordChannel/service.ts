@@ -253,7 +253,9 @@ export class DiscordChannelService extends PaginatedService {
             desc: false,
           },
         ],
-        limit: output.linesLimit ?? undefined,
+        // if ranksToShow is 1, always fetch all of the submissions, event if there's more than linesLimit
+        limit:
+          output.ranksToShow === 1 ? undefined : output.linesLimit ?? undefined,
       });
 
       heading.submissions.push(
@@ -289,9 +291,33 @@ export class DiscordChannelService extends PaginatedService {
     outputArray.forEach((outputObject) => {
       let placeDiff = 0;
       let currentPlace = 0;
+
+      const leaderboardUrl = generateLeaderboardRoute({
+        eventId: outputObject.event.id, // required
+        eventEraId: outputObject.eventEraId, // optional
+        eventEraMode: outputObject.eventEraMode.name, // required
+        participants: outputObject.participants ?? "__undefined", // required
+        isSoloPersonalBest: outputObject.isSoloPersonalBest,
+      });
+
       const descriptionArray = outputObject.submissions.map(
         (submissionObject, index) => {
           currentPlace = placeDiff + 1;
+
+          // if this is the 4th entry and the linesLimit is 3, MUST be due to ranksToShow: 1
+          // on the 4th entry, add a "+ 1 more", then after that, return null, which will be ignored.
+          if (outputObject.linesLimit && index + 1 > outputObject.linesLimit) {
+            if (index === outputObject.linesLimit) {
+              return `${
+                placeEmojisMap[currentPlace] ?? "(" + currentPlace + ")"
+              } [(+${
+                outputObject.submissions.length - outputObject.linesLimit
+              } more)](${leaderboardUrl})`;
+            } else {
+              return null;
+            }
+          }
+
           // check the next record and see if it exists and the score is not the same
           if (
             outputObject.submissions[index + 1] &&
@@ -335,19 +361,13 @@ export class DiscordChannelService extends PaginatedService {
           outputObject.participants,
           outputObject.maxParticipants
         ),
-        url: generateLeaderboardRoute({
-          eventId: outputObject.event.id, // required
-          eventEraId: outputObject.eventEraId, // optional
-          eventEraMode: outputObject.eventEraMode.name, // required
-          participants: outputObject.participants ?? "__undefined", // required
-          isSoloPersonalBest: outputObject.isSoloPersonalBest,
-        }),
+        url: leaderboardUrl,
         thumbnail: outputObject.event.avatar
           ? {
               url: outputObject.event.avatar,
             }
           : undefined,
-        description: descriptionArray.join("\n"),
+        description: descriptionArray.filter((ele) => ele).join("\n"),
       });
     });
 
