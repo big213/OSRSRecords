@@ -84,7 +84,15 @@ export async function getGuildMemberId(guildId: string, username: string) {
     `/guilds/${guildId}/members/search?query=${username}`,
     authHeaders
   );
-  return data[0]?.user.id;
+
+  return data.find((guildMember) => {
+    if (!guildMember.user) return false;
+
+    return (
+      `${guildMember.user.username}#${guildMember.user.discriminator}`.toLowerCase() ===
+      username.toLowerCase()
+    );
+  })?.user.id;
 }
 
 export async function createDMChannel(discordUserId: string) {
