@@ -93,7 +93,7 @@
         :to="item.to"
         nuxt
         router
-        exact
+        exact-path
       >
         <v-list-item-action>
           <v-icon>{{ item.icon }}</v-icon>
@@ -225,24 +225,7 @@ export default {
         {
           icon: 'mdi-format-list-checkbox',
           title: 'Review Queue',
-          to: generateCrudRecordRoute(this, {
-            typename: 'submission',
-            routeType: 'a',
-            pageOptions: {
-              search: '',
-              filters: [
-                {
-                  field: 'status',
-                  operator: 'in',
-                  value: ['UNDER_REVIEW', 'SUBMITTED', 'INFORMATION_REQUESTED'],
-                },
-              ],
-              sort: {
-                field: 'createdAt',
-                desc: true,
-              },
-            },
-          }),
+          to: '/review-queue',
         },
         {
           icon: 'mdi-checkbox-marked',

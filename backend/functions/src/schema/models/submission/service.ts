@@ -36,6 +36,7 @@ import {
 } from "../../helpers/common";
 import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
+import { env } from "../../../config";
 
 type UpdateLogPostSubmission = {
   submission: any;
@@ -254,6 +255,57 @@ export class SubmissionService extends PaginatedService {
         fieldPath,
       });
     }
+  }
+
+  // goes through all submissions that are info requested, submitted, or under review and returns the count. also sends an update in discord subAlerts channel.
+  async checkSubmissions({
+    req,
+    fieldPath,
+    args,
+    query,
+    isAdmin = false,
+  }: ServiceFunctionInputs) {
+    const recordsCount = await this.countSqlRecord({
+      where: [
+        {
+          field: "status",
+          operator: "in",
+          value: [
+            submissionStatusKenum.INFORMATION_REQUESTED.index,
+            submissionStatusKenum.SUBMITTED.index,
+            submissionStatusKenum.UNDER_REVIEW.index,
+          ],
+        },
+      ],
+    });
+
+    if (recordsCount > 0) {
+      await sendDiscordMessage(channelMap.subAlerts, {
+        content: `${recordsCount} submissions - action required`,
+        /*       embeds: [
+          {
+            title: `Submission ID ${submissionId}`,
+            description: await this.generateSubmissionText(submissionId),
+            color: submissionStatusObject.colorId,
+          },
+        ], */
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                label: "View Submissions",
+                style: 5,
+                url: `${env.site.base_url}/review-queue`,
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    return recordsCount;
   }
 
   @permissionsCheck("create")
