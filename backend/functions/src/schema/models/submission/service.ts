@@ -282,13 +282,6 @@ export class SubmissionService extends PaginatedService {
     if (recordsCount > 0) {
       await sendDiscordMessage(channelMap.subAlerts, {
         content: `${recordsCount} submissions - action required`,
-        /*       embeds: [
-          {
-            title: `Submission ID ${submissionId}`,
-            description: await this.generateSubmissionText(submissionId),
-            color: submissionStatusObject.colorId,
-          },
-        ], */
         components: [
           {
             type: 1,
