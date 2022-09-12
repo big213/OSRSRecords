@@ -78,6 +78,9 @@ export default {
         // this.$emit('submit')
         this.$emit('item-updated')
 
+        // refresh any submission interfaces
+        this.$root.$emit('refresh-interface', 'submission')
+
         this.$notifier.showSnackbar({
           message: `Submission Status updated`,
           variant: 'success',

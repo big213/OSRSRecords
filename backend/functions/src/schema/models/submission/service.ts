@@ -1463,7 +1463,7 @@ export class SubmissionService extends PaginatedService {
             ? relevantErasUpdateLogPost.isWR.isTie
             : null;
 
-        const matchingScores = isTie?.matchingScores!;
+        const matchingScores = isTie?.matchingScores;
 
         discordMessageContents.push({
           content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
@@ -1477,7 +1477,7 @@ export class SubmissionService extends PaginatedService {
           )}** by\n\`\`\`yaml\n+ ${relevantErasUpdateLogPost.currentSubmission.characters.join(
             ", "
           )}\`\`\`\n🔸 ${
-            relevantErasUpdateLogPost.isWR
+            relevantErasUpdateLogPost.isWR && matchingScores
               ? `as a ${matchingScores}-way tie for`
               : "to"
           } **${
