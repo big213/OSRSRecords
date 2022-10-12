@@ -46,6 +46,7 @@ type UpdateLogPostSubmission = {
 type RelevantErasUpdateLogPost = {
   currentSubmission: UpdateLogPostSubmission;
   ranksToShow: number | null;
+  isFastestCompletion: boolean;
   relevantChannelIds: Set<string>;
   ranking: number | null;
   isWR:
@@ -1022,12 +1023,6 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
-    const eventStr = generateEventText(
-      submission["event.name"],
-      submission.participants,
-      submission["event.maxParticipants"]
-    );
-
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
         select: ["character.name", "character.id"],
@@ -1048,6 +1043,7 @@ export class SubmissionService extends PaginatedService {
         characters: submissionLinks.map((link) => link["character.name"]),
       },
       ranksToShow: null,
+      isFastestCompletion: false,
       relevantChannelIds: new Set(),
       ranking: relevantEraRanking,
       isWR: relevantEraRanking === 1 ? { isTie: false } : false,
@@ -1218,7 +1214,7 @@ export class SubmissionService extends PaginatedService {
     // check if this record would appear in any normal style leaderboards. eventEraMode: relevant_eras only
     if (relevantErasUpdateLogPost.ranking) {
       const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
-        select: ["ranksToShow", "discordChannel.channelId"],
+        select: ["ranksToShow", "discordChannel.channelId", "participants"],
         where: [
           {
             field: "event.id",
@@ -1255,6 +1251,14 @@ export class SubmissionService extends PaginatedService {
         relevantErasUpdateLogPost.ranksToShow = Math.max(
           ...discordChannelOutputs.map((ele) => ele.ranksToShow)
         );
+
+        // if one output and it is for fastest completion, need to adjust the flag
+        if (
+          discordChannelOutputs.length === 1 &&
+          discordChannelOutputs[0].participants === null
+        ) {
+          relevantErasUpdateLogPost.isFastestCompletion = true;
+        }
 
         relevantErasUpdateLogPost.relevantChannelIds = new Set(
           discordChannelOutputs.map(
@@ -1341,6 +1345,11 @@ export class SubmissionService extends PaginatedService {
     // generate the discord message for soloPBUpdateLogPost
     // case 1: improvement from X -> Y place
     if (soloPBUpdateLogPost.relevantChannelIds.size) {
+      const eventStr = generateEventText(
+        submission["event.name"],
+        submission.participants,
+        submission["event.maxParticipants"]
+      );
       if (soloPBUpdateLogPost.currentUserSecondPlaceSubmission) {
         discordMessageContents.push({
           content: `<t:${Math.floor(submission.happenedOn)}:D>\n\n${
@@ -1420,6 +1429,14 @@ export class SubmissionService extends PaginatedService {
       relevantErasUpdateLogPost.relevantChannelIds.size &&
       discordMessageContents.length < 1
     ) {
+      const eventStr = generateEventText(
+        submission["event.name"],
+        relevantErasUpdateLogPost.isFastestCompletion
+          ? null
+          : submission.participants,
+        submission["event.maxParticipants"]
+      );
+
       if (
         relevantErasUpdateLogPost.isWR &&
         !relevantErasUpdateLogPost.isWR.isTie &&
