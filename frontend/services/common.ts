@@ -113,7 +113,10 @@ export async function generateLeaderboardPageOptions(
   filters.push({
     field: 'participants',
     operator: 'eq',
-    value: Number(actualParticipants),
+    value:
+      actualParticipants === '__undefined'
+        ? actualParticipants
+        : Number(actualParticipants),
   })
 
   if (isSoloPersonalBest !== undefined) {
