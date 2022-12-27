@@ -87,6 +87,7 @@ export type SqlSelectQuery = {
   // distinct?: boolean;
   distinctOn?: string[];
   specialParams?: any;
+  transaction?: Knex.Transaction;
 };
 
 export type SqlCountQuery = {
@@ -96,6 +97,7 @@ export type SqlCountQuery = {
   limit?: number;
   distinct?: boolean;
   specialParams?: any;
+  transaction?: Knex.Transaction;
 };
 
 export type SqlSumQuery = {
@@ -105,6 +107,7 @@ export type SqlSumQuery = {
   limit?: number;
   distinct?: boolean;
   specialParams?: any;
+  transaction?: Knex.Transaction;
 };
 
 export type SqlInsertQuery = {
@@ -113,6 +116,7 @@ export type SqlInsertQuery = {
     [x: string]: any;
   };
   extendFn?: KnexExtendFunction;
+  transaction?: Knex.Transaction;
 };
 
 export type KnexExtendFunction = (knexObject: Knex.QueryBuilder) => void;
@@ -124,12 +128,14 @@ export type SqlUpdateQuery = {
   };
   where: SqlWhereInput;
   extendFn?: KnexExtendFunction;
+  transaction?: Knex.Transaction;
 };
 
 export type SqlDeleteQuery = {
   table: string;
   where: SqlWhereInput;
   extendFn?: KnexExtendFunction;
+  transaction?: Knex.Transaction;
 };
 
 function generateError(err: unknown, fieldPath?: string[]) {
@@ -732,6 +738,10 @@ export async function fetchTableRows(
       );
     }
 
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
+
     return await knexObject;
   } catch (err) {
     throw generateError(err, fieldPath);
@@ -777,6 +787,10 @@ export async function countTableRows(
     knexObject[sqlQuery.distinct ? "countDistinct" : "count"](
       knex.raw(`"${tableAlias}"."${sqlQuery.field ?? "id"}"`)
     );
+
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
 
     const results = await knexObject;
     return Number(results[0].count);
@@ -831,6 +845,10 @@ export async function sumTableRows(
       knex.raw(`"${sumFieldInfo.tableAlias}"."${sumFieldInfo.finalField}"`)
     );
 
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
+
     const results = await knexObject;
     return Number(results[0].sum);
   } catch (err) {
@@ -864,6 +882,10 @@ export async function insertTableRow(
     const knexObject = knex(sqlQuery.table).insert(sqlFields).returning(["id"]);
 
     sqlQuery.extendFn && sqlQuery.extendFn(knexObject);
+
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
 
     return await knexObject;
   } catch (err) {
@@ -921,6 +943,10 @@ export async function updateTableRow(
 
     sqlQuery.extendFn && sqlQuery.extendFn(knexObject);
 
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
+
     return await knexObject.update(sqlFields);
   } catch (err) {
     throw generateError(err, fieldPath);
@@ -958,6 +984,10 @@ export async function deleteTableRow(
     }
 
     sqlQuery.extendFn && sqlQuery.extendFn(knexObject);
+
+    if (sqlQuery.transaction) {
+      knexObject.transacting(sqlQuery.transaction);
+    }
 
     return await knexObject.delete();
   } catch (err) {

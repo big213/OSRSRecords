@@ -5,6 +5,7 @@ import axios from "axios";
 import * as admin from "firebase-admin";
 import { isFileUrl } from "../../helpers/common";
 import { File, Submission } from "../../services";
+import { Transaction } from "knex";
 let bucket;
 
 export class ExternalLinkBackupService extends PaginatedService {
@@ -35,7 +36,8 @@ export class ExternalLinkBackupService extends PaginatedService {
   async backupExternalLinks(
     submissionId: string,
     userId: string,
-    externalLinks: string[]
+    externalLinks: string[],
+    transaction?: Transaction
   ) {
     const externalLinkBackups: string[] = [];
 
@@ -51,6 +53,7 @@ export class ExternalLinkBackupService extends PaginatedService {
             where: {
               url: link,
             },
+            transaction,
           },
           [],
           false
@@ -82,6 +85,7 @@ export class ExternalLinkBackupService extends PaginatedService {
               contentType: metadata.contentType,
               createdBy: userId,
             },
+            transaction,
           });
 
           // create the externalLinkBackup record
@@ -91,6 +95,7 @@ export class ExternalLinkBackupService extends PaginatedService {
               file: createdFile[0].id,
               createdBy: userId,
             },
+            transaction,
           });
 
           externalLinkBackups.push(createdExternalLinkBackup[0].id);
@@ -107,6 +112,7 @@ export class ExternalLinkBackupService extends PaginatedService {
         where: {
           id: submissionId,
         },
+        transaction,
       });
     }
   }

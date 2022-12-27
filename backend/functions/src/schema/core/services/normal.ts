@@ -45,6 +45,7 @@ import {
   updateObjectType,
 } from "../helpers/resolver";
 import { itemNotFoundError } from "../helpers/error";
+import { Transaction } from "knex";
 
 export type FieldObject = {
   field?: string;
@@ -742,7 +743,11 @@ export class NormalService extends BaseService {
 
   // generates a valid unique ID for this record
   // will try 3 times before calling it quits
-  async generateRecordId(fieldPath?: string[], attempt = 0) {
+  async generateRecordId(
+    fieldPath?: string[],
+    transaction?: Transaction,
+    attempt = 0
+  ) {
     // if 3 or more tries, throw err
     if (attempt > 2) {
       throw new Error(
@@ -757,6 +762,7 @@ export class NormalService extends BaseService {
         where: {
           id,
         },
+        transaction,
       },
       fieldPath
     );
@@ -765,7 +771,7 @@ export class NormalService extends BaseService {
       return id;
     }
 
-    return this.generateRecordId(fieldPath, ++attempt);
+    return this.generateRecordId(fieldPath, transaction, ++attempt);
   }
 
   @permissionsCheck("create")

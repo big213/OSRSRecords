@@ -25,6 +25,7 @@ import { CustomResolverFunction } from "../../../types";
 
 import { expandObject, isObject } from "../helpers/shared";
 import type { Request } from "express";
+import { Transaction } from "knex";
 
 type CustomResolver = {
   resolver: CustomResolverFunction;
@@ -46,12 +47,14 @@ export async function createObjectType({
   fieldPath,
   addFields,
   extendFn,
+  transaction,
 }: {
   typename: string;
   req: Request;
   fieldPath: string[];
   addFields: { [x: string]: unknown };
   extendFn?: KnexExtendFunction;
+  transaction?: Transaction;
 }): Promise<any> {
   const typeDef = objectTypeDefs.get(typename);
   if (!typeDef) {
@@ -99,6 +102,7 @@ export async function createObjectType({
         table: typename,
         fields: sqlFields,
         extendFn,
+        transaction,
       },
       fieldPath
     );
@@ -126,12 +130,14 @@ export async function updateObjectType({
   fieldPath,
   updateFields,
   id,
+  transaction,
 }: {
   typename: string;
   req: Request;
   fieldPath: string[];
   updateFields: { [x: string]: unknown };
   id: number;
+  transaction?: Transaction;
 }): Promise<any> {
   const typeDef = objectTypeDefs.get(typename);
   if (!typeDef) {
@@ -179,6 +185,7 @@ export async function updateObjectType({
         where: {
           id,
         },
+        transaction,
       },
       fieldPath
     );
@@ -207,11 +214,13 @@ export async function deleteObjectType({
   req,
   fieldPath,
   id,
+  transaction,
 }: {
   typename: string;
   req: Request;
   fieldPath: string[];
   id: number;
+  transaction?: Transaction;
 }): Promise<any> {
   //resolve the deleters
   const typeDef = objectTypeDefs.get(typename);
@@ -249,6 +258,7 @@ export async function deleteObjectType({
         where: {
           id,
         },
+        transaction,
       },
       fieldPath
     );

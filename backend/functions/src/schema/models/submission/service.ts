@@ -37,6 +37,8 @@ import {
 import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
 import { env } from "../../../config";
+import { knex } from "../../../utils/knex";
+import { Transaction } from "knex";
 
 type UpdateLogPostSubmission = {
   submission: any;
@@ -145,6 +147,7 @@ export class SubmissionService extends PaginatedService {
     characterId = null,
     status,
     score,
+    transaction,
   }: {
     eventId: string;
     participants: number | null;
@@ -154,6 +157,7 @@ export class SubmissionService extends PaginatedService {
     characterId?: string | null;
     status: submissionStatusKenum | null;
     score: number;
+    transaction?: Transaction;
   }) {
     // if status is not approved, return null
     if (status !== submissionStatusKenum.APPROVED) {
@@ -226,6 +230,7 @@ export class SubmissionService extends PaginatedService {
       field: "score",
       distinct: true,
       where: [whereObject],
+      transaction,
     });
 
     return resultsCount + 1;
@@ -234,7 +239,8 @@ export class SubmissionService extends PaginatedService {
   async validateEvidenceKeyConstraint(
     evidenceKey: string | null,
     eventId: string,
-    fieldPath: string[]
+    fieldPath: string[],
+    transaction?: Transaction
   ) {
     // if no evidenceKey, pass
     if (!evidenceKey) return;
@@ -246,6 +252,7 @@ export class SubmissionService extends PaginatedService {
           event: eventId,
           status: submissionStatusKenum.APPROVED.index,
         },
+        transaction,
       },
       fieldPath
     );
@@ -331,123 +338,137 @@ export class SubmissionService extends PaginatedService {
       (validatedArgs.externalLinks ? validatedArgs.externalLinks[0] : null) ??
       null;
 
-    // changed: if adding as APPROVED and at least 1 externalLink provided, use the first link as the evidenceKey
-    if (inferredStatus === submissionStatusKenum.APPROVED) {
-      // check it against the existing evidenceKeys for approved submissions
-      await this.validateEvidenceKeyConstraint(
-        evidenceKey,
-        validatedArgs.event,
+    let addResults;
+    await knex.transaction(async (transaction) => {
+      // changed: if adding as APPROVED and at least 1 externalLink provided, use the first link as the evidenceKey
+      if (inferredStatus === submissionStatusKenum.APPROVED) {
+        // check it against the existing evidenceKeys for approved submissions
+        await this.validateEvidenceKeyConstraint(
+          evidenceKey,
+          validatedArgs.event,
+          fieldPath,
+          transaction
+        );
+      }
+
+      // changed: check if number of participants is between minParticipants and maxParticipants for the event
+      const eventRecord = await Event.getFirstSqlRecord(
+        {
+          select: ["minParticipants", "maxParticipants"],
+          where: { id: validatedArgs.event },
+          transaction,
+        },
         fieldPath
       );
-    }
 
-    // changed: check if number of participants is between minParticipants and maxParticipants for the event
-    const eventRecord = await Event.getFirstSqlRecord(
-      {
-        select: ["minParticipants", "maxParticipants"],
-        where: { id: validatedArgs.event },
-      },
-      fieldPath
-    );
+      if (
+        eventRecord.minParticipants &&
+        validatedArgs.participantsList.length < eventRecord.minParticipants
+      ) {
+        throw new GiraffeqlBaseError({
+          message: `This event requires at least ${eventRecord.minParticipants} participants`,
+          fieldPath,
+        });
+      }
 
-    if (
-      eventRecord.minParticipants &&
-      validatedArgs.participantsList.length < eventRecord.minParticipants
-    ) {
-      throw new GiraffeqlBaseError({
-        message: `This event requires at least ${eventRecord.minParticipants} participants`,
-        fieldPath,
-      });
-    }
+      if (
+        eventRecord.maxParticipants &&
+        validatedArgs.participantsList.length > eventRecord.maxParticipants
+      ) {
+        throw new GiraffeqlBaseError({
+          message: `This event requires at most ${eventRecord.maxParticipants} participants`,
+          fieldPath,
+        });
+      }
 
-    if (
-      eventRecord.maxParticipants &&
-      validatedArgs.participantsList.length > eventRecord.maxParticipants
-    ) {
-      throw new GiraffeqlBaseError({
-        message: `This event requires at most ${eventRecord.maxParticipants} participants`,
-        fieldPath,
-      });
-    }
+      // changed: check if happenedOn is between beginDate and endDate for eventEra
+      const eventEraRecord = await EventEra.getFirstSqlRecord(
+        {
+          select: ["beginDate", "endDate", "event.id"],
+          where: { id: validatedArgs.eventEra },
+          transaction,
+        },
+        fieldPath
+      );
 
-    // changed: check if happenedOn is between beginDate and endDate for eventEra
-    const eventEraRecord = await EventEra.getFirstSqlRecord(
-      {
-        select: ["beginDate", "endDate", "event.id"],
-        where: { id: validatedArgs.eventEra },
-      },
-      fieldPath
-    );
+      if (validatedArgs.happenedOn < eventEraRecord.beginDate) {
+        throw new GiraffeqlBaseError({
+          message: `HappenedOn cannot be before the eventEra's begin date`,
+          fieldPath,
+        });
+      }
 
-    if (validatedArgs.happenedOn < eventEraRecord.beginDate) {
-      throw new GiraffeqlBaseError({
-        message: `HappenedOn cannot be before the eventEra's begin date`,
-        fieldPath,
-      });
-    }
+      if (
+        eventEraRecord.endDate &&
+        validatedArgs.happenedOn > eventEraRecord.endDate
+      ) {
+        throw new GiraffeqlBaseError({
+          message: `HappenedOn cannot be after the eventEra's end date`,
+          fieldPath,
+        });
+      }
 
-    if (
-      eventEraRecord.endDate &&
-      validatedArgs.happenedOn > eventEraRecord.endDate
-    ) {
-      throw new GiraffeqlBaseError({
-        message: `HappenedOn cannot be after the eventEra's end date`,
-        fieldPath,
-      });
-    }
+      // changed: confirm if eventEra.event is same as event
+      if (eventEraRecord["event.id"] !== validatedArgs.event) {
+        throw new GiraffeqlBaseError({
+          message: `eventEra must correspond to the event`,
+          fieldPath,
+        });
+      }
 
-    // changed: confirm if eventEra.event is same as event
-    if (eventEraRecord["event.id"] !== validatedArgs.event) {
-      throw new GiraffeqlBaseError({
-        message: `eventEra must correspond to the event`,
-        fieldPath,
-      });
-    }
-
-    const addResults = await createObjectType({
-      typename: this.typename,
-      addFields: {
-        id: await this.generateRecordId(fieldPath),
-        ...validatedArgs,
-        participants: validatedArgs.participantsList.length, // computed
-        evidenceKey: evidenceKey, // computed
-        score: validatedArgs.timeElapsed,
-        createdBy: req.user?.id, // nullable
-      },
-      req,
-      fieldPath,
-    });
-
-    // changed: also need to add the submissionCharacterParticipantLinks
-    for (const participant of validatedArgs.participantsList) {
-      await createObjectType({
-        typename: SubmissionCharacterParticipantLink.typename,
+      addResults = await createObjectType({
+        typename: this.typename,
         addFields: {
-          id: await SubmissionCharacterParticipantLink.generateRecordId(
-            fieldPath
-          ),
-          submission: addResults.id,
-          character: participant.characterId,
-          title: participant.discordId,
+          id: await this.generateRecordId(fieldPath, transaction),
+          ...validatedArgs,
+          participants: validatedArgs.participantsList.length, // computed
+          evidenceKey: evidenceKey, // computed
+          score: validatedArgs.timeElapsed,
           createdBy: req.user?.id, // nullable
         },
         req,
         fieldPath,
+        transaction,
       });
-    }
 
-    // if the record was added as approved, also need to run syncSubmissionIsRelevantRecord and syncSoloPBState
-    // HOWEVER, will NOT be triggering broadcastUpdateLogs and syncDiscordLeaderboards. admin can flick the status if they want to trigger these events
-    if (inferredStatus === submissionStatusKenum.APPROVED) {
-      await this.syncIsRelevantRecord(args.event, args.participantsList.length);
-
-      // also need to sync the isSoloPersonalBest state if it is a solo record
-      if (validatedArgs.participantsList.length === 1) {
-        await this.syncSoloPBState(addResults.id, args.event);
+      // changed: also need to add the submissionCharacterParticipantLinks
+      for (const participant of validatedArgs.participantsList) {
+        await createObjectType({
+          typename: SubmissionCharacterParticipantLink.typename,
+          addFields: {
+            id: await SubmissionCharacterParticipantLink.generateRecordId(
+              fieldPath,
+              transaction
+            ),
+            submission: addResults.id,
+            character: participant.characterId,
+            title: participant.discordId,
+            createdBy: req.user?.id, // nullable
+          },
+          req,
+          fieldPath,
+          transaction,
+        });
       }
-    }
+
+      // if the record was added as approved, also need to run syncSubmissionIsRelevantRecord and syncSoloPBState
+      // HOWEVER, will NOT be triggering broadcastUpdateLogs and syncDiscordLeaderboards. admin can flick the status if they want to trigger these events
+      if (inferredStatus === submissionStatusKenum.APPROVED) {
+        await this.syncIsRelevantRecord(
+          args.event,
+          args.participantsList.length,
+          transaction
+        );
+
+        // also need to sync the isSoloPersonalBest state if it is a solo record
+        if (validatedArgs.participantsList.length === 1) {
+          await this.syncSoloPBState(addResults.id, args.event, transaction);
+        }
+      }
+    });
 
     // do post-create fn, if any
+    // no txn for discord messaging -- if this fails, the above work gets saved.
     await this.afterCreateProcess(
       {
         req,
@@ -576,108 +597,143 @@ export class SubmissionService extends PaginatedService {
 
     const evidenceKey = inferredExternalLinks[0] ?? null;
 
-    // changed: if status is being updated from !APPROVED to APPROVED, need to validate the evidenceKey
-    if (
-      previousStatus !== submissionStatusKenum.APPROVED &&
-      newStatus === submissionStatusKenum.APPROVED
-    ) {
-      // check it against the existing evidenceKeys for approved submissions
-      await this.validateEvidenceKeyConstraint(
-        evidenceKey,
-        item["event.id"],
-        fieldPath
-      );
-    }
-
-    // note: currently NOT validating if happenedOn corresponds to eventEra OR if participantsList.length corresponds to event, as this should only be accessible by reviewers who should know what they are doing
-
     // convert any lookup/joined fields into IDs
     await this.handleLookupArgs(validatedArgs.fields, fieldPath);
 
-    await updateObjectType({
-      typename: this.typename,
-      id: item.id,
-      updateFields: {
-        ...validatedArgs.fields,
-        participants: validatedArgs.fields.participantsList
-          ? validatedArgs.fields.participantsList.length
-          : undefined, // computed
-        score: validatedArgs.fields.timeElapsed ?? undefined,
-        evidenceKey: validatedArgs.fields.externalLinks
-          ? validatedArgs.fields.externalLinks[0]
-          : undefined, // computed
-        updatedAt: 1,
-      },
-      req,
-      fieldPath,
-    });
+    let relevantEraRanking, soloPBRanking;
 
-    // changed: if participantsList was changed in any way, need to also delete all submissionParticipantLinks and re-sync them
-    if (validatedArgs.fields.participantsList) {
+    await knex.transaction(async (transaction) => {
+      // changed: if status is being updated from !APPROVED to APPROVED, need to validate the evidenceKey
       if (
-        JSON.stringify(validatedArgs.fields.participantsList) !==
-        JSON.stringify(item.participantsList)
+        previousStatus !== submissionStatusKenum.APPROVED &&
+        newStatus === submissionStatusKenum.APPROVED
       ) {
-        await SubmissionCharacterParticipantLink.deleteSqlRecord({
-          where: {
-            submission: item.id,
-          },
-        });
+        // check it against the existing evidenceKeys for approved submissions
+        await this.validateEvidenceKeyConstraint(
+          evidenceKey,
+          item["event.id"],
+          fieldPath,
+          transaction
+        );
+      }
 
-        for (const participant of validatedArgs.fields.participantsList) {
-          await createObjectType({
-            typename: SubmissionCharacterParticipantLink.typename,
-            addFields: {
-              id: await SubmissionCharacterParticipantLink.generateRecordId(
-                fieldPath
-              ),
+      // note: currently NOT validating if happenedOn corresponds to eventEra OR if participantsList.length corresponds to event, as this should only be accessible by reviewers who should know what they are doing
+
+      await updateObjectType({
+        typename: this.typename,
+        id: item.id,
+        updateFields: {
+          ...validatedArgs.fields,
+          participants: validatedArgs.fields.participantsList
+            ? validatedArgs.fields.participantsList.length
+            : undefined, // computed
+          score: validatedArgs.fields.timeElapsed ?? undefined,
+          evidenceKey: validatedArgs.fields.externalLinks
+            ? validatedArgs.fields.externalLinks[0]
+            : undefined, // computed
+          updatedAt: 1,
+        },
+        req,
+        fieldPath,
+        transaction,
+      });
+
+      // changed: if participantsList was changed in any way, need to also delete all submissionParticipantLinks and re-sync them
+      if (validatedArgs.fields.participantsList) {
+        if (
+          JSON.stringify(validatedArgs.fields.participantsList) !==
+          JSON.stringify(item.participantsList)
+        ) {
+          await SubmissionCharacterParticipantLink.deleteSqlRecord({
+            where: {
               submission: item.id,
-              character: participant.characterId,
-              title: participant.discordId,
-              createdBy: req.user?.id, // nullable
             },
-            req,
-            fieldPath,
+            transaction,
           });
+
+          for (const participant of validatedArgs.fields.participantsList) {
+            await createObjectType({
+              typename: SubmissionCharacterParticipantLink.typename,
+              addFields: {
+                id: await SubmissionCharacterParticipantLink.generateRecordId(
+                  fieldPath,
+                  transaction
+                ),
+                submission: item.id,
+                character: participant.characterId,
+                title: participant.discordId,
+                createdBy: req.user?.id, // nullable
+              },
+              req,
+              fieldPath,
+              transaction,
+            });
+          }
         }
       }
-    }
 
-    // also need to sync the isSoloPersonalBest if it is a solo record
-    if (item.participants === 1) {
-      await this.syncSoloPBState(item.id, item["event.id"]);
-    }
+      // also need to sync the isSoloPersonalBest if it is a solo record
+      if (item.participants === 1) {
+        await this.syncSoloPBState(item.id, item["event.id"], transaction);
+      }
 
+      if (newStatus) {
+        // this is the RELEVANT_ERA rank
+        relevantEraRanking = await this.calculateRank({
+          eventId: item["event.id"],
+          participants: item.participants,
+          eventEraId: null,
+          isRelevantEventEra: true,
+          isSoloPersonalBest: null,
+          status: newStatus,
+          score: item.score,
+          transaction,
+        });
+
+        soloPBRanking = await this.calculateRank({
+          eventId: item["event.id"],
+          participants: item.participants,
+          eventEraId: null,
+          isRelevantEventEra: true,
+          isSoloPersonalBest: true,
+          status: newStatus,
+          score: item.score,
+          transaction,
+        });
+        // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
+        if (
+          (previousStatus === submissionStatusKenum.APPROVED &&
+            newStatus !== submissionStatusKenum.APPROVED) ||
+          newStatus === submissionStatusKenum.APPROVED
+        ) {
+          // also need to sync the isRelevantRecord state
+          await this.syncIsRelevantRecord(
+            item["event.id"],
+            item.participants,
+            transaction
+          );
+        }
+
+        if (newStatus === submissionStatusKenum.APPROVED) {
+          // if the status changed from ANY->APPROVED, need to ensure the externalLinks are backed up
+          await ExternalLinkBackup.backupExternalLinks(
+            item.id,
+            req.user!.id,
+            item.externalLinks,
+            transaction
+          );
+        }
+      }
+    });
+
+    // perform stuff outside of transaction -- persist the state even if these fail
     if (newStatus) {
-      // this is the RELEVANT_ERA rank
-      const relevantEraRanking = await this.calculateRank({
-        eventId: item["event.id"],
-        participants: item.participants,
-        eventEraId: null,
-        isRelevantEventEra: true,
-        isSoloPersonalBest: null,
-        status: newStatus,
-        score: item.score,
-      });
-
-      const soloPBRanking = await this.calculateRank({
-        eventId: item["event.id"],
-        participants: item.participants,
-        eventEraId: null,
-        isRelevantEventEra: true,
-        isSoloPersonalBest: true,
-        status: newStatus,
-        score: item.score,
-      });
-      // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
       if (
         (previousStatus === submissionStatusKenum.APPROVED &&
           newStatus !== submissionStatusKenum.APPROVED) ||
         newStatus === submissionStatusKenum.APPROVED
       ) {
-        // also need to sync the isRelevantRecord state
-        await this.syncIsRelevantRecord(item["event.id"], item.participants);
-
+        // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
         await this.syncDiscordLeaderboards({
           eventId: item["event.id"],
           participants: item.participants,
@@ -685,23 +741,16 @@ export class SubmissionService extends PaginatedService {
           relevantEraRanking,
           soloPBRanking,
         });
-      }
 
-      // if the status changed from ANY->APPROVED, need to also possibly send an announcement in update-logs
-      if (newStatus === submissionStatusKenum.APPROVED) {
-        await this.broadcastUpdateLogs({
-          submissionId: item.id,
-          relevantEraRanking,
-          soloPBRanking,
-          fieldPath,
-        });
-
-        // if the status changed from ANY->APPROVED, need to ensure the externalLinks are backed up
-        await ExternalLinkBackup.backupExternalLinks(
-          item.id,
-          req.user!.id,
-          item.externalLinks
-        );
+        // if the status changed from ANY->APPROVED, need to also possibly send an announcement in update-logs
+        if (newStatus === submissionStatusKenum.APPROVED) {
+          await this.broadcastUpdateLogs({
+            submissionId: item.id,
+            relevantEraRanking,
+            soloPBRanking,
+            fieldPath,
+          });
+        }
       }
 
       // if the status was updated, also force refresh of the discordMessage, if any
@@ -776,12 +825,14 @@ export class SubmissionService extends PaginatedService {
     eventEraId,
     relevantEraRanking,
     soloPBRanking,
+    transaction,
   }: {
     eventId: string;
     participants: number;
     eventEraId: string;
     relevantEraRanking: number | null;
     soloPBRanking: number | null;
+    transaction?: Transaction;
   }) {
     // discord channels that need to be refreshed
     const discordChannelIds: Set<string> = new Set();
@@ -820,6 +871,7 @@ export class SubmissionService extends PaginatedService {
             value: null,
           },
         ],
+        transaction,
       });
 
       discordChannelOutputs.forEach((ele) => {
@@ -861,6 +913,7 @@ export class SubmissionService extends PaginatedService {
             value: true,
           },
         ],
+        transaction,
       });
 
       discordChannelOutputs.forEach((ele) => {
@@ -883,6 +936,7 @@ export class SubmissionService extends PaginatedService {
     isSoloPersonalBest,
     characterId = null,
     participants,
+    transaction,
   }: {
     n: number;
     eventId: string;
@@ -891,6 +945,7 @@ export class SubmissionService extends PaginatedService {
     isSoloPersonalBest: boolean | null;
     characterId?: string | null;
     participants: number;
+    transaction?: Transaction;
   }) {
     const additionalFilters: SqlWhereFieldObject[] = [];
 
@@ -963,12 +1018,16 @@ export class SubmissionService extends PaginatedService {
       ],
       limit: 1,
       offset: n - 1,
+      transaction,
     });
 
     return nthScoreResults[0]?.score ?? null;
   }
 
-  async getSubmissionCharacters(submissionId: string) {
+  async getSubmissionCharacters(
+    submissionId: string,
+    transaction?: Transaction
+  ) {
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
         select: ["character.name"],
@@ -981,6 +1040,7 @@ export class SubmissionService extends PaginatedService {
             desc: false,
           },
         ],
+        transaction,
       });
 
     return submissionLinks.map((link) => link["character.name"]);
@@ -992,11 +1052,13 @@ export class SubmissionService extends PaginatedService {
     relevantEraRanking,
     soloPBRanking,
     fieldPath,
+    transaction,
   }: {
     submissionId: string;
     relevantEraRanking: number | null;
     soloPBRanking: number | null;
     fieldPath: string[];
+    transaction?: Transaction;
   }) {
     const discordMessageContents: {
       content: string;
@@ -1019,6 +1081,7 @@ export class SubmissionService extends PaginatedService {
           "isRecordingVerified",
         ],
         where: { id: submissionId },
+        transaction,
       },
       fieldPath
     );
@@ -1035,6 +1098,7 @@ export class SubmissionService extends PaginatedService {
             desc: false,
           },
         ],
+        transaction,
       });
 
     const relevantErasUpdateLogPost: RelevantErasUpdateLogPost = {
@@ -1100,6 +1164,7 @@ export class SubmissionService extends PaginatedService {
             value: true,
           },
         ],
+        transaction,
       });
 
       if (discordChannelOutputs.length > 0) {
@@ -1124,6 +1189,7 @@ export class SubmissionService extends PaginatedService {
               participants: submission.participants,
               isSoloPersonalBest: true,
             },
+            transaction,
           },
           fieldPath
         );
@@ -1141,6 +1207,7 @@ export class SubmissionService extends PaginatedService {
           participants: 1,
           isSoloPersonalBest: null,
           characterId: firstCharacterId,
+          transaction,
         });
 
         if (charactersSecondFastestScore) {
@@ -1152,6 +1219,7 @@ export class SubmissionService extends PaginatedService {
             isSoloPersonalBest: true,
             status: submissionStatusKenum.APPROVED,
             score: charactersSecondFastestScore,
+            transaction,
           });
 
           // actual rank is previousScoreRank - 1
@@ -1178,6 +1246,7 @@ export class SubmissionService extends PaginatedService {
             eventEraMode: eventEraModeKenum.RELEVANT_ERAS,
             participants: 1,
             isSoloPersonalBest: true,
+            transaction,
           });
 
           if (nPlusOneHighestScore) {
@@ -1198,11 +1267,15 @@ export class SubmissionService extends PaginatedService {
                   desc: true,
                 },
               ],
+              transaction,
             });
 
             for (const submission of submissions) {
               soloPBUpdateLogPost.kickedSubmissions.push({
-                characters: await this.getSubmissionCharacters(submission.id),
+                characters: await this.getSubmissionCharacters(
+                  submission.id,
+                  transaction
+                ),
                 score: nPlusOneHighestScore,
               });
             }
@@ -1245,6 +1318,7 @@ export class SubmissionService extends PaginatedService {
             value: null,
           },
         ],
+        transaction,
       });
 
       if (discordChannelOutputs.length > 0) {
@@ -1284,6 +1358,7 @@ export class SubmissionService extends PaginatedService {
                   "eventEra.isRelevant": true,
                   participants: submission.participants,
                 },
+                transaction,
               },
               fieldPath
             );
@@ -1303,6 +1378,7 @@ export class SubmissionService extends PaginatedService {
               eventEraId: submission["eventEra.id"],
               participants: submission.participants,
               isSoloPersonalBest: null,
+              transaction,
             });
 
             if (secondPlaceScore) {
@@ -1321,13 +1397,15 @@ export class SubmissionService extends PaginatedService {
                     desc: false,
                   },
                 ],
+                transaction,
               });
 
               for (const currentSubmission of secondPlaceSubmissions) {
                 relevantErasUpdateLogPost.secondPlaceSubmissions.push({
                   submission: currentSubmission,
                   characters: await this.getSubmissionCharacters(
-                    currentSubmission.id
+                    currentSubmission.id,
+                    transaction
                   ),
                 });
               }
@@ -1540,13 +1618,18 @@ export class SubmissionService extends PaginatedService {
   }
 
   // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
-  async syncSoloPBState(submissionId: string, eventId: string) {
+  async syncSoloPBState(
+    submissionId: string,
+    eventId: string,
+    transaction?: Transaction
+  ) {
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
         select: ["character.id"],
         where: {
           submission: submissionId,
         },
+        transaction,
       });
 
     // only need to check for participants = 1
@@ -1570,6 +1653,7 @@ export class SubmissionService extends PaginatedService {
         },
       ],
       limit: 2,
+      transaction,
     });
 
     if (!fastestRecord) {
@@ -1588,6 +1672,7 @@ export class SubmissionService extends PaginatedService {
           status: submissionStatusKenum.APPROVED.index,
           "submissionCharacterParticipantLink/character.id": characterId,
         },
+        transaction,
       });
 
       await this.updateSqlRecord({
@@ -1601,6 +1686,7 @@ export class SubmissionService extends PaginatedService {
             value: submissions.map((submission) => submission.id),
           },
         ],
+        transaction,
       });
     }
 
@@ -1612,6 +1698,7 @@ export class SubmissionService extends PaginatedService {
       where: {
         id: fastestRecord.id,
       },
+      transaction,
     });
   }
 
@@ -1738,7 +1825,11 @@ export class SubmissionService extends PaginatedService {
     };
   }
 
-  async syncIsRelevantRecord(eventId: string, participants: number) {
+  async syncIsRelevantRecord(
+    eventId: string,
+    participants: number,
+    transaction?: Transaction
+  ) {
     // reset all isRecord flags for the event.
     await this.updateSqlRecord({
       fields: {
@@ -1748,6 +1839,7 @@ export class SubmissionService extends PaginatedService {
         event: eventId,
         participants: participants,
       },
+      transaction,
     });
 
     // lookup all approved submissions in relevantEra, sorting by happenedOn
@@ -1765,6 +1857,7 @@ export class SubmissionService extends PaginatedService {
           desc: false,
         },
       ],
+      transaction,
     });
 
     // go through each submission and if it is a relevantRecord, flag it
@@ -1781,6 +1874,7 @@ export class SubmissionService extends PaginatedService {
           where: {
             id: submission.id,
           },
+          transaction,
         });
       }
     }
@@ -1820,27 +1914,6 @@ export class SubmissionService extends PaginatedService {
       fieldPath
     );
 
-    // this is the RELEVANT_ERA rank
-    const relevantEraRanking = await this.calculateRank({
-      eventId: item["event.id"],
-      participants: item.participants,
-      eventEraId: null,
-      isRelevantEventEra: true,
-      isSoloPersonalBest: null,
-      status: submissionStatusKenum.fromUnknown(item.status),
-      score: item.score,
-    });
-
-    const soloPBRanking = await this.calculateRank({
-      eventId: item["event.id"],
-      participants: item.participants,
-      eventEraId: null,
-      isRelevantEventEra: true,
-      isSoloPersonalBest: true,
-      status: submissionStatusKenum.fromUnknown(item.status),
-      score: item.score,
-    });
-
     // first, fetch the requested query, if any
     const requestedResults = this.isEmptyQuery(query)
       ? {}
@@ -1853,43 +1926,76 @@ export class SubmissionService extends PaginatedService {
           data,
         });
 
-    await deleteObjectType({
-      typename: this.typename,
-      id: item.id,
-      req,
-      fieldPath,
-    });
-
-    // changed: also need to delete related links
-    await SubmissionCharacterParticipantLink.deleteSqlRecord({
-      where: {
-        submission: item.id,
-      },
-    });
-
-    // if the status was APPROVED on the deleted record, need to sync any leaderboard that contains it
-    if (
-      submissionStatusKenum.fromUnknown(item.status) ===
-      submissionStatusKenum.APPROVED
-    ) {
-      await this.syncDiscordLeaderboards({
+    await knex.transaction(async (transaction) => {
+      // this is the RELEVANT_ERA rank
+      const relevantEraRanking = await this.calculateRank({
         eventId: item["event.id"],
         participants: item.participants,
-        eventEraId: item["eventEra.id"],
-        relevantEraRanking,
-        soloPBRanking,
+        eventEraId: null,
+        isRelevantEventEra: true,
+        isSoloPersonalBest: null,
+        status: submissionStatusKenum.fromUnknown(item.status),
+        score: item.score,
+        transaction,
       });
 
-      // also need to sync the isSoloPersonalBest state if it is a solo record
-      if (item.participants === 1) {
-        await this.syncSoloPBState(item.id, item["event.id"]);
-      }
+      const soloPBRanking = await this.calculateRank({
+        eventId: item["event.id"],
+        participants: item.participants,
+        eventEraId: null,
+        isRelevantEventEra: true,
+        isSoloPersonalBest: true,
+        status: submissionStatusKenum.fromUnknown(item.status),
+        score: item.score,
+        transaction,
+      });
 
-      // also need to sync the isRelevantRecord state if it was a relevant record
-      if (item.isRelevantRecord) {
-        await this.syncIsRelevantRecord(item["event.id"], item.participants);
+      await deleteObjectType({
+        typename: this.typename,
+        id: item.id,
+        req,
+        fieldPath,
+        transaction,
+      });
+
+      // changed: also need to delete related links
+      await SubmissionCharacterParticipantLink.deleteSqlRecord({
+        where: {
+          submission: item.id,
+        },
+        transaction,
+      });
+
+      // if the status was APPROVED on the deleted record, need to sync any leaderboard that contains it
+      if (
+        submissionStatusKenum.fromUnknown(item.status) ===
+        submissionStatusKenum.APPROVED
+      ) {
+        // if the leaderboard sync fails, rollback
+        await this.syncDiscordLeaderboards({
+          eventId: item["event.id"],
+          participants: item.participants,
+          eventEraId: item["eventEra.id"],
+          relevantEraRanking,
+          soloPBRanking,
+          transaction,
+        });
+
+        // also need to sync the isSoloPersonalBest state if it is a solo record
+        if (item.participants === 1) {
+          await this.syncSoloPBState(item.id, item["event.id"], transaction);
+        }
+
+        // also need to sync the isRelevantRecord state if it was a relevant record
+        if (item.isRelevantRecord) {
+          await this.syncIsRelevantRecord(
+            item["event.id"],
+            item.participants,
+            transaction
+          );
+        }
       }
-    }
+    });
 
     // edit the discordMessageId to indicate it was deleted
     await updateDiscordMessage(channelMap.subAlerts, item.discordMessageId, {
