@@ -710,7 +710,7 @@ export class NormalService extends BaseService {
     return insertTableRow({
       ...sqlQuery,
       fields: {
-        id: await this.generateRecordId(fieldPath),
+        id: await this.generateRecordId(fieldPath, sqlQuery.transaction),
         ...sqlQuery.fields,
       },
       table: this.typename,
