@@ -673,9 +673,10 @@ export class SubmissionService extends PaginatedService {
       }
 
       // also need to sync the isSoloPersonalBest if it is a solo record
-      if (item.participants === 1) {
-        await this.syncSoloPBState(item.id, item["event.id"], transaction);
-      }
+      const isSoloPB =
+        item.participants === 1
+          ? await this.syncSoloPBState(item.id, item["event.id"], transaction)
+          : false;
 
       if (newStatus) {
         // this is the RELEVANT_ERA rank
@@ -690,16 +691,20 @@ export class SubmissionService extends PaginatedService {
           transaction,
         });
 
-        soloPBRanking = await this.calculateRank({
-          eventId: item["event.id"],
-          participants: item.participants,
-          eventEraId: null,
-          isRelevantEventEra: true,
-          isSoloPersonalBest: true,
-          status: newStatus,
-          score: item.score,
-          transaction,
-        });
+        // if this submission was slower or the same as a previous solo PB, then set the soloPBRanking to null
+        soloPBRanking = isSoloPB
+          ? await this.calculateRank({
+              eventId: item["event.id"],
+              participants: item.participants,
+              eventEraId: null,
+              isRelevantEventEra: true,
+              isSoloPersonalBest: true,
+              status: newStatus,
+              score: item.score,
+              transaction,
+            })
+          : null;
+
         // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
         if (
           (previousStatus === submissionStatusKenum.APPROVED &&
@@ -1618,11 +1623,12 @@ export class SubmissionService extends PaginatedService {
   }
 
   // checks to see if this is a user's PB for the event and participants = 1, and syncs the isSoloPersonalBest state
+  // returns true if the submission is the new solo PB, false otherwise. undefined if participants > 1
   async syncSoloPBState(
     submissionId: string,
     eventId: string,
     transaction?: Transaction
-  ) {
+  ): Promise<boolean | undefined> {
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
         select: ["character.id"],
@@ -1649,6 +1655,10 @@ export class SubmissionService extends PaginatedService {
       orderBy: [
         {
           field: "score",
+          desc: false,
+        },
+        {
+          field: "happenedOn",
           desc: false,
         },
       ],
@@ -1700,6 +1710,8 @@ export class SubmissionService extends PaginatedService {
       },
       transaction,
     });
+
+    return fastestRecord.id === submissionId;
   }
 
   // generate some text summarizing a submission's reviewer comments only
