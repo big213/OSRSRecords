@@ -732,6 +732,8 @@ export class SubmissionService extends PaginatedService {
     });
 
     // perform stuff outside of transaction -- persist the state even if these fail
+    console.log(relevantEraRanking);
+    console.log(soloPBRanking);
     if (newStatus) {
       if (
         (previousStatus === submissionStatusKenum.APPROVED &&
@@ -739,6 +741,7 @@ export class SubmissionService extends PaginatedService {
         newStatus === submissionStatusKenum.APPROVED
       ) {
         // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
+
         await this.syncDiscordLeaderboards({
           eventId: item["event.id"],
           participants: item.participants,
@@ -843,46 +846,47 @@ export class SubmissionService extends PaginatedService {
     const discordChannelIds: Set<string> = new Set();
 
     // see if any discord leaderboards with eventEraMode: "RELEVANT_ERAS" need to be refreshed
-    if (relevantEraRanking) {
-      const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
-        select: ["discordChannel.id"],
-        where: [
-          {
-            field: "event.id",
-            operator: "eq",
-            value: eventId,
-          },
-          {
-            field: "participants",
-            operator: "in",
-            value: [null, participants],
-          },
-          {
-            field: "eventEra.id",
-            operator: "in",
-            value: [null, eventEraId],
-          },
-          {
-            field: "ranksToShow",
-            operator: "gte",
-            value: relevantEraRanking,
-          },
-          {
-            field: "eventEraMode",
-            value: eventEraModeKenum.RELEVANT_ERAS.index,
-          },
-          {
-            field: "isSoloPersonalBest",
-            value: null,
-          },
-        ],
-        transaction,
-      });
+    // even if relevantEraRanking is null (due to non-approved submission, most likely), force update of related channels to be safe
+    const discordChannelOutputs = await DiscordChannelOutput.getAllSqlRecord({
+      select: ["discordChannel.id"],
+      where: <any>[
+        {
+          field: "event.id",
+          operator: "eq",
+          value: eventId,
+        },
+        {
+          field: "participants",
+          operator: "in",
+          value: [null, participants],
+        },
+        {
+          field: "eventEra.id",
+          operator: "in",
+          value: [null, eventEraId],
+        },
+        relevantEraRanking
+          ? {
+              field: "ranksToShow",
+              operator: "gte",
+              value: relevantEraRanking,
+            }
+          : null,
+        {
+          field: "eventEraMode",
+          value: eventEraModeKenum.RELEVANT_ERAS.index,
+        },
+        {
+          field: "isSoloPersonalBest",
+          value: null,
+        },
+      ].filter((e) => e),
+      transaction,
+    });
 
-      discordChannelOutputs.forEach((ele) => {
-        discordChannelIds.add(ele["discordChannel.id"]);
-      });
-    }
+    discordChannelOutputs.forEach((ele) => {
+      discordChannelIds.add(ele["discordChannel.id"]);
+    });
 
     // see if any discord leaderboards with isSoloPersonalBest: true need to be refreshed
     if (participants === 1 && soloPBRanking) {
