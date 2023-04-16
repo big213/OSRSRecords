@@ -732,8 +732,6 @@ export class SubmissionService extends PaginatedService {
     });
 
     // perform stuff outside of transaction -- persist the state even if these fail
-    console.log(relevantEraRanking);
-    console.log(soloPBRanking);
     if (newStatus) {
       if (
         (previousStatus === submissionStatusKenum.APPROVED &&
@@ -741,7 +739,6 @@ export class SubmissionService extends PaginatedService {
         newStatus === submissionStatusKenum.APPROVED
       ) {
         // if the status changed from APPROVED->!APPROVED, or ANY->APPROVED need to update discord leaderboards
-
         await this.syncDiscordLeaderboards({
           eventId: item["event.id"],
           participants: item.participants,
