@@ -11,6 +11,7 @@ import AdminEditSubmissionInterface from '~/components/interface/crud/special/ad
 import CrudSubmissionInterface from '~/components/interface/crud/special/crudSubmissionInterface.vue'
 import UrlColumn from '~/components/table/urlColumn.vue'
 import EvidenceColumn from '~/components/table/special/evidenceColumn.vue'
+import AllEvidenceColumn from '~/components/table/special/allEvidenceColumn.vue'
 import RankingColumn from '~/components/table/special/rankingColumn.vue'
 import ReignColumn from '~/components/table/special/reignColumn.vue'
 import ParticipantsColumn from '~/components/table/special/participantsColumn.vue'
@@ -186,6 +187,11 @@ export const Submission = <RecordInfo<'submission'>>{
       text: 'Evidence',
       fields: ['firstImageLink', 'firstVideoLink'],
       component: EvidenceColumn,
+    },
+    allEvidenceLinks: {
+      text: 'Evidence',
+      fields: ['externalLinks'],
+      component: AllEvidenceColumn,
     },
     score: {
       text: 'Result',

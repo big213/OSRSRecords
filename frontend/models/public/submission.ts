@@ -47,8 +47,8 @@ export const PublicSubmission = {
         align: 'right',
       },
       {
-        field: 'mainEvidenceLinks',
-        width: '50px',
+        field: 'allEvidenceLinks',
+        width: '90px',
       },
       {
         field: 'happenedOn',

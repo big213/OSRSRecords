@@ -197,3 +197,9 @@ export function generateEventText(
 export function isValidEvidenceLink(link: string) {
   return link.match(/youtu\.be|youtube\.com|streamable\.com|imgur\.com/)
 }
+
+export function isVideoUrl(url: string) {
+  return url.match(
+    /(\.(gif|mp4)$)|(youtu\.be|youtube\.com|streamable\.com|gfycat\.com)/
+  )
+}
