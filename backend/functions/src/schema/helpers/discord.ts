@@ -87,11 +87,7 @@ export async function getGuildMemberId(guildId: string, username: string) {
 
   return data.find((guildMember) => {
     if (!guildMember.user) return false;
-
-    return (
-      `${guildMember.user.username}#${guildMember.user.discriminator}`.toLowerCase() ===
-      username.toLowerCase()
-    );
+    return guildMember.user.username.toLowerCase() === username.toLowerCase();
   })?.user.id;
 }
 

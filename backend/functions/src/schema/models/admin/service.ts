@@ -9,7 +9,7 @@ import {
   ExternalLinkBackup,
   Submission,
 } from "../../services";
-import { sendDiscordRequest } from "../../helpers/discord";
+import { getGuildMemberId, sendDiscordRequest } from "../../helpers/discord";
 import { submissionStatusKenum } from "../../enums";
 import { Request } from "express";
 import { SqlWhereFieldObject } from "../../core/helpers/sql";

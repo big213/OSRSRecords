@@ -113,7 +113,6 @@ export const Submission = <RecordInfo<'submission'>>{
             inputType: 'text',
             text: 'Discord ID',
             optional: true,
-            hint: 'Example: username#1234',
             inputOptions: {
               cols: 6,
             },
@@ -289,7 +288,7 @@ export const Submission = <RecordInfo<'submission'>>{
     },
     discordId: {
       text: 'Discord ID',
-      hint: 'We will use this to contact you if there are any issues with the submission. Example: username#1234',
+      hint: 'We will use this to contact you if there are any issues with the submission',
     },
     isCurrent: {
       text: 'Is Current',
