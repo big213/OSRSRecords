@@ -6,6 +6,7 @@ import * as admin from "firebase-admin";
 import { isFileUrl } from "../../helpers/common";
 import { File, Submission } from "../../services";
 import { Transaction } from "knex";
+import { env } from "../../../config";
 let bucket;
 
 export class ExternalLinkBackupService extends PaginatedService {
@@ -41,6 +42,8 @@ export class ExternalLinkBackupService extends PaginatedService {
   ) {
     const externalLinkBackups: string[] = [];
 
+    const finalExternalLinks: string[] = [];
+
     if (!bucket) bucket = admin.storage().bucket();
 
     for (const link of externalLinks) {
@@ -49,7 +52,7 @@ export class ExternalLinkBackupService extends PaginatedService {
         // if yes, check if there is already a link for it
         const externalLinkBackup = await this.getFirstSqlRecord(
           {
-            select: ["id"],
+            select: ["id", "file.id"],
             where: {
               url: link,
             },
@@ -62,6 +65,11 @@ export class ExternalLinkBackupService extends PaginatedService {
         // if yes, add the id to the array of ids
         if (externalLinkBackup) {
           externalLinkBackups.push(externalLinkBackup["id"]);
+
+          // if a backup exists, add that in the finalExternalLinks
+          finalExternalLinks.push(
+            `${env.site.cdn_url}/f/${externalLinkBackup["file.id"]}`
+          );
         } else {
           // if not, create it and add to the array of ids
           const { data } = await axios.get(link, {
@@ -99,7 +107,13 @@ export class ExternalLinkBackupService extends PaginatedService {
           });
 
           externalLinkBackups.push(createdExternalLinkBackup[0].id);
+
+          // if a backup created, add that in the finalExternalLinks
+          finalExternalLinks.push(`${env.site.cdn_url}/f/${createdFile[0].id}`);
         }
+      } else {
+        // if no backup created, use the original link
+        finalExternalLinks.push(link);
       }
     }
 
@@ -108,6 +122,7 @@ export class ExternalLinkBackupService extends PaginatedService {
       await Submission.updateSqlRecord({
         fields: {
           externalLinkBackups,
+          externalLinks: finalExternalLinks,
         },
         where: {
           id: submissionId,

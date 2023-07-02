@@ -67,7 +67,66 @@ export class AdminService extends BaseService {
 
     // await this.syncAllIsRelevantRecord();
 
+    // await this.convertSubmissionExternalLinks();
     return "done";
+  }
+
+  // goes through all the APPROVED submissions and replaces any externalLink elements that are backed up as a file
+  async convertSubmissionExternalLinks() {
+    // look up all of the externalBackupLinks
+    const externalLinkBackups = await ExternalLinkBackup.getAllSqlRecord({
+      select: ["id", "url", "file.id"],
+      where: [],
+    });
+
+    // create the link -> file.id map
+    const linkMap: Map<string, string> = new Map();
+
+    externalLinkBackups.forEach((backup) => {
+      linkMap.set(backup.url, backup["file.id"]);
+    });
+
+    // loop through all APPROVED submissions
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: [
+        {
+          field: "status",
+          value: submissionStatusKenum.APPROVED.index,
+        },
+      ],
+    });
+
+    // for each, replace the externalLinks and update
+    for (const submission of submissions) {
+      let changed = false;
+      const finalExternalLinks = submission.externalLinks.map((link) => {
+        // if link exists, replace it. else use original
+        const convertedLink = linkMap.get(link);
+
+        if (convertedLink) {
+          changed = true;
+          return convertedLink;
+        }
+
+        return link;
+      });
+
+      // if changed, update
+      if (changed) {
+        await Submission.updateSqlRecord({
+          fields: {
+            externalLinks: finalExternalLinks,
+          },
+          where: [
+            {
+              field: "id",
+              value: submission.id,
+            },
+          ],
+        });
+      }
+    }
   }
 
   // goes through all the APPROVED submissions, finds any images and backs them up
