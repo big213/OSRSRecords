@@ -11,7 +11,7 @@ const handler = createHandler({
 
 export const serveImage = functions.https.onRequest(async (req, res) => {
   // if the url matches /f/xyz, look up the url and rewrite the url
-  const fileId = req.url.match(/^\/f\/(.*)/)?.[1];
+  const fileId = req.url.match(/^\/f\/([^\.]*)\.?([a-z]*)$/)?.[1];
   if (fileId) {
     const file = await File.getFirstSqlRecord({
       select: ["location"],

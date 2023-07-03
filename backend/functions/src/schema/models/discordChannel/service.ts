@@ -275,14 +275,18 @@ export class DiscordChannelService extends PaginatedService {
       }
     }
 
-    return updateDiscordMessage(
-      discordChannel.channelId,
-      discordChannel.primaryMessageId,
-      {
-        content: null,
-        embeds: this.generateDiscordRichContent(outputArray),
-      }
-    );
+    // if there is any output, perform the update
+    const embeds = this.generateDiscordRichContent(outputArray);
+    if (embeds.length > 0) {
+      return updateDiscordMessage(
+        discordChannel.channelId,
+        discordChannel.primaryMessageId,
+        {
+          content: null,
+          embeds: this.generateDiscordRichContent(outputArray),
+        }
+      );
+    }
   }
 
   generateDiscordRichContent(outputArray: outputObject[]) {

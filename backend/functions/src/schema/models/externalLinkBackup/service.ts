@@ -47,14 +47,17 @@ export class ExternalLinkBackupService extends PaginatedService {
     if (!bucket) bucket = admin.storage().bucket();
 
     for (const link of externalLinks) {
+      // convert all .gifv to .gif
+      const validatedLink = link.replace(".gifv", ".gif");
+
       // is the link a direct link to a file?
-      if (isFileUrl(link)) {
+      if (isFileUrl(validatedLink)) {
         // if yes, check if there is already a link for it
         const externalLinkBackup = await this.getFirstSqlRecord(
           {
             select: ["id", "file.id"],
             where: {
-              url: link,
+              url: validatedLink,
             },
             transaction,
           },
@@ -62,21 +65,24 @@ export class ExternalLinkBackupService extends PaginatedService {
           false
         );
 
+        const extension = validatedLink.split(".").pop();
+
         // if yes, add the id to the array of ids
         if (externalLinkBackup) {
           externalLinkBackups.push(externalLinkBackup["id"]);
 
           // if a backup exists, add that in the finalExternalLinks
           finalExternalLinks.push(
-            `${env.site.cdn_url}/f/${externalLinkBackup["file.id"]}`
+            `${env.site.cdn_url}/f/${externalLinkBackup["file.id"]}.${extension}`
           );
         } else {
           // if not, create it and add to the array of ids
-          const { data } = await axios.get(link, {
+          // always replace gifv with gif
+          const { data } = await axios.get(validatedLink, {
             responseType: "arraybuffer",
           });
 
-          const location = `backup/${encodeURIComponent(link)}`;
+          const location = `backup/${encodeURIComponent(validatedLink)}`;
 
           await bucket.file(`source/${location}`).save(data);
 
@@ -87,9 +93,10 @@ export class ExternalLinkBackupService extends PaginatedService {
           // create the file record
           const createdFile = await File.createSqlRecord({
             fields: {
-              name: link,
+              name: validatedLink,
               location,
               size: metadata.size,
+              // bug with gifv files not having proper metadata
               contentType: metadata.contentType,
               createdBy: userId,
             },
@@ -99,7 +106,7 @@ export class ExternalLinkBackupService extends PaginatedService {
           // create the externalLinkBackup record
           const createdExternalLinkBackup = await this.createSqlRecord({
             fields: {
-              url: link,
+              url: validatedLink,
               file: createdFile[0].id,
               createdBy: userId,
             },
@@ -109,11 +116,13 @@ export class ExternalLinkBackupService extends PaginatedService {
           externalLinkBackups.push(createdExternalLinkBackup[0].id);
 
           // if a backup created, add that in the finalExternalLinks
-          finalExternalLinks.push(`${env.site.cdn_url}/f/${createdFile[0].id}`);
+          finalExternalLinks.push(
+            `${env.site.cdn_url}/f/${createdFile[0].id}.${extension}`
+          );
         }
       } else {
         // if no backup created, use the original link
-        finalExternalLinks.push(link);
+        finalExternalLinks.push(validatedLink);
       }
     }
 

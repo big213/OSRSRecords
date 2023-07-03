@@ -4,6 +4,7 @@ import axios from "axios";
 import { permissionsCheck } from "../../core/helpers/permissions";
 import { env } from "../../../config";
 import {
+  DiscordChannel,
   Event,
   EventEra,
   ExternalLinkBackup,
@@ -15,6 +16,8 @@ import { Request } from "express";
 import { SqlWhereFieldObject } from "../../core/helpers/sql";
 import { isTimeoutImminent } from "../../core/helpers/shared";
 import { TimeoutError } from "../../core/helpers/error";
+import { isFileUrl } from "../../helpers/common";
+import * as admin from "firebase-admin";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -67,12 +70,140 @@ export class AdminService extends BaseService {
 
     // await this.syncAllIsRelevantRecord();
 
-    // await this.convertSubmissionExternalLinks();
+    // await this.convertSubmissionExternalLinks(args);
+
+    // await this.refreshAllDiscordLeaderboard();
+
+    // await this.backupNecessarySubmissionEvidence(req.user!.id);
+
+    // await this.fixSubmissionExternalLinks(args);
+
     return "done";
   }
 
+  // backup submission evidence where necessary
+  async backupNecessarySubmissionEvidence(userId) {
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: [],
+    });
+
+    for (const submission of submissions) {
+      let needsUpdating = false;
+      submission.externalLinks.forEach((link) => {
+        if (link.match(/^https:\/\/i.imgur/)) {
+          needsUpdating = true;
+        }
+      });
+
+      if (needsUpdating) {
+        await ExternalLinkBackup.backupExternalLinks(
+          submission.id,
+          userId,
+          submission.externalLinks
+        );
+      }
+    }
+  }
+
+  // refreshes all the discord leaderboards
+  async refreshAllDiscordLeaderboard() {
+    const discordChannels = await DiscordChannel.getAllSqlRecord({
+      select: ["id"],
+      where: [],
+    });
+
+    for (const discordChannel of discordChannels) {
+      await DiscordChannel.renderOutput(discordChannel.id, []);
+    }
+  }
+
+  // goes through all the APPROVED submissions and replaces any externalLink elements that are backed up as a file (add the file extension)
+  async fixSubmissionExternalLinks(after: string | null) {
+    // look up all of the externalBackupLinks
+    const externalLinkBackups = await ExternalLinkBackup.getAllSqlRecord({
+      select: ["id", "url", "file.id"],
+      where: [],
+    });
+
+    // create the /f/abc -> /f/abc.png map
+    const linkMap: Map<string, string> = new Map();
+
+    externalLinkBackups.forEach((backup) => {
+      const extension = backup.url.split(".").pop();
+
+      linkMap.set(
+        `${env.site.cdn_url}/f/${backup["file.id"]}`,
+        `${backup["file.id"]}.${extension}`
+      );
+    });
+
+    const whereObject: SqlWhereFieldObject[] = [
+      {
+        field: "status",
+        value: submissionStatusKenum.APPROVED.index,
+      },
+    ];
+
+    if (after) {
+      whereObject.push({
+        field: "id",
+        operator: "lte",
+        value: after,
+      });
+    }
+
+    // loop through all APPROVED submissions
+    const submissions = await Submission.getAllSqlRecord({
+      select: ["id", "externalLinks"],
+      where: [
+        {
+          field: "status",
+          value: submissionStatusKenum.APPROVED.index,
+        },
+      ],
+      orderBy: [
+        {
+          field: "id",
+          desc: true,
+        },
+      ],
+    });
+
+    // for each, replace the externalLinks and update
+    for (const submission of submissions) {
+      let changed = false;
+      const finalExternalLinks = submission.externalLinks.map((link) => {
+        // if link exists, replace it. else use original
+        const fileId = linkMap.get(link);
+
+        if (fileId) {
+          changed = true;
+          return `${env.site.cdn_url}/f/${fileId}`;
+        }
+
+        return link;
+      });
+
+      // if changed, update
+      if (changed) {
+        await Submission.updateSqlRecord({
+          fields: {
+            externalLinks: finalExternalLinks,
+          },
+          where: [
+            {
+              field: "id",
+              value: submission.id,
+            },
+          ],
+        });
+      }
+    }
+  }
+
   // goes through all the APPROVED submissions and replaces any externalLink elements that are backed up as a file
-  async convertSubmissionExternalLinks() {
+  async convertSubmissionExternalLinks(after: string | null) {
     // look up all of the externalBackupLinks
     const externalLinkBackups = await ExternalLinkBackup.getAllSqlRecord({
       select: ["id", "url", "file.id"],
@@ -86,6 +217,21 @@ export class AdminService extends BaseService {
       linkMap.set(backup.url, backup["file.id"]);
     });
 
+    const whereObject: SqlWhereFieldObject[] = [
+      {
+        field: "status",
+        value: submissionStatusKenum.APPROVED.index,
+      },
+    ];
+
+    if (after) {
+      whereObject.push({
+        field: "id",
+        operator: "lte",
+        value: after,
+      });
+    }
+
     // loop through all APPROVED submissions
     const submissions = await Submission.getAllSqlRecord({
       select: ["id", "externalLinks"],
@@ -95,6 +241,12 @@ export class AdminService extends BaseService {
           value: submissionStatusKenum.APPROVED.index,
         },
       ],
+      orderBy: [
+        {
+          field: "id",
+          desc: true,
+        },
+      ],
     });
 
     // for each, replace the externalLinks and update
@@ -102,11 +254,11 @@ export class AdminService extends BaseService {
       let changed = false;
       const finalExternalLinks = submission.externalLinks.map((link) => {
         // if link exists, replace it. else use original
-        const convertedLink = linkMap.get(link);
+        const fileId = linkMap.get(link);
 
-        if (convertedLink) {
+        if (fileId) {
           changed = true;
-          return convertedLink;
+          return `${env.site.cdn_url}/f/${fileId}`;
         }
 
         return link;

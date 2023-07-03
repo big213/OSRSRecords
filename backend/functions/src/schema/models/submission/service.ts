@@ -248,7 +248,8 @@ export class SubmissionService extends PaginatedService {
     const count = await this.countSqlRecord(
       {
         where: {
-          evidenceKey,
+          // always replace .gifv with .gif for the evidence key
+          evidenceKey: evidenceKey.replace(".gifv", ".gif"),
           event: eventId,
           status: submissionStatusKenum.APPROVED.index,
         },
@@ -724,7 +725,7 @@ export class SubmissionService extends PaginatedService {
           await ExternalLinkBackup.backupExternalLinks(
             item.id,
             req.user!.id,
-            item.externalLinks,
+            inferredExternalLinks,
             transaction
           );
         }
