@@ -59,5 +59,9 @@ export function isFileUrl(url: string) {
   return !!url
     .split("/")
     .pop()
-    ?.match(/\.[a-z]*$/);
+    ?.match(/\.[a-zA-Z0-9]*/);
+}
+
+export function isCdnUrl(url: string) {
+  return !!url.match(/^https:\/\/cdn.osrsrecords.com/);
 }

@@ -8,6 +8,7 @@ import {
   Event,
   EventEra,
   ExternalLinkBackup,
+  File,
   Submission,
 } from "../../services";
 import { getGuildMemberId, sendDiscordRequest } from "../../helpers/discord";
@@ -16,8 +17,9 @@ import { Request } from "express";
 import { SqlWhereFieldObject } from "../../core/helpers/sql";
 import { isTimeoutImminent } from "../../core/helpers/shared";
 import { TimeoutError } from "../../core/helpers/error";
-import { isFileUrl } from "../../helpers/common";
+import { isCdnUrl, isFileUrl } from "../../helpers/common";
 import * as admin from "firebase-admin";
+import { knex } from "../../../utils/knex";
 
 const prodResource = axios.create({
   baseURL: "https://api.imgur.com/3",
@@ -78,30 +80,89 @@ export class AdminService extends BaseService {
 
     // await this.fixSubmissionExternalLinks(args);
 
+    // await this.deleteBadFiles();
+
     return "done";
+  }
+
+  async deleteBadFiles() {
+    await File.deleteSqlRecord({
+      where: [
+        {
+          field: "name",
+          operator: "regex",
+          value: /cdn\.osrsrecords\.com/,
+        },
+      ],
+    });
+
+    await ExternalLinkBackup.deleteSqlRecord({
+      where: [
+        {
+          field: "url",
+          operator: "regex",
+          value: /cdn\.osrsrecords\.com/,
+        },
+      ],
+    });
+
+    const files = await File.getAllSqlRecord({
+      select: ["id", "name", "location"],
+      where: [
+        {
+          field: "name",
+          operator: "regex",
+          value: /cdn\.osrsrecords\.com/,
+        },
+      ],
+    });
+
+    const backups = await ExternalLinkBackup.getAllSqlRecord({
+      select: ["id", "url"],
+      where: [
+        {
+          field: "url",
+          operator: "regex",
+          value: /cdn\.osrsrecords\.com/,
+        },
+      ],
+    });
+
+    // const bucket = admin.storage().bucket();
+
+    /*
+    for (const file of files) {
+      console.log(await bucket.file(`source/${file.location}`).exists());
+    }
+    */
   }
 
   // backup submission evidence where necessary
   async backupNecessarySubmissionEvidence(userId) {
     const submissions = await Submission.getAllSqlRecord({
       select: ["id", "externalLinks"],
-      where: [],
+      where: {
+        status: submissionStatusKenum.APPROVED.index,
+      },
     });
 
     for (const submission of submissions) {
       let needsUpdating = false;
       submission.externalLinks.forEach((link) => {
-        if (link.match(/^https:\/\/i.imgur/)) {
+        if (isFileUrl(link) && !isCdnUrl(link)) {
           needsUpdating = true;
         }
       });
 
       if (needsUpdating) {
-        await ExternalLinkBackup.backupExternalLinks(
-          submission.id,
-          userId,
-          submission.externalLinks
-        );
+        await knex.transaction(async (transaction) => {
+          await ExternalLinkBackup.backupExternalLinks(
+            submission.id,
+            userId,
+            submission.externalLinks,
+            transaction
+          );
+        });
       }
     }
   }

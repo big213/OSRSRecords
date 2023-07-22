@@ -3,7 +3,7 @@ import { AccessControlMap, ExternalQuery } from "../../../types";
 import { PaginatedService } from "../../core/services";
 import axios from "axios";
 import * as admin from "firebase-admin";
-import { isFileUrl } from "../../helpers/common";
+import { isCdnUrl, isFileUrl } from "../../helpers/common";
 import { File, Submission } from "../../services";
 import { Transaction } from "knex";
 import { env } from "../../../config";
@@ -48,10 +48,11 @@ export class ExternalLinkBackupService extends PaginatedService {
 
     for (const link of externalLinks) {
       // convert all .gifv to .gif
-      const validatedLink = link.replace(".gifv", ".gif");
+      // remove all query params
+      const validatedLink = link.replace(".gifv", ".gif").replace(/\?.*$/, "");
 
-      // is the link a direct link to a file?
-      if (isFileUrl(validatedLink)) {
+      // is the link a direct link to a file AND not already a cdn.osrsrecords link?
+      if (isFileUrl(validatedLink) && !isCdnUrl(validatedLink)) {
         // if yes, check if there is already a link for it
         const externalLinkBackup = await this.getFirstSqlRecord(
           {
