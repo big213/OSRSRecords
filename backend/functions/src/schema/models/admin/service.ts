@@ -82,7 +82,76 @@ export class AdminService extends BaseService {
 
     // await this.deleteBadFiles();
 
+    // await this.addEras(req.user!.id);
+
     return "done";
+  }
+
+  async addEras(userId: string) {
+    // corrupted gauntlet-related events (6) and the new DT2 boss events (4)
+    const excludeEventsArray = [
+      "sxqr8l7a",
+      "7wq0afw6",
+      "xgi3ae3n",
+      "l01byt2r",
+      "sptdofn8",
+      "mxn0ukzs",
+      "sjxy20va",
+      "yvyynkqo",
+      "x4cppho6",
+      "s5cg0ptb",
+    ];
+
+    await knex.transaction(async (transaction) => {
+      // get all current eventEras, excluding events for ones in the array
+      const eventEras = await EventEra.getAllSqlRecord({
+        select: ["id", "event.id"],
+        where: [
+          {
+            field: "event",
+            operator: "nin",
+            value: excludeEventsArray,
+          },
+          {
+            field: "isCurrent",
+            operator: "eq",
+            value: true,
+          },
+        ],
+        transaction,
+      });
+
+      for (const eventEra of eventEras) {
+        // for each eventEra, add a new one, set the existing one's name to Pre-DT2, isCurrent to false
+        // add new one
+        await EventEra.createSqlRecord({
+          fields: {
+            name: "Current Era",
+            event: eventEra["event.id"],
+            beginDate: 1690344000, // 7-26-2023 in unix time
+            endDate: null,
+            isBuff: true,
+            isRelevant: true,
+            isCurrent: true,
+            createdBy: userId,
+          },
+          transaction,
+        });
+
+        await EventEra.updateSqlRecord({
+          fields: {
+            name: "Pre-DT2",
+            isCurrent: false,
+            isBuff: true,
+            endDate: 1690344000, // 7-26-2023 in unix time
+          },
+          where: {
+            id: eventEra.id,
+          },
+          transaction,
+        });
+      }
+    });
   }
 
   async deleteBadFiles() {
