@@ -207,6 +207,7 @@ export class AdminService extends BaseService {
   }
 
   // backup submission evidence where necessary
+  // run this if there are some links that were not correctly converted to CDN urls
   async backupNecessarySubmissionEvidence(userId) {
     const submissions = await Submission.getAllSqlRecord({
       select: ["id", "externalLinks"],
