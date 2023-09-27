@@ -123,7 +123,7 @@ export class ExternalLinkBackupService extends PaginatedService {
         }
       } else {
         // if no backup created, use the original link
-        finalExternalLinks.push(validatedLink);
+        finalExternalLinks.push(link);
       }
     }
 
