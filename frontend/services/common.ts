@@ -195,11 +195,18 @@ export function generateEventText(
 
 // currently only Imgur/Streamable/YT links supported
 export function isValidEvidenceLink(link: string) {
-  return link.match(/youtu\.be|youtube\.com|streamable\.com|imgur\.com/)
+  return (
+    link.match(/youtu\.be|youtube\.com|streamable\.com|imgur\.com/) ||
+    isCdnUrl(link)
+  )
 }
 
 export function isVideoUrl(url: string) {
   return url.match(
     /(\.(gif|mp4)$)|(youtu\.be|youtube\.com|streamable\.com|gfycat\.com)/
   )
+}
+
+export function isCdnUrl(url: string) {
+  return !!url.match(/^https:\/\/cdn.osrsrecords.com/)
 }
