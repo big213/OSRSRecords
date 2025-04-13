@@ -79,16 +79,15 @@ export class ExternalLinkBackupService extends PaginatedService {
         } else {
           // if not, create it and add to the array of ids
           // always replace gifv with gif
-          const { data } = await axios.get(validatedLink, {
-            responseType: "arraybuffer",
-          }).catch((err) => {
-            console.log(err.toJSON())
-            throw err;
-          })
+          const arrayBuffer = await fetch(validatedLink).then((res) =>
+            res.arrayBuffer()
+          );
 
           const location = `backup/${encodeURIComponent(validatedLink)}`;
 
-          await bucket.file(`source/${location}`).save(data);
+          await bucket
+            .file(`source/${location}`)
+            .save(new Uint8Array(arrayBuffer));
 
           const retrievedFile = await bucket.file(`source/${location}`);
 
