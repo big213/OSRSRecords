@@ -81,7 +81,10 @@ export class ExternalLinkBackupService extends PaginatedService {
           // always replace gifv with gif
           const { data } = await axios.get(validatedLink, {
             responseType: "arraybuffer",
-          });
+          }).catch((err) => {
+            console.log(err.toJSON())
+            throw err;
+          })
 
           const location = `backup/${encodeURIComponent(validatedLink)}`;
 
