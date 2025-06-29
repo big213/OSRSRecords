@@ -91,6 +91,9 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       inputType: 'switch',
       component: BooleanColumn,
       default: () => true,
+      parseImportValue: (val) => {
+        return val === 'TRUE' ? true : val === 'FALSE' ? false : null
+      },
     },
     isRelevant: {
       text: 'Is Relevant',
@@ -116,7 +119,12 @@ export const EventEra = <RecordInfo<'eventEra'>>{
   },
   paginationOptions: {
     hasSearch: false,
-    filterOptions: [],
+    filterOptions: [
+      {
+        field: 'isCurrent',
+        operator: 'eq',
+      },
+    ],
     sortOptions: [
       {
         field: 'createdAt',
@@ -166,15 +174,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     operationName: 'addEventEra',
   },
   importOptions: {
-    fields: [
-      'event.id',
-      'avatar',
-      'name',
-      'description',
-      'beginDate',
-      'endDate',
-      'isBuff',
-    ],
+    fields: ['event.id', 'previousEventEraName', 'beginDate', 'isBuff'],
   },
   editOptions: {
     fields: ['avatar', 'name', 'description'],

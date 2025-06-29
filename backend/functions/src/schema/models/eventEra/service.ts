@@ -14,6 +14,7 @@ export class EventEraService extends PaginatedService {
     id: {},
     "createdBy.id": {},
     "event.id": {},
+    isCurrent: {},
   };
 
   sortFieldsMap = {
@@ -77,7 +78,7 @@ export class EventEraService extends PaginatedService {
             endDate: validatedArgs.beginDate,
           },
           where: {
-            id: currentEventEra,
+            id: currentEventEra.id,
           },
         },
         fieldPath
@@ -89,6 +90,7 @@ export class EventEraService extends PaginatedService {
       typename: this.typename,
       addFields: {
         id: await this.generateRecordId(fieldPath),
+        event: validatedArgs.event,
         name: "Current Era",
         beginDate: validatedArgs.beginDate,
         isBuff: validatedArgs.isBuff,
