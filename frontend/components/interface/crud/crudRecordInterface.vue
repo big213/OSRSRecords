@@ -248,7 +248,7 @@
                     bottom
                     offset-y
                     @handle-action-click="openEditDialog"
-                    @handle-expand-click="openExpandDialog(item, ...$event)"
+                    @handle-expand-click="openExpandDialog(item, $event)"
                     @handle-custom-action-click="handleCustomActionClick"
                   >
                     <template v-slot:activator="{ on, attrs }">
@@ -324,7 +324,7 @@
                 bottom
                 offset-y
                 @handle-action-click="openEditDialog"
-                @handle-expand-click="toggleItemExpanded(props, ...$event)"
+                @handle-expand-click="toggleItemExpanded(props, $event)"
                 @handle-custom-action-click="handleCustomActionClick"
               >
                 <template v-slot:activator="{ on, attrs }">
@@ -373,7 +373,7 @@
                 left
                 offset-x
                 @handle-action-click="openEditDialog"
-                @handle-expand-click="toggleItemExpanded(props, ...$event)"
+                @handle-expand-click="toggleItemExpanded(props, $event)"
                 @handle-custom-action-click="handleCustomActionClick"
               >
                 <template v-slot:activator="{ on, attrs }">

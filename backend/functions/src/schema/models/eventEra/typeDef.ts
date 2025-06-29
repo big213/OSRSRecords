@@ -22,6 +22,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     event: generateJoinableField({
       service: Event,
       allowNull: false,
+      typeDefOptions: { addable: false, updateable: false },
     }),
     name: generateStringField({ allowNull: false }),
     avatar: generateStringField({ allowNull: true }),
@@ -31,14 +32,17 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     beginDate: generateUnixTimestampField({
       allowNull: false,
       sqlOptions: { field: "begin_date" },
+      typeDefOptions: { addable: false, updateable: false },
     }),
     endDate: generateUnixTimestampField({
       allowNull: true,
       sqlOptions: { field: "end_date" },
+      typeDefOptions: { addable: false, updateable: false },
     }),
     isBuff: generateBooleanField({
       allowNull: true,
       sqlOptions: { field: "is_buff" },
+      typeDefOptions: { addable: false, updateable: false },
     }),
     isRelevant: generateBooleanField({
       allowNull: false,
@@ -53,6 +57,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
       allowNull: false,
       defaultValue: false,
       sqlOptions: { field: "is_current" },
+      typeDefOptions: { addable: false, updateable: false },
     }),
     ...generateCreatedAtField(),
     ...generateUpdatedAtField(),

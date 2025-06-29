@@ -4,6 +4,7 @@ import NameAvatarColumn from '~/components/table/nameAvatarColumn.vue'
 import TimeagoColumn from '~/components/table/timeagoColumn.vue'
 import AvatarColumn from '~/components/table/avatarColumn.vue'
 import BooleanColumn from '~/components/table/booleanColumn.vue'
+import TimeRangeColumn from '~/components/table/special/timeRangeColumn.vue'
 import { getEvents } from '~/services/dropdown'
 import {
   generateJoinableField,
@@ -80,6 +81,11 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       },
       component: TimeStringColumn,
     },
+    duration: {
+      text: 'Duration',
+      fields: ['beginDate', 'endDate'],
+      component: TimeRangeColumn,
+    },
     isBuff: {
       text: 'Is Buff',
       inputType: 'switch',
@@ -104,6 +110,9 @@ export const EventEra = <RecordInfo<'eventEra'>>{
       text: 'Updated At',
       component: TimeagoColumn,
     },
+    previousEventEraName: {
+      text: 'Previous Event Era Name',
+    },
   },
   paginationOptions: {
     hasSearch: false,
@@ -123,11 +132,15 @@ export const EventEra = <RecordInfo<'eventEra'>>{
         field: 'nameWithAvatar',
       },
       {
-        field: 'isCurrent',
+        field: 'duration',
+        with: '300px',
+      },
+      {
+        field: 'isBuff',
         width: '150px',
       },
       {
-        field: 'createdAt',
+        field: 'isCurrent',
         width: '150px',
       },
       {
@@ -149,15 +162,8 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     },
   },
   addOptions: {
-    fields: [
-      'event',
-      'avatar',
-      'name',
-      'description',
-      'beginDate',
-      'endDate',
-      'isBuff',
-    ],
+    fields: ['event', 'previousEventEraName', 'beginDate', 'isBuff'],
+    operationName: 'addEventEra',
   },
   importOptions: {
     fields: [
@@ -171,15 +177,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
     ],
   },
   editOptions: {
-    fields: [
-      'event',
-      'avatar',
-      'name',
-      'description',
-      'beginDate',
-      'endDate',
-      'isBuff',
-    ],
+    fields: ['avatar', 'name', 'description'],
   },
   viewOptions: {
     fields: [
@@ -196,7 +194,7 @@ export const EventEra = <RecordInfo<'eventEra'>>{
   enterOptions: {
     routeType: 'a',
   },
-  deleteOptions: {},
+  // deleteOptions: {},
   shareOptions: {},
   expandTypes: [],
 }

@@ -85,7 +85,7 @@
     </v-list>
     <v-divider></v-divider>
     -->
-    <v-list v-if="isAdmin" dense>
+    <v-list v-if="isModerator" dense>
       <v-subheader>Moderation</v-subheader>
       <v-list-item
         v-for="(item, i) in moderatorItems"
@@ -270,6 +270,24 @@ export default {
             },
           }),
         },
+        /*
+        {
+          icon: 'mdi-star-box',
+          title: 'Manage Events',
+          to: generateCrudRecordRoute(this, {
+            typename: 'event',
+            routeType: 'a',
+            pageOptions: {
+              search: '',
+              filters: [],
+              sort: {
+                field: 'createdAt',
+                desc: true,
+              },
+            },
+          }),
+        },
+        */
       ],
     }
   },
@@ -280,6 +298,12 @@ export default {
 
     isAdmin() {
       return this.$store.getters['auth/user']?.role === 'ADMIN'
+    },
+
+    isModerator() {
+      return ['ADMIN', 'MODERATOR'].includes(
+        this.$store.getters['auth/user']?.role
+      )
     },
 
     logoImageSrc() {

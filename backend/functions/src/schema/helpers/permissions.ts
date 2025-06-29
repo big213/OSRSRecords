@@ -8,6 +8,7 @@ import { objectOnlyHasFields } from "../core/helpers/shared";
 
 export const userRoleToPermissionsMap = {
   [userRoleKenum.ADMIN.name]: [userPermissionEnum.A_A],
+  [userRoleKenum.MODERATOR.name]: [userPermissionEnum.A_A],
   [userRoleKenum.NORMAL.name]: [],
 };
 

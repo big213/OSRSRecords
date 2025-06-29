@@ -5,6 +5,7 @@ import {
   updateObjectType,
 } from "../../core/helpers/resolver";
 import { PaginatedService } from "../../core/services";
+import { Submission } from "../../services";
 
 export class EventEraService extends PaginatedService {
   defaultTypename = "eventEra";
@@ -31,6 +32,122 @@ export class EventEraService extends PaginatedService {
     getMultiple: () => true,
   };
 
+  @permissionsCheck("create")
+  async addEventEra({
+    req,
+    fieldPath,
+    args,
+    query,
+    data = {},
+    isAdmin = false,
+  }: ServiceFunctionInputs) {
+    // args should be validated already
+    const validatedArgs = <any>args;
+    await this.handleLookupArgs(args, fieldPath);
+
+    const currentEventEra = await this.getFirstSqlRecord(
+      {
+        select: ["id", "beginDate"],
+        where: {
+          isCurrent: true,
+          "event.id": validatedArgs.event,
+        },
+      },
+      fieldPath,
+      false
+    );
+
+    // check if beginDate of new era is before the current era (if any)
+    if (
+      currentEventEra &&
+      validatedArgs.beginDate <= currentEventEra.beginDate
+    ) {
+      throw new Error(
+        `beginDate must be greater than the current event era's beginDate`
+      );
+    }
+
+    // set the current era (if any) to isCurrent = false, and set the endDate
+    if (currentEventEra) {
+      await this.updateSqlRecord(
+        {
+          fields: {
+            isCurrent: false,
+            name: validatedArgs.previousEventEraName,
+            endDate: validatedArgs.beginDate,
+          },
+          where: {
+            id: currentEventEra,
+          },
+        },
+        fieldPath
+      );
+    }
+
+    // create the current era
+    const addResults = await createObjectType({
+      typename: this.typename,
+      addFields: {
+        id: await this.generateRecordId(fieldPath),
+        name: "Current Era",
+        beginDate: validatedArgs.beginDate,
+        isBuff: validatedArgs.isBuff,
+        isRelevant: true,
+        isCurrent: true,
+        createdBy: req.user!.id,
+      },
+      req,
+      fieldPath,
+    });
+
+    // sync the isRelevant status (if it was a nerf, this would potentially change things)
+    if (validatedArgs.isBuff === false) {
+      await this.syncIsRelevantStatus(validatedArgs.event);
+    }
+
+    // if there are any submissions that happened after beginDate, set the era to current era
+    await Submission.updateSqlRecord(
+      {
+        fields: {
+          eventEra: addResults.id,
+        },
+        where: [
+          {
+            field: "happenedOn",
+            operator: "gte",
+            value: validatedArgs.beginDate,
+          },
+        ],
+      },
+      fieldPath
+    );
+
+    // do post-create fn, if any
+    await this.afterCreateProcess(
+      {
+        req,
+        fieldPath,
+        args,
+        query,
+        data,
+        isAdmin,
+      },
+      addResults.id
+    );
+
+    return this.isEmptyQuery(query)
+      ? {}
+      : await this.getRecord({
+          req,
+          args: { id: addResults.id },
+          query,
+          fieldPath,
+          isAdmin,
+          data,
+        });
+  }
+
+  // no longer allowed -- use addEventEra instead
   @permissionsCheck("create")
   async createRecord({
     req,
@@ -138,12 +255,15 @@ export class EventEraService extends PaginatedService {
     });
 
     // changed: sync the isRelevant statuses IF isBuff was updated
+    // (no longer allowing this to be updated)
+    /*
     if (
       validatedArgs.fields.isBuff !== undefined &&
       item.isBuff !== validatedArgs.fields.isBuff
     ) {
       await this.syncIsRelevantStatus(item["event.id"]);
     }
+    */
 
     // do post-update fn, if any
     await this.afterUpdateProcess(
@@ -196,7 +316,7 @@ export class EventEraService extends PaginatedService {
 
     const mostRecentNerfBeginDate = results[0]?.beginDate;
 
-    // if there was a recent nerf, set all records after begin date as isRelevant = true
+    // if there was a recent nerf, set all eras after begin date as isRelevant = true
     if (mostRecentNerfBeginDate) {
       await this.updateSqlRecord({
         fields: {
@@ -215,11 +335,9 @@ export class EventEraService extends PaginatedService {
         ],
       });
 
-      // if there was a recent nerf, set all records lte begin date as isRelevant = false
-      await this.updateSqlRecord({
-        fields: {
-          isRelevant: false,
-        },
+      // if there was a recent nerf, get all eventEras lte begin date
+      const irrelevantEras = await this.getAllSqlRecord({
+        select: ["id", "isRelevant"],
         where: [
           {
             field: "beginDate",
@@ -232,6 +350,30 @@ export class EventEraService extends PaginatedService {
           },
         ],
       });
+
+      // for each irrelevant era, set isRelevant to false (if not already)
+      for (const eventEra of irrelevantEras) {
+        if (eventEra.isRelevant !== false) {
+          await this.updateSqlRecord({
+            fields: {
+              isRelevant: false,
+            },
+            where: {
+              id: eventEra.id,
+            },
+          });
+
+          // also set all submissions belonging to the newly irrelevant era as isRelevantRecord = false
+          await Submission.updateSqlRecord({
+            fields: {
+              isRelevantRecord: false,
+            },
+            where: {
+              eventEra: eventEra.id,
+            },
+          });
+        }
+      }
     } else {
       // if no most recent nerfed eventEra, all eventEras should be isRelevant = true
       await this.updateSqlRecord({

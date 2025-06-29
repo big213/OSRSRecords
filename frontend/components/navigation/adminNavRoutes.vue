@@ -37,6 +37,14 @@ function generateAdminRouteObject(that, recordInfo) {
     to: generateCrudRecordRoute(that, {
       typename: recordInfo.typename,
       routeType: 'a',
+      pageOptions: {
+        search: '',
+        filters: [],
+        sort: {
+          field: 'createdAt',
+          desc: true,
+        },
+      },
     }),
   }
 }
