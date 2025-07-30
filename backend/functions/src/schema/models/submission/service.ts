@@ -382,6 +382,14 @@ export class SubmissionService extends PaginatedService {
         });
       }
 
+      // check if happenedOn is in the future, and if so, throw err
+      if (validatedArgs.happenedOn > new Date().getTime() / 1000) {
+        throw new GiraffeqlBaseError({
+          message: `HappenedOn cannot be in the future`,
+          fieldPath,
+        });
+      }
+
       // changed: check if happenedOn is between beginDate and endDate for eventEra
       const eventEraRecord = await EventEra.getFirstSqlRecord(
         {
