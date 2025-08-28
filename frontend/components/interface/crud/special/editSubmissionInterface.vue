@@ -212,8 +212,8 @@ export default {
 
             // if it matches https://imgur.com/asdf(.xyz), convert to i.imgur
             const firstMatch = link.match(/\/imgur.com\/(\w*)(\..*)?$/)
-            // if it matches https://imgur.com/a/asdf(.xyz), convert to i.imgur with first album image
-            const secondMatch = link.match(/\/imgur.com\/a\/(\w*)(\..*)?$/)
+            // if it matches https://imgur.com/a/asdf, convert to i.imgur with first album image
+            const secondMatch = link.match(/\/imgur.com\/a\/(.*)$/)
             if (firstMatch) {
               const imageData = await executeGiraffeql(this, {
                 getImgurImage: {
@@ -225,7 +225,7 @@ export default {
             } else if (secondMatch) {
               const albumData = await executeGiraffeql(this, {
                 getImgurAlbum: {
-                  __args: secondMatch[1],
+                  __args: secondMatch[1].split('-').pop(),
                 },
               })
 
