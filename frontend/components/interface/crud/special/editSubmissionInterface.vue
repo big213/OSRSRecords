@@ -237,7 +237,8 @@ export default {
           })
         )
 
-        // changed: if happenedOn field is empty, attempt to fetch it from a valid imgur link, if any
+        // changed: if happenedOn field is empty, attempt to fetch it from a valid imgur link, if any.
+        // catch by throwing an err if it fails for some reason
         if (!inputs.happenedOn) {
           // find the first exteralLink that follows the imgur pattern, if any
           const validImgurExternalLink = inputs.externalLinks.find(
@@ -254,6 +255,10 @@ export default {
                 getImgurImage: {
                   __args: regexMatch[1],
                 },
+              }).catch(() => {
+                throw new Error(
+                  `An error occurred while populating Happened On automatically. Please fill in the Happened On field manually.`
+                )
               })
 
               inputs.happenedOn = imageData.datetime
