@@ -270,6 +270,22 @@ export default {
             },
           }),
         },
+        {
+          icon: 'mdi-format-list-checkbox',
+          title: 'Discord Channels',
+          to: generateCrudRecordRoute(this, {
+            typename: 'discordChannel',
+            routeType: 'a',
+            pageOptions: {
+              search: '',
+              filters: [],
+              sort: {
+                field: 'createdAt',
+                desc: true,
+              },
+            },
+          }),
+        },
         /*
         {
           icon: 'mdi-star-box',
