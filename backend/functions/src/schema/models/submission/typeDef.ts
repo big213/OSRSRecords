@@ -51,7 +51,7 @@ export default new GiraffeqlObjectType(<ObjectTypeDefinition>{
     participants: generateIntegerField({
       allowNull: false,
       defaultValue: 0,
-      typeDefOptions: { addable: false, updateable: false },
+      typeDefOptions: { addable: false, updateable: true },
     }),
     participantsList: generateArrayField({
       allowNull: false,

@@ -87,6 +87,7 @@ export const Submission = <RecordInfo<'submission'>>{
     }),
     participants: {
       text: 'Participants Count',
+      hint: 'Set to 0 for unknown. Avoid changing this otherwise.',
     },
     participantsList: {
       text: 'Team Members',
@@ -490,6 +491,7 @@ export const Submission = <RecordInfo<'submission'>>{
       'externalLinks',
       'happenedOn',
       'participantsList',
+      'participants',
       'privateComments',
       'publicComments',
       'reviewerComments',
