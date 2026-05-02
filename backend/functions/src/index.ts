@@ -87,12 +87,7 @@ app.get("/schema.ts", function (req, res, next) {
 });
 
 // runWith does not work properly with timeoutSeconds > 60 as of Firebase Cloud Functions V1
-export const api = functions
-  .runWith({
-    timeoutSeconds: functionTimeoutSeconds,
-    memory: "256MB",
-  })
-  .https.onRequest(app);
+export const api = functions.https.onRequest(app);
 
 export { serveImage } from "./misc/serveImage";
 
