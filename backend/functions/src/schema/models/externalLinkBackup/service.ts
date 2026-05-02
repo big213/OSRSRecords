@@ -5,7 +5,7 @@ import axios from "axios";
 import * as admin from "firebase-admin";
 import { isCdnUrl, isFileUrl } from "../../helpers/common";
 import { File, Submission } from "../../services";
-import { Transaction } from "knex";
+import { Knex } from "knex";
 import { env } from "../../../config";
 let bucket;
 
@@ -38,7 +38,7 @@ export class ExternalLinkBackupService extends PaginatedService {
     submissionId: string,
     userId: string,
     externalLinks: string[],
-    transaction?: Transaction
+    transaction?: Knex.Transaction
   ) {
     const externalLinkBackups: string[] = [];
 

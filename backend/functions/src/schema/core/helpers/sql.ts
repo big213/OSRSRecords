@@ -7,7 +7,7 @@ import {
   ObjectTypeDefinitionField,
   objectTypeDefs,
 } from "giraffeql";
-import Knex = require("knex");
+import { Knex } from "knex";
 import { isDev } from "../../../config";
 import { executeDBQuery, knex } from "../../../utils/knex";
 import { linkDefs } from "../../links";

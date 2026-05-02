@@ -45,7 +45,7 @@ import {
   updateObjectType,
 } from "../helpers/resolver";
 import { itemNotFoundError } from "../helpers/error";
-import { Transaction } from "knex";
+import { Knex } from "knex";
 
 export type FieldObject = {
   field?: string;
@@ -745,7 +745,7 @@ export class NormalService extends BaseService {
   // will try 3 times before calling it quits
   async generateRecordId(
     fieldPath?: string[],
-    transaction?: Transaction,
+    transaction?: Knex.Transaction,
     attempt = 0
   ) {
     // if 3 or more tries, throw err

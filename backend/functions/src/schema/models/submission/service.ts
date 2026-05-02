@@ -38,7 +38,7 @@ import { objectOnlyHasFields } from "../../core/helpers/shared";
 import { GiraffeqlBaseError } from "giraffeql";
 import { env } from "../../../config";
 import { knex } from "../../../utils/knex";
-import { Transaction } from "knex";
+import { Knex } from "knex";
 
 type UpdateLogPostSubmission = {
   submission: any;
@@ -157,7 +157,7 @@ export class SubmissionService extends PaginatedService {
     characterId?: string | null;
     status: submissionStatusKenum | null;
     score: number;
-    transaction?: Transaction;
+    transaction?: Knex.Transaction;
   }) {
     // if status is not approved, return null
     if (status !== submissionStatusKenum.APPROVED) {
@@ -240,7 +240,7 @@ export class SubmissionService extends PaginatedService {
     evidenceKey: string | null,
     eventId: string,
     fieldPath: string[],
-    transaction?: Transaction
+    transaction?: Knex.Transaction
   ) {
     // if no evidenceKey, pass
     if (!evidenceKey) return;
@@ -846,7 +846,7 @@ export class SubmissionService extends PaginatedService {
     eventEraId: string;
     relevantEraRanking: number | null;
     soloPBRanking: number | null;
-    transaction?: Transaction;
+    transaction?: Knex.Transaction;
   }) {
     // discord channels that need to be refreshed
     const discordChannelIds: Set<string> = new Set();
@@ -960,7 +960,7 @@ export class SubmissionService extends PaginatedService {
     isSoloPersonalBest: boolean | null;
     characterId?: string | null;
     participants: number;
-    transaction?: Transaction;
+    transaction?: Knex.Transaction;
   }) {
     const additionalFilters: SqlWhereFieldObject[] = [];
 
@@ -1041,7 +1041,7 @@ export class SubmissionService extends PaginatedService {
 
   async getSubmissionCharacters(
     submissionId: string,
-    transaction?: Transaction
+    transaction?: Knex.Transaction
   ) {
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
@@ -1073,7 +1073,7 @@ export class SubmissionService extends PaginatedService {
     relevantEraRanking: number | null;
     soloPBRanking: number | null;
     fieldPath: string[];
-    transaction?: Transaction;
+    transaction?: Knex.Transaction;
   }) {
     const discordMessageContents: {
       content: string;
@@ -1637,7 +1637,7 @@ export class SubmissionService extends PaginatedService {
   async syncSoloPBState(
     submissionId: string,
     eventId: string,
-    transaction?: Transaction
+    transaction?: Knex.Transaction
   ): Promise<boolean | undefined> {
     const submissionLinks =
       await SubmissionCharacterParticipantLink.getAllSqlRecord({
@@ -1850,7 +1850,7 @@ export class SubmissionService extends PaginatedService {
   async syncIsRelevantRecord(
     eventId: string,
     participants: number,
-    transaction?: Transaction
+    transaction?: Knex.Transaction
   ) {
     // reset all isRecord flags for the event.
     await this.updateSqlRecord({
