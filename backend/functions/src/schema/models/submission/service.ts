@@ -633,9 +633,12 @@ export class SubmissionService extends PaginatedService {
         id: item.id,
         updateFields: {
           ...validatedArgs.fields,
-          participants: validatedArgs.fields.participantsList
-            ? validatedArgs.fields.participantsList.length
-            : undefined, // computed
+          participants:
+            validatedArgs.fields.participants === 0
+              ? 0
+              : validatedArgs.fields.participantsList
+              ? validatedArgs.fields.participantsList.length
+              : undefined, // computed, unless 0 -- then set to 0
           score: validatedArgs.fields.timeElapsed ?? undefined,
           evidenceKey: validatedArgs.fields.externalLinks
             ? validatedArgs.fields.externalLinks[0]
