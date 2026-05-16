@@ -1350,6 +1350,22 @@ export class SubmissionService extends PaginatedService {
           discordChannelOutputs[0].participants === null
         ) {
           relevantErasUpdateLogPost.isFastestCompletion = true;
+
+          // calculate and populate the fastest completion ranking and isWR data
+          const fastestCompletionRanking = await this.calculateRank({
+            eventId: submission["event.id"],
+            participants: null,
+            eventEraId: null,
+            isRelevantEventEra: true,
+            isSoloPersonalBest: null,
+            status: submissionStatusKenum.APPROVED,
+            score: submission.score,
+            transaction,
+          });
+
+          relevantErasUpdateLogPost.ranking = fastestCompletionRanking;
+          relevantErasUpdateLogPost.isWR =
+            fastestCompletionRanking === 1 ? { isTie: false } : false;
         }
 
         relevantErasUpdateLogPost.relevantChannelIds = new Set(
